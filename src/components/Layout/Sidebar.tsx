@@ -13,13 +13,14 @@ import {
   LogOut,
   Trophy,
   Menu,
-  X
+  X,
+  Calendar
 } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
-  userRole: 'student' | 'teacher';
+  userRole: 'student' | 'teacher' | 'school' | 'admin';
   onLogout?: () => void;
 }
 
@@ -32,20 +33,38 @@ export function Sidebar({ activeTab, onTabChange, userRole, onLogout }: SidebarP
     { id: 'lessons', label: t('navigation.lessons'), icon: BookOpen },
     { id: 'quizzes', label: t('navigation.quizzes'), icon: Brain },
     { id: 'badges', label: t('navigation.badges'), icon: Award },
+    { id: 'student-homework', label: 'Homework', icon: FileText },
+    { id: 'student-assignments', label: 'Assignments', icon: FileText },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'profile', label: t('navigation.profile'), icon: User }
   ];
 
   const teacherTabs = [
     { id: 'dashboard', label: t('teacher.dashboard'), icon: LayoutDashboard },
-    { id: 'students', label: t('teacher.students'), icon: Users },
-    { id: 'add-student', label: 'Add Student', icon: Users },
+    { id: 'assign-homework', label: 'Assign Homework', icon: FileText },
+    { id: 'assign-assignments', label: 'Assign Assignments', icon: FileText },
     { id: 'analytics', label: t('teacher.analytics'), icon: BarChart3 },
     { id: 'reports', label: t('teacher.reports'), icon: FileText },
     { id: 'profile', label: t('navigation.profile'), icon: User }
   ];
 
-  const tabs = userRole === 'teacher' ? teacherTabs : studentTabs;
+  const schoolTabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'school-students', label: 'Students', icon: Users },
+    { id: 'add-student', label: 'Add Student', icon: Users },
+    { id: 'school-events', label: 'Add Events', icon: Calendar },
+    { id: 'school-reports', label: 'Reports', icon: FileText },
+    { id: 'school-settings', label: 'Settings', icon: Settings },
+  ];
+
+  const adminTabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'admin-schools', label: 'Schools', icon: Users },
+    { id: 'admin-analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'admin-users', label: 'User Management', icon: User },
+  ];
+
+  const tabs = userRole === 'teacher' ? teacherTabs : userRole === 'school' ? schoolTabs : userRole === 'admin' ? adminTabs : studentTabs;
 
   return (
     <nav aria-label="Primary" className="h-full">
@@ -98,18 +117,20 @@ export function Sidebar({ activeTab, onTabChange, userRole, onLogout }: SidebarP
         </nav>
 
         <div className="border-t p-4 space-y-2">
-          <button
-            onClick={() => { onTabChange('settings'); setOpen(false); }}
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
-              activeTab === 'settings'
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg'
-                : 'text-gray-700 hover:bg-gray-50'
-            }`}
-            aria-label="Settings"
-          >
-            <Settings className={`w-5 h-5 ${activeTab === 'settings' ? 'text-white' : 'text-gray-400'}`} aria-hidden="true" />
-            <span className="font-medium">{t('navigation.settings')}</span>
-          </button>
+          {!(userRole === 'school' || userRole === 'admin') && (
+            <button
+              onClick={() => { onTabChange('settings'); setOpen(false); }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
+                activeTab === 'settings'
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+              aria-label="Settings"
+            >
+              <Settings className={`w-5 h-5 ${activeTab === 'settings' ? 'text-white' : 'text-gray-400'}`} aria-hidden="true" />
+              <span className="font-medium">{t('navigation.settings')}</span>
+            </button>
+          )}
 
           {onLogout && (
             <button

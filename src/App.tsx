@@ -1,18 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
 import { Login } from './components/Auth/Login';
-import { StudentDashboard } from './components/Student/Dashboard';
-import { Leaderboard } from './components/Student/Leaderboard';
-import { AddStudent } from './components/Teacher/AddStudent';
-import { TeacherDashboard } from './components/Teacher/Dashboard';
+const StudentDashboard = React.lazy(() => import('./components/Student/Dashboard').then(m => ({ default: m.StudentDashboard })));
+const Leaderboard = React.lazy(() => import('./components/Student/Leaderboard').then(m => ({ default: m.Leaderboard })));
+const AddStudent = React.lazy(() => import('./components/Teacher/AddStudent').then(m => ({ default: m.AddStudent })));
+const TeacherAssignHomework = React.lazy(() => import('./components/Teacher/TeacherAssignHomework').then(m => ({ default: m.TeacherAssignHomework })));
+const TeacherAssignAssignments = React.lazy(() => import('./components/Teacher/TeacherAssignAssignments').then(m => ({ default: m.TeacherAssignAssignments })));
+const StudentHomework = React.lazy(() => import('./components/Student/StudentHomework').then(m => ({ default: m.StudentHomework })));
+const StudentAssignments = React.lazy(() => import('./components/Student/StudentAssignments').then(m => ({ default: m.StudentAssignments })));
+const TeacherDashboard = React.lazy(() => import('./components/Teacher/Dashboard').then(m => ({ default: m.TeacherDashboard })));
+const SchoolDashboard = React.lazy(() => import('./components/School/SchoolDashboard').then(m => ({ default: m.SchoolDashboard })));
+const AdminDashboard = React.lazy(() => import('./components/Admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const SchoolStudents = React.lazy(() => import('./components/School/SchoolStudents').then(m => ({ default: m.SchoolStudents })));
+const SchoolReports = React.lazy(() => import('./components/School/SchoolReports').then(m => ({ default: m.SchoolReports })));
+const SchoolSettings = React.lazy(() => import('./components/School/SchoolSettings').then(m => ({ default: m.SchoolSettings })));
+const SchoolAddEvents = React.lazy(() => import('./components/School/SchoolAddEvents').then(m => ({ default: m.SchoolAddEvents })));
+const AdminSchools = React.lazy(() => import('./components/Admin/AdminSchools').then(m => ({ default: m.AdminSchools })));
+const AdminAnalytics = React.lazy(() => import('./components/Admin/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })));
+const AdminUsers = React.lazy(() => import('./components/Admin/AdminUsers').then(m => ({ default: m.AdminUsers })));
 import './i18n';
 
 interface User {
   id: string;
   name: string;
-  role: 'student' | 'teacher';
+  role: 'student' | 'teacher' | 'school' | 'admin';
 }
 
 function App() {
@@ -74,15 +87,23 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return user.role === 'student' ? (
-          <StudentDashboard userId={user.id} userName={user.name} />
-        ) : (
-          <TeacherDashboard />
-        );
+        if (user.role === 'student') return <StudentDashboard userId={user.id} userName={user.name} />;
+        if (user.role === 'teacher') return <TeacherDashboard />;
+        if (user.role === 'school') return <SchoolDashboard />;
+        if (user.role === 'admin') return <AdminDashboard />;
+        return null;
       case 'leaderboard':
         return (
           <Leaderboard />
         );
+      case 'assign-homework':
+        return <TeacherAssignHomework />;
+      case 'assign-assignments':
+        return <TeacherAssignAssignments />;
+      case 'student-homework':
+        return <StudentHomework />;
+      case 'student-assignments':
+        return <StudentAssignments />;
       case 'lessons':
         return (
           <div className="p-6">
@@ -136,6 +157,22 @@ function App() {
         return (
           <AddStudent />
         );
+      // School routes
+      case 'school-students':
+        return <SchoolStudents />;
+      case 'school-events':
+        return <SchoolAddEvents />;
+      case 'school-reports':
+        return <SchoolReports />;
+      case 'school-settings':
+        return <SchoolSettings />;
+      // Admin routes
+      case 'admin-schools':
+        return <AdminSchools />;
+      case 'admin-analytics':
+        return <AdminAnalytics />;
+      case 'admin-users':
+        return <AdminUsers />;
       default:
         return (
           <div className="p-6">
@@ -164,8 +201,10 @@ function App() {
           />
         </div>
         
-        <main className="flex-1 overflow-auto">
-          {renderContent()}
+        <main className="flex-1 overflow-auto" role="main">
+          <Suspense fallback={<div className="p-6">Loading…</div>}>
+            {renderContent()}
+          </Suspense>
         </main>
       </div>
     </div>
