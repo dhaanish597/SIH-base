@@ -52,16 +52,17 @@ export function Leaderboard() {
   }
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Leaderboard</h2>
-      <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+    <main className="p-6" role="main" aria-labelledby="leaderboard-heading">
+      <h2 id="leaderboard-heading" className="text-2xl font-bold text-gray-900 mb-4">Leaderboard</h2>
+      <section className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
+        <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200" role="table" aria-label="Student leaderboard">
+          <thead className="bg-gray-50 sticky top-0">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Rank</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Name</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Class</th>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Points</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
@@ -75,8 +76,9 @@ export function Leaderboard() {
             ))}
           </tbody>
         </table>
-      </div>
-    </div>
+        </div>
+      </section>
+    </main>
   );
 }
 

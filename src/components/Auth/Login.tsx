@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Mail, Lock, User, GraduationCap } from 'lucide-react';
+import { BookOpen, Mail, Lock, User, GraduationCap, Building2, Shield } from 'lucide-react';
 
 interface LoginProps {
-  onLogin: (user: { id: string; name: string; role: 'student' | 'teacher' }) => void;
+  onLogin: (user: { id: string; name: string; role: 'student' | 'teacher' | 'school' | 'admin' }) => void;
 }
 
 export function Login({ onLogin }: LoginProps) {
@@ -11,7 +11,7 @@ export function Login({ onLogin }: LoginProps) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: 'student' as 'student' | 'teacher'
+    role: 'student' as 'student' | 'teacher' | 'school' | 'admin'
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,7 +27,14 @@ export function Login({ onLogin }: LoginProps) {
       // For demo purposes, create a mock user
       const user = {
         id: `user_${Date.now()}`,
-        name: formData.role === 'teacher' ? 'Teacher Kumar' : 'Student Priya',
+        name:
+          formData.role === 'teacher'
+            ? 'Teacher Kumar'
+            : formData.role === 'school'
+            ? 'School Admin'
+            : formData.role === 'admin'
+            ? 'Platform Admin'
+            : 'Student Priya',
         role: formData.role
       };
 
@@ -68,7 +75,7 @@ export function Login({ onLogin }: LoginProps) {
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Login as:
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, role: 'student' })}
@@ -92,6 +99,30 @@ export function Login({ onLogin }: LoginProps) {
                 >
                   <GraduationCap className="w-5 h-5" />
                   <span className="font-medium">Teacher</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, role: 'school' })}
+                  className={`flex items-center justify-center space-x-2 p-3 rounded-lg border-2 transition-all ${
+                    formData.role === 'school'
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <Building2 className="w-5 h-5" />
+                  <span className="font-medium">School</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, role: 'admin' })}
+                  className={`flex items-center justify-center space-x-2 p-3 rounded-lg border-2 transition-all ${
+                    formData.role === 'admin'
+                      ? 'border-rose-500 bg-rose-50 text-rose-700'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <Shield className="w-5 h-5" />
+                  <span className="font-medium">Admin</span>
                 </button>
               </div>
             </div>

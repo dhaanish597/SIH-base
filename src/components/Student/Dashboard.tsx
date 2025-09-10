@@ -18,10 +18,34 @@ interface DashboardProps {
   userName: string;
 }
 
+// Local type to describe user progress items to avoid `never` inference
+type ProgressItem = {
+  id: string;
+  userId: string;
+  lessonId: string;
+  completed: boolean;
+  score: number;
+  timeSpent: number;
+  completedAt: string | Date;
+  synced: boolean;
+};
+
+type UserProgressItem = {
+  id: string;
+  userId: string;
+  lessonId: string;
+  completed: boolean;
+  score: number;
+  timeSpent: number;
+  completedAt: string | Date;
+  synced: boolean;
+};
+
 export function StudentDashboard({ userId, userName }: DashboardProps) {
   const { t } = useTranslation();
   const { stats, loading: statsLoading } = useUserStats();
   const { progress, loading: progressLoading } = useUserProgress(userId);
+  const typedProgress = (progress as unknown as ProgressItem[]) || [];
   const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
@@ -39,8 +63,8 @@ export function StudentDashboard({ userId, userName }: DashboardProps) {
     );
   }
 
-  const completedLessons = progress.filter(p => p.completed).length;
-  const totalScore = progress.reduce((sum, p) => sum + p.score, 0);
+  const completedLessons = typedProgress.filter(p => p.completed).length;
+  const totalScore = typedProgress.reduce((sum, p) => sum + p.score, 0);
   const avgScore = completedLessons > 0 ? Math.round(totalScore / completedLessons) : 0;
 
   return (
@@ -166,7 +190,7 @@ export function StudentDashboard({ userId, userName }: DashboardProps) {
       <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
         <h3 className="text-xl font-bold text-gray-900 mb-4">Recent Progress</h3>
         <div className="space-y-3">
-          {progress.slice(-5).reverse().map((item, index) => (
+          {typedProgress.slice(-5).reverse().map((item, index) => (
             <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">

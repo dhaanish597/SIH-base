@@ -20,16 +20,29 @@ self.addEventListener('install', (event) => {
 
 // Fetch
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  // Ignore non-http(s) schemes (e.g., chrome-extension://) to avoid cache.put failures
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return; // let the request pass through
+  }
+  // Network-first for API
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+  // Cache-first for static assets
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      }
-    )
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((res) => {
+        return caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, res.clone());
+          return res;
+        });
+      });
+    })
   );
 });
 
