@@ -1,37 +1,70 @@
-const CACHE_NAME = 'stem-learn-v1';
-const urlsToCache = [
+const CACHE_NAME = 'stem-learn-v2';
+const OFFLINE_URL = '/offline.html';
+const PRECACHE_URLS = [
   '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
   '/manifest.json',
-  '/offline.html'
+  OFFLINE_URL
 ];
 
 // Install SW
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(PRECACHE_URLS);
+    self.skipWaiting();
+  })());
 });
 
 // Fetch
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      }
-    )
-  );
+  const { request } = event;
+  if (request.method !== 'GET') return;
+
+  // Network-first for API, cache-first for static
+  if (request.url.includes('/api/')) {
+    event.respondWith(networkFirst(request));
+  } else {
+    event.respondWith(cacheFirst(request));
+  }
 });
+
+async function cacheFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response && response.ok && isCacheable(request)) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (err) {
+    const url = new URL(request.url);
+    if (url.origin === location.origin && url.pathname === '/') {
+      return cache.match(OFFLINE_URL);
+    }
+    throw err;
+  }
+}
+
+async function networkFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const response = await fetch(request);
+    if (response && response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (err) {
+    const cached = await cache.match(request);
+    return cached || new Response(JSON.stringify({ error: 'Offline' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+  }
+}
+
+function isCacheable(request) {
+  const url = new URL(request.url);
+  return url.origin === location.origin;
+}
 
 // Background Sync
 self.addEventListener('sync', (event) => {
@@ -53,7 +86,7 @@ async function syncData() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(data)
+          body: JSON.stringify({ type: data.type, data: data.data })
         });
         
         // Remove from pending sync after successful upload

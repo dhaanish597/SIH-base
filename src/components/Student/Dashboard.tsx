@@ -12,6 +12,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useUserStats, useUserProgress } from '../../hooks/useIndexedDB';
+import { InlineLoader } from '../Loading/LoadingSpinner';
 
 interface DashboardProps {
   userId: string;
@@ -32,11 +33,7 @@ export function StudentDashboard({ userId, userName }: DashboardProps) {
   }, []);
 
   if (statsLoading || progressLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
+    return <InlineLoader text="Loading your dashboard..." />;
   }
 
   const completedLessons = progress.filter(p => p.completed).length;

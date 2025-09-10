@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { TableSkeleton } from '../Loading/SkeletonLoader';
 
 interface LeaderboardItem {
   rank: number;
@@ -37,8 +38,9 @@ export function Leaderboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Leaderboard</h2>
+        <TableSkeleton />
       </div>
     );
   }

@@ -24,12 +24,13 @@ export function TeacherDashboard() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex md:block justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Teacher Dashboard</h1>
           <p className="text-gray-600 mt-1">Monitor your students' progress and engagement</p>
         </div>
-        <div className="flex space-x-3">
+
+        <div className="block md:block justify-center space-x-3">
           <button className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
             <Sync className="w-4 h-4" />
             <span>Sync Data</span>
@@ -39,7 +40,6 @@ export function TeacherDashboard() {
             <span>Export Report</span>
           </button>
         </div>
-      </div>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

@@ -4,10 +4,31 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gamified STEM Learning Platform PWA</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#4F46E5" />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/main.tsx" as="script" />
+    <link rel="preload" href="/src/index.css" as="style" />
+    
+    <!-- DNS prefetch for external resources -->
+    <link rel="dns-prefetch" href="//images.pexels.com" />
+    
+    <!-- Preconnect to improve loading performance -->
+    <link rel="preconnect" href="https://images.pexels.com" crossorigin />
+    
+    <title>STEM Learn - Gamified Learning Platform</title>
+    <meta name="description" content="Offline-first gamified STEM learning platform for rural schools. Learn Mathematics, Science, Technology, and Engineering with interactive lessons and quizzes." />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>
