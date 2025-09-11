@@ -212,7 +212,7 @@ function App() {
       <Header user={user} />
       
       <div className="flex flex-col md:flex-row h-[calc(100vh-80px)]">
-        <div className="w-0 md:w-64 md:flex-shrink-0">
+        <div className="hidden md:block w-64 flex-shrink-0">
           <Sidebar
             activeTab={activeTab}
             onTabChange={setActiveTab}

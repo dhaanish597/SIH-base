@@ -12,7 +12,6 @@ import {
   FileText,
   LogOut,
   Trophy,
-  Menu,
   X,
   Calendar
 } from 'lucide-react';
@@ -22,11 +21,12 @@ interface SidebarProps {
   onTabChange: (tab: string) => void;
   userRole: 'student' | 'teacher' | 'school' | 'admin';
   onLogout?: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export function Sidebar({ activeTab, onTabChange, userRole, onLogout }: SidebarProps) {
+export function Sidebar({ activeTab, onTabChange, userRole, onLogout, isOpen = false, onClose }: SidebarProps) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
 
   const studentTabs = [
     { id: 'dashboard', label: t('navigation.dashboard'), icon: LayoutDashboard },
@@ -66,87 +66,90 @@ export function Sidebar({ activeTab, onTabChange, userRole, onLogout }: SidebarP
 
   const tabs = userRole === 'teacher' ? teacherTabs : userRole === 'school' ? schoolTabs : userRole === 'admin' ? adminTabs : studentTabs;
 
+  const handleTabClick = (id: string) => {
+    onTabChange(id);
+    onClose?.();
+  };
+
   return (
-    <nav aria-label="Primary" className="h-full">
-      {/* Mobile top bar */}
-      <div className="md:hidden bg-white shadow flex items-center justify-between px-4 py-3">
-        <button
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          className="p-2 rounded-lg border border-gray-200"
-          onClick={() => setOpen(!open)}
-        >
-          {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
-        </button>
-        <span className="text-sm text-gray-700">{userRole === 'teacher' ? 'Teacher' : 'Student'}</span>
-        <button
-          onClick={() => onTabChange('settings')}
-          className="p-2 rounded-lg border border-gray-200"
-          aria-label="Open settings"
-        >
-          <Settings aria-hidden="true" />
-        </button>
-      </div>
+    <>
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity duration-300"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Sidebar panel */}
-      <div
+      <nav 
         className={`
-          bg-white shadow-lg h-full flex flex-col md:translate-x-0 transition-transform duration-200
-          ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-          fixed md:static top-0 left-0 w-64 z-40
+          bg-white shadow-lg h-full flex flex-col transition-transform duration-300 ease-in-out safe-left
+          ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          fixed md:static top-0 left-0 w-64 sm:w-72 md:w-64 z-50 md:z-auto
         `}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Navigation menu"
+        aria-label="Primary navigation"
+        role="navigation"
       >
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto" aria-label="Sections">
+        {/* Mobile close button */}
+        <div className="md:hidden flex justify-between items-center p-4 border-b bg-gray-50">
+          <span className="text-lg font-semibold text-gray-900">Menu</span>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-gray-200 transition-colors focus-visible"
+            aria-label="Close navigation menu"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        <div className="flex-1 px-3 sm:px-4 py-4 sm:py-6 space-y-1 sm:space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => { onTabChange(id); setOpen(false); }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
+              onClick={() => handleTabClick(id)}
+              className={`w-full flex items-center space-x-3 px-3 sm:px-4 py-3 rounded-xl text-left transition-all duration-200 focus-visible ${
                 activeTab === id
                   ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-gray-50'
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
               }`}
               aria-current={activeTab === id ? 'page' : undefined}
             >
-              <Icon className={`w-5 h-5 ${activeTab === id ? 'text-white' : 'text-gray-400'}`} aria-hidden="true" />
-              <span className="font-medium">{label}</span>
+              <Icon className={`w-5 h-5 flex-shrink-0 ${activeTab === id ? 'text-white' : 'text-gray-400'}`} aria-hidden="true" />
+              <span className="font-medium text-sm sm:text-base truncate leading-tight">{label}</span>
             </button>
           ))}
-        </nav>
+        </div>
 
-        <div className="border-t p-4 space-y-2">
+        <div className="border-t p-3 sm:p-4 space-y-1 sm:space-y-2">
           {!(userRole === 'school' || userRole === 'admin') && (
             <button
-              onClick={() => { onTabChange('settings'); setOpen(false); }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
+              onClick={() => handleTabClick('settings')}
+              className={`w-full flex items-center space-x-3 px-3 sm:px-4 py-3 rounded-xl text-left transition-all duration-200 focus-visible ${
                 activeTab === 'settings'
                   ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-gray-50'
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
               }`}
               aria-label="Settings"
             >
-              <Settings className={`w-5 h-5 ${activeTab === 'settings' ? 'text-white' : 'text-gray-400'}`} aria-hidden="true" />
-              <span className="font-medium">{t('navigation.settings')}</span>
+              <Settings className={`w-5 h-5 flex-shrink-0 ${activeTab === 'settings' ? 'text-white' : 'text-gray-400'}`} aria-hidden="true" />
+              <span className="font-medium text-sm sm:text-base">{t('navigation.settings')}</span>
             </button>
           )}
 
           {onLogout && (
             <button
-              onClick={() => { onLogout(); setOpen(false); }}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left text-red-600 hover:bg-red-50 transition-all duration-200"
+              onClick={() => { onLogout(); onClose?.(); }}
+              className="w-full flex items-center space-x-3 px-3 sm:px-4 py-3 rounded-xl text-left text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 focus-visible"
               aria-label="Log out"
             >
-              <LogOut className="w-5 h-5" aria-hidden="true" />
-              <span className="font-medium">{t('navigation.logout')}</span>
+              <LogOut className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+              <span className="font-medium text-sm sm:text-base">{t('navigation.logout')}</span>
             </button>
           )}
         </div>
-      </div>
-
-      {/* Backdrop for mobile */}
-      {open && <button aria-hidden="true" className="fixed inset-0 bg-black/20 md:hidden" onClick={() => setOpen(false)} />}
-    </nav>
+      </nav>
+    </>
   );
 }
