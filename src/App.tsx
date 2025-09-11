@@ -1,10 +1,10 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Trophy } from 'lucide-react';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
 import { Login } from './components/Auth/Login';
 const StudentDashboard = React.lazy(() => import('./components/Student/Dashboard').then(m => ({ default: m.StudentDashboard })));
-const Leaderboard = React.lazy(() => import('./components/Student/Leaderboard').then(m => ({ default: m.Leaderboard })));
 const AddStudent = React.lazy(() => import('./components/Teacher/AddStudent').then(m => ({ default: m.AddStudent })));
 const TeacherAssignHomework = React.lazy(() => import('./components/Teacher/TeacherAssignHomework').then(m => ({ default: m.TeacherAssignHomework })));
 const TeacherAssignAssignments = React.lazy(() => import('./components/Teacher/TeacherAssignAssignments').then(m => ({ default: m.TeacherAssignAssignments })));
@@ -51,7 +51,13 @@ function App() {
     // Check for cached user
     const cachedUser = localStorage.getItem('stem_user');
     if (cachedUser) {
-      setUser(JSON.parse(cachedUser));
+      try {
+        const userData = JSON.parse(cachedUser);
+        setUser(userData);
+      } catch (error) {
+        console.error('Error parsing cached user data:', error);
+        localStorage.removeItem('stem_user');
+      }
     }
     setIsLoading(false);
   }, []);
@@ -65,6 +71,8 @@ function App() {
     setUser(null);
     localStorage.removeItem('stem_user');
     setActiveTab('dashboard');
+    // Force re-render to ensure login page is shown
+    window.location.reload();
   };
 
   const changeLanguage = (language: string) => {
@@ -80,6 +88,7 @@ function App() {
     );
   }
 
+  // Show login page if no user is authenticated
   if (!user) {
     return <Login onLogin={handleLogin} />;
   }
@@ -94,7 +103,18 @@ function App() {
         return null;
       case 'leaderboard':
         return (
-          <Leaderboard />
+          <div className="p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Leaderboard</h2>
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+              <div className="text-center py-12">
+                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <Trophy className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Leaderboard Coming Soon</h3>
+                <p className="text-gray-600">This feature will be implemented soon. Stay tuned for updates!</p>
+              </div>
+            </div>
+          </div>
         );
       case 'assign-homework':
         return <TeacherAssignHomework />;

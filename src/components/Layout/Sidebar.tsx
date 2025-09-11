@@ -35,7 +35,7 @@ export function Sidebar({ activeTab, onTabChange, userRole, onLogout }: SidebarP
     { id: 'badges', label: t('navigation.badges'), icon: Award },
     { id: 'student-homework', label: 'Homework', icon: FileText },
     { id: 'student-assignments', label: 'Assignments', icon: FileText },
-    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+    { id: 'leaderboard', label: 'Leaderboard (Coming Soon)', icon: Trophy },
     { id: 'profile', label: t('navigation.profile'), icon: User }
   ];
 

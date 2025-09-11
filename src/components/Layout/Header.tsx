@@ -6,7 +6,7 @@ import { useOfflineSync } from '../../hooks/useIndexedDB';
 interface HeaderProps {
   user?: {
     name: string;
-    role: 'student' | 'teacher';
+    role: 'student' | 'teacher' | 'school' | 'admin';
   };
   onProfileClick?: () => void;
   onSettingsClick?: () => void;
@@ -84,6 +84,10 @@ export function Header({ user, onProfileClick, onSettingsClick }: HeaderProps) {
                   <span className={`px-2 py-1 text-xs rounded-full ${
                     user.role === 'teacher' 
                       ? 'bg-purple-100 text-purple-700'
+                      : user.role === 'school'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : user.role === 'admin'
+                      ? 'bg-rose-100 text-rose-700'
                       : 'bg-green-100 text-green-700'
                   }`}>
                     {user.role}
