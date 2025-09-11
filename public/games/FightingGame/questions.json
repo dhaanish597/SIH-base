@@ -1,0 +1,22 @@
+[
+  {
+    "q": "What is 5 + 3?",
+    "a": "8"
+  },
+  {
+    "q": "Who is known as the father of computers?",
+    "a": "Charles Babbage"
+  },
+  {
+    "q": "What does HTML stand for?",
+    "a": "HyperText Markup Language"
+  },
+  {
+    "q": "Which planet is known as the Red Planet?",
+    "a": "Mars"
+  },
+  {
+    "q": "What is the capital of France?",
+    "a": "Paris"
+  }
+]

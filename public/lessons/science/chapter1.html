@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Science Chapter 1 - Enhanced Learning Slides</title>
+<style>
+  body {
+    margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #e0f7fa;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .sidebar {
+    width: 260px;
+    background: #00838f;
+    color: white;
+    padding: 20px 15px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .sidebar h2 {
+    margin: 0 0 20px 10px;
+    font-weight: 700;
+  }
+  .concept-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .concept-list li {
+    margin: 10px 0;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 1em;
+    background: #00acc1cc;
+    transition: background 0.3s;
+    user-select:none;
+  }
+  .concept-list li:hover {
+    background: #00bcd4dd;
+  }
+  .concept-list li.completed {
+    background: #4db6ac;
+    color: #00332f;
+    font-weight: 700;
+  }
+  .tick {
+    margin-left: auto;
+    color: #004d40;
+    font-size: 1.3em;
+  }
+  .slides-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    padding: 40px 50px 50px 50px;
+    box-sizing: border-box;
+    position: relative;
+    overflow-y: auto;
+  }
+  .slide {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+  }
+  .slide.active {
+    display: flex;
+  }
+  h1 {
+    color: #00796b;
+    margin-bottom: 15px;
+  }
+  p {
+    color: #004d40;
+    line-height: 1.7em;
+    margin-top: 10px;
+    font-size: 1.15em;
+  }
+  ul.content-list {
+    margin: 10px 0 10px 20px;
+    color: #00695c;
+    font-size: 1.1em;
+  }
+  ul.content-list li {
+    margin-bottom: 6px;
+  }
+  .image-wrapper {
+    margin: 30px 0;
+    text-align: center;
+  }
+  .image-wrapper img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px #004d4025;
+  }
+  .navigation {
+    position: fixed;
+    bottom: 25px;
+    right: 40px;
+    display: flex;
+    gap: 18px;
+    z-index: 10;
+  }
+  .nav-btn {
+    background: #00838f;
+    border: none;
+    color: white;
+    font-size: 1.8em;
+    padding: 14px 32px;
+    border-radius: 45px;
+    cursor: pointer;
+    box-shadow: 0 5px 12px #004d4044;
+    transition: background 0.3s ease;
+    user-select:none;
+  }
+  .nav-btn:disabled {
+    background: #80cbc4;
+    cursor: not-allowed;
+  }
+  .nav-btn:hover:not(:disabled) {
+    background: #00675b;
+  }
+  /* Scrollbar for sidebar */
+  .sidebar::-webkit-scrollbar {
+    width: 7px;
+  }
+  .sidebar::-webkit-scrollbar-thumb {
+    background: #004d40;
+    border-radius: 4px;
+  }
+  .sidebar::-webkit-scrollbar-track {
+    background: #00796b88;
+  }
+  /* Responsive adjustments */
+  @media (max-width: 900px) {
+    body {
+      flex-direction: column;
+    }
+    .sidebar {
+      width: 100%;
+      height: 130px;
+      flex-direction: row;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 15px 8px;
+    }
+    .sidebar h2 {
+      display: none;
+    }
+    .concept-list {
+      display: flex;
+      flex-direction: row;
+      gap: 15px;
+      align-items: center;
+    }
+    .concept-list li {
+      flex-shrink: 0;
+      padding: 7px 18px;
+      margin: 0;
+      font-size: 1em;
+      border-radius: 22px;
+      white-space: nowrap;
+    }
+    .slides-container {
+      padding: 20px 20px 70px;
+      height: calc(100vh - 130px);
+    }
+    .navigation {
+      bottom: 20px;
+      right: 20px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>Topics</h2>
+  <ul class="concept-list" id="topicList"></ul>
+</div>
+
+<div class="slides-container" id="slideContainer">
+  <div class="navigation">
+    <button class="nav-btn" id="prevSlide" title="Previous Topic">&#8592;</button>
+    <button class="nav-btn" id="nextSlide" title="Next Topic">&#8594;</button>
+  </div>
+</div>
+
+<script>
+  const slides = [
+    {
+      title: "Welcome to Science",
+      content: [
+        "Science helps us understand the world and universe.",
+        "It is about observing, thinking, asking questions, and discovering answers.",
+        "Curiosity is the most important quality of a scientist."
+      ],
+      additional: [
+        "Every discovery starts with wondering about things around us.",
+        "Science is a way of thinking and exploring facts, not just memorizing."
+      ],
+      image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
+      alt: "Science exploration"
+    },
+    {
+      title: "Science is Everywhere",
+      content: [
+        "Science is found from tiny grains of sand to giant mountains.",
+        "It explains why stars shine and how flowers bloom at the right time.",
+        "From oceans to outer space, science uncovers many secrets."
+      ],
+      additional: [
+        "Sometimes, important discoveries come from unexpected places.",
+        "Science helps us connect different ideas about the world."
+      ],
+      images: [
+        {src: "https://wallpaperaccess.com/full/8684620.jpg", alt:"Mountain"},
+        
+      ]
+    },
+    {
+      title: "Science is a Giant Puzzle",
+      content: [
+        "Every new discovery adds a piece to a big, never-ending puzzle.",
+        "New findings may change what we thought was true before.",
+        "Ideas in science are connected and grow over time."
+      ],
+      additional: [
+        "This continuous learning helps us solve bigger mysteries of the universe."
+      ],
+      image: "https://png.pngtree.com/background/20230522/original/pngtree-large-pile-of-puzzle-jigsaw-pieces-picture-image_2686845.jpg",
+      alt: "Puzzle pieces"
+    },
+    {
+      title: "Life on Earth",
+      content: [
+        "Earth is the only planet that supports life as we know it.",
+        "Many plants and animals have adapted to live in different environments.",
+        "You might have seen seeds grow into plants or caterpillars turn into butterflies."
+      ],
+      additional: [
+        "Understanding how living things grow is an important part of science."
+      ],
+      image: "https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg",
+      alt: "Tree and plants"
+    },
+    {
+      title: "Water and Food",
+      content: [
+        "Water is vital for life and it changes states: ice, water, steam.",
+        "Rain forms when water vapor cools and condenses in the sky.",
+        "Food comes from different parts of our country and is very diverse."
+      ],
+      additional: [
+        "Science helps us understand the ingredients and cooking of food."
+      ],
+      images: [
+        {src: "https://images.unsplash.com/photo-1584982442479-16e4ac81adff?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8d2F0ZXIlMjBkcm9wfGVufDB8fDB8fA==&ixlib=rb-1.2.1&w=1000&q=80", alt:"Water drops"},
+        {src: "https://www.westside.social/wp-content/uploads/2017/12/food-background-food-concept-with-various-tasty-fresh-ingredients-for-cooking-italian-food-ingredients-view-from-above-with-copy-space_1220-1491-2-e1513108150131.jpg", alt:"Food ingredients"}
+      ]
+    },
+    {
+      title: "Materials Around Us",
+      content: [
+        "Everyday items like keys, rulers, and erasers are made from different materials.",
+        "Materials include metal, plastic, rubber, wood, and glass.",
+        "We can separate materials based on their properties like magnetism or solubility."
+      ],
+      additional: [
+        "Knowing materials helps us recycle and use objects better."
+      ],
+      image: "https://blog.hexagon.com/wp-content/uploads/2022/05/Materials-management-Xalt-scaled.jpeg",
+      alt: "Materials"
+    },
+    {
+      title: "The Scientific Method",
+      content: [
+        "To solve problems, scientists observe, ask questions, and make guesses (hypotheses).",
+        "They test their guesses by doing experiments or more observations.",
+        "Analyzing results helps confirm or change their ideas."
+      ],
+      additional: [
+        "This step-by-step process is called the Scientific Method.",
+        "Anyone who thinks this way is working like a scientist."
+      ],
+      image: "https://sciencenotes.org/wp-content/uploads/2022/12/Scientific-Method-Coloring-Sheet-791x1024.png",
+      alt: "Scientific method"
+    },
+    {
+      title: "Science in Daily Life",
+      content: [
+        "We all use science every day when we try to fix problems.",
+        "For example, when a pen stops writing, we try to find out why.",
+        "Guessing and testing is how we solve many small problems."
+      ],
+      images: [
+        {src: "https://static.vecteezy.com/system/resources/previews/009/884/901/non_2x/man-character-thinking-free-vector.jpg", alt:"Thinking person"},
+        {src: "https://img.freepik.com/free-photo/pen-close-up-shot_127657-19556.jpg?size=626&ext=jpg", alt:"Pen closeup"}
+      ]
+    },
+    {
+      title: "Keep Exploring with Curiosity",
+      content: [
+        "Science is a joyful journey full of exciting questions and discoveries.",
+        "Being curious motivates us to learn more and solve mysteries.",
+        "Remember: every wise person is a 'whys' person."
+      ],
+      additional: [
+        "Keep asking, exploring, and discovering new things about the world!"
+      ],
+      image: "https://www.events.unsw.edu.au/sites/default/files/styles/event_header_image/public/2023-06/Earth%20x%20Space%20-%20EventsWeb.png?itok=JiqoYKSf",
+      alt: "Exploration"
+    }
+  ];
+
+  const topicList = document.getElementById('topicList');
+  const slideContainer = document.getElementById('slideContainer');
+  const prevSlide = document.getElementById('prevSlide');
+  const nextSlide = document.getElementById('nextSlide');
+
+  let currentIndex = 0;
+  const completedTopics = new Array(slides.length).fill(false);
+
+  function createTopicItem(index, title) {
+    const li = document.createElement('li');
+    li.textContent = title;
+    li.dataset.index = index;
+    li.tabIndex = 0;
+    li.addEventListener('click', () => goToSlide(index));
+    li.addEventListener('keydown', e => {
+      if(e.key === 'Enter' || e.key === ' ') goToSlide(index);
+    });
+    return li;
+  }
+
+  function updateTopicList() {
+    topicList.innerHTML = '';
+    slides.forEach((slide, i) => {
+      const li = createTopicItem(i, slide.title);
+      if (completedTopics[i]) li.classList.add('completed');
+      if (i === currentIndex) li.style.fontWeight = 'bold';
+      if (completedTopics[i]) {
+        const tick = document.createElement('span');
+        tick.className = 'tick';
+        tick.textContent = '✔';
+        li.appendChild(tick);
+      }
+      topicList.appendChild(li);
+    });
+  }
+
+  function createSlide(slide) {
+    const slideEl = document.createElement('div');
+    slideEl.className = 'slide';
+
+    const title = document.createElement('h1');
+    title.textContent = slide.title;
+    slideEl.appendChild(title);
+
+    slide.content.forEach(text => {
+      const p = document.createElement('p');
+      p.textContent = text;
+      slideEl.appendChild(p);
+    });
+
+    if (slide.additional && slide.additional.length) {
+      const list = document.createElement('ul');
+      list.className = "content-list";
+      slide.additional.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        list.appendChild(li);
+      });
+      slideEl.appendChild(list);
+    }
+
+    if (slide.image) {
+      const imgWrapper = document.createElement('div');
+      imgWrapper.className = 'image-wrapper';
+      const img = document.createElement('img');
+      img.src = slide.image;
+      img.alt = slide.alt || '';
+      imgWrapper.appendChild(img);
+      slideEl.appendChild(imgWrapper);
+    }
+
+    if (slide.images && Array.isArray(slide.images)) {
+      slide.images.forEach(({src, alt}) => {
+        const imgWrapper = document.createElement('div');
+        imgWrapper.className = 'image-wrapper';
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = alt || '';
+        imgWrapper.appendChild(img);
+        slideEl.appendChild(imgWrapper);
+      });
+    }
+
+    return slideEl;
+  }
+
+  function renderSlides() {
+    slideContainer.querySelectorAll('.slide').forEach(s => s.remove());
+    const slideEl = createSlide(slides[currentIndex]);
+    slideEl.classList.add('active');
+    slideContainer.insertBefore(slideEl, slideContainer.querySelector('.navigation'));
+  }
+
+  function goToSlide(index) {
+    if (index < 0 || index >= slides.length) return;
+    currentIndex = index;
+    completedTopics[index] = true;
+    renderSlides();
+    updateTopicList();
+    updateNavButtons();
+  }
+
+  function updateNavButtons() {
+    prevSlide.disabled = currentIndex === 0;
+    nextSlide.disabled = currentIndex === slides.length - 1;
+  }
+
+  prevSlide.addEventListener('click', () => {
+    if(currentIndex > 0) goToSlide(currentIndex - 1);
+  });
+  nextSlide.addEventListener('click', () => {
+    if(currentIndex < slides.length - 1) goToSlide(currentIndex + 1);
+  });
+
+  // Initialize first slide & topics list
+  goToSlide(0);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8" /> <meta name="viewport" content="width=device-width, initial-scale=1" /> <title>Mindful Eating: A Path to a Healthy Body - Interactive Learning</title> <style> body { font-family: Arial, sans-serif; margin: 0; background: #f9f8f6; color: #333; } header { background: #b5651d; color: white; padding: 1rem; text-align: center; font-size: 1.6rem; font-weight: 700; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; } .container { display: flex; min-height: 100vh; } aside { width: 280px; background: #d99a2a; color: white; padding: 1rem 1.5rem; box-sizing: border-box; overflow-y: auto; } aside h2 { font-size: 1.3rem; margin-bottom: 1rem; border-bottom: 2px solid #ffdb58; padding-bottom: 0.5rem; font-weight: 600; } aside ul { list-style: none; padding: 0; } aside ul li { padding: 0.8rem 1rem; margin-bottom: 0.5rem; background: #b67200; border-radius: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; transition: background 0.3s; } aside ul li:hover { background: #d3ac2e; color: #3b2d00; } aside ul li.completed { background: #acd39d; color: #2f4200; } aside ul li span { font-size: 1.3rem; line-height: 1; color: #2f4200; } main { flex: 1; background: white; padding: 2rem 3rem; overflow-y: auto; box-sizing: border-box; } .slide { display: none; animation: fadein 0.7s ease; } .slide.active { display: block; } @keyframes fadein { from {opacity: 0;} to {opacity:1;} } h3 { color: #b5651d; font-weight: 700; margin-bottom: 0.7rem; } p { font-size: 1.05rem; line-height: 1.6; margin-bottom: 1rem; } blockquote { font-size: 1rem; font-style: italic; background: #fff4c1; border-left: 5px solid #b5651d; padding: 1rem 1.2rem; margin: 1rem 0 1.5rem 0; color: #7a5e04; } ul.concepts-list { padding-left: 1.2rem; margin-bottom: 1rem; } ul.concepts-list li { margin-bottom: 0.5rem; } img { max-width: 100%; border-radius: 8px; box-shadow: 0 3px 8px rgba(181, 101, 29, 0.2); margin: 1rem 0 1.5rem 0; } .nav-buttons { text-align: center; margin-top: 2rem; } button { background: #b5651d; border: none; padding: 0.6rem 1.4rem; margin: 0 0.4rem; font-size: 1.1rem; color: white; border-radius: 5px; cursor: pointer; font-weight: 600; transition: background 0.3s; } button:hover { background: #a1500d; } .note { background: #fff9db; border-left: 5px solid #b5651d; padding: 1rem 1.2rem; margin: 1.5rem 0 2rem; color: #704600; font-weight: 600; } </style> </head> <body> <header>Mindful Eating: A Path to a Healthy Body</header> <div class="container"> <aside> <h2>Concepts</h2> <ul id="conceptList"> <li data-slide="0">Food Diversity in India <span></span></li> <li data-slide="1">Food Components & Nutrients <span></span></li> <li data-slide="2">Testing Food Components <span></span></li> <li data-slide="3">Balanced Diet & Junk Food <span></span></li> <li data-slide="4">Millets & Food Miles <span></span></li> </ul> </aside> <main> <div class="slide active" id="slide0"> <h3>Food Diversity in India</h3> <p>Food eaten in India varies greatly across states, influenced by locally grown crops, cultural preferences, and traditions. For example, Punjab has wheat and chickpea with foods like Makki di roti, while Karnataka features rice and ragi with idli and dosa.</p> <blockquote>“Food gives life to living beings.” – Sanskrit Saying</blockquote> <p>Traditional and modern cooking tools have evolved from chulha and sil-batta to gas stoves and electrical grinders, influenced by technology and lifestyle changes.</p> <img src="https://upload.wikimedia.org/wikipedia/commons/3/3b/Indian_Food_Thali_02.jpg" alt="Indian Food Variety" /> </div> <div class="slide" id="slide1"> <h3>Food Components & Nutrients</h3> <p>Our food contains key nutrients: carbohydrates, fats, proteins, vitamins, minerals, dietary fibers, and water. Carbohydrates and fats give energy; proteins help build and repair the body.</p> <ul class="concepts-list"> <li><strong>Carbohydrates:</strong> Wheat, rice, banana, potato</li> <li><strong>Fats:</strong> Nuts, seeds, ghee, butter</li> <li><strong>Proteins:</strong> Milk, pulses, eggs, fish</li> <li><strong>Vitamins & Minerals:</strong> Protect the body and prevent diseases</li> <li><strong>Dietary Fibres:</strong> Aid digestion, found in fruits, vegetables, whole grains</li> </ul> <img src="https://upload.wikimedia.org/wikipedia/commons/f/f7/Food_categories_IGFA.jpg" alt="Nutrient Sources" /> </div> <div class="slide" id="slide2"> <h3>Testing Food Components</h3> <p>We can detect key nutrients in food by simple tests:</p> <ul class="concepts-list"> <li><strong>Starch Test:</strong> Food turns blue-black with iodine (e.g., potato, rice)</li> <li><strong>Fat Test:</strong> Oily patch on paper indicates fat content (e.g., butter, peanuts)</li> <li><strong>Protein Test:</strong> Violet color with copper sulfate and caustic soda (e.g., peas, bread)</li> </ul> <img src="https://upload.wikimedia.org/wikipedia/commons/8/8f/Starch_test_on_potato.jpg" alt="Starch test" /> <p class="note">Caution: Some tests require chemicals and safety measures.</p> </div> <div class="slide" id="slide3"> <h3>Balanced Diet & Junk Food</h3> <p>A balanced diet includes all essential nutrients in right amounts along with adequate fibers and water. Junk food is high in sugars and fats but low in vitamins and fiber and can cause health problems like obesity.</p> <p>Compare nutritional values: Of potato wafers (high fats and calories) vs roasted chana (higher protein and fiber).</p> <img src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Potato-Chips.jpg" alt="Potato Wafers" /> <img src="https://upload.wikimedia.org/wikipedia/commons/4/4c/Chickpeas_roasted.jpg" alt="Roasted Chana" /> <p><strong>Remember:</strong> Good health is the ultimate wealth.</p> </div> <div class="slide" id="slide4"> <h3>Millets & Food Miles</h3> <p>Millets like jowar, bajra, and ragi are native, nutritious grains rich in vitamins, minerals, and fibers, easily cultivated in varied climates and called nutri-cereals.</p> <p>Food miles refer to the distance food travels from farm to plate. Minimizing food miles by eating local produce supports farmers, reduces pollution, and keeps food fresh.</p> <img src="https://upload.wikimedia.org/wikipedia/commons/f/f8/Millet_grains.jpg" alt="Millets" /> <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Wheat_food_chain.svg/500px-Wheat_food_chain.svg.png" alt="Farm to Plate Food Miles" /> <p class="note">Take only what you can eat to avoid wastage and respect the effort behind every meal.</p> </div> <div class="nav-buttons"> <button id="prevBtn">← Previous</button> <button id="nextBtn">Next →</button> </div> </main> </div> <script> const slides = document.querySelectorAll('.slide'); const conceptItems = document.querySelectorAll('#conceptList li'); const prevBtn = document.getElementById('prevBtn'); const nextBtn = document.getElementById('nextBtn'); let currentSlide = 0;
+function showSlide(index) {
+if(index < 0) index = slides.length - 1;
+if(index >= slides.length) index = 0;
+slides.forEach(slide => slide.classList.remove('active'));
+slides[index].classList.add('active');
+currentSlide = index;
+updateConceptTicks(index);
+}
+
+function updateConceptTicks(index) {
+conceptItems.forEach((item, idx) => {
+if(idx <= index) {
+item.classList.add('completed');
+if (!item.querySelector('span').textContent.trim()) item.querySelector('span').textContent = '✔';
+} else {
+item.classList.remove('completed');
+item.querySelector('span').textContent = '';
+}
+});
+}
+
+prevBtn.addEventListener('click', () => {
+showSlide(currentSlide - 1);
+});
+
+nextBtn.addEventListener('click', () => {
+showSlide(currentSlide + 1);
+});
+
+conceptItems.forEach(item => {
+item.addEventListener('click', () => {
+const slideIndex = parseInt(item.getAttribute('data-slide'));
+showSlide(slideIndex);
+});
+});
+
+showSlide(0);
+</script>
+
+</body> </html>

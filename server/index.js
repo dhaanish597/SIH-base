@@ -7,9 +7,13 @@ const sqlite3 = require('sqlite3').verbose();
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
+// Note: We'll read questions from disk on each request so updates to the file are picked up without restart
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 
 // Middleware
 app.use(helmet());
@@ -21,6 +25,68 @@ app.use(express.json());
 // Database connections
 let sqliteDb;
 let mysqlConnection;
+
+// Auth helpers
+function authenticateToken(req, res, next) {
+  try {
+    const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+    const token = authHeader && authHeader.split(' ')[0] === 'Bearer' ? authHeader.split(' ')[1] : null;
+    if (!token) return res.status(401).json({ error: 'Missing token' });
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+      req.user = user;
+      next();
+    });
+  } catch (e) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+}
+
+function requireRole(role) {
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (req.user.role !== role) return res.status(403).json({ error: 'Forbidden' });
+    next();
+  };
+}
+
+// Login
+app.post('/api/login', (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    sqliteDb.get('SELECT id, name, email, class, role, password_hash FROM users WHERE email = ? AND status = "active"', [email], async (err, userRow) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (!userRow || !userRow.password_hash) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      try {
+        const match = await bcrypt.compare(password, userRow.password_hash);
+        if (!match) {
+          return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Update last_login
+        sqliteDb.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [userRow.id], () => {});
+
+        const payload = { id: userRow.id, name: userRow.name, class: userRow.class || null, role: userRow.role };
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+        return res.json({ ...payload, token });
+      } catch (cmpErr) {
+        return res.status(500).json({ error: 'Login failed' });
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Login failed' });
+  }
+});
 
 // Initialize SQLite (for offline analytics)
 function initSQLite() {
@@ -112,6 +178,7 @@ function createSQLiteTables() {
       lesson_id TEXT NOT NULL,
       questions TEXT NOT NULL,
       total_points INTEGER NOT NULL,
+      grade INTEGER NOT NULL DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (lesson_id) REFERENCES lessons (id) ON DELETE CASCADE
     )`,
@@ -251,7 +318,9 @@ function runSQLiteMigrations() {
   ensureSQLiteColumn('lessons', 'created_by', 'TEXT');
 
   // quizzes
-  ensureSQLiteColumn('quizzes', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+  // Some SQLite versions reject non-constant defaults during ALTER TABLE; add without default for existing DBs
+  ensureSQLiteColumn('quizzes', 'created_at', 'DATETIME');
+  ensureSQLiteColumn('quizzes', 'grade', 'INTEGER NOT NULL DEFAULT 0');
 
   // student_progress
   ensureSQLiteColumn('student_progress', 'attempts', 'INTEGER DEFAULT 1');
@@ -343,6 +412,7 @@ async function createMySQLTables() {
       lesson_id VARCHAR(255) NOT NULL,
       questions JSON NOT NULL,
       total_points INT NOT NULL,
+      grade INT NOT NULL DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       CONSTRAINT fk_quizzes_lesson FOREIGN KEY (lesson_id) REFERENCES lessons (id) ON DELETE CASCADE
     )`,
@@ -510,7 +580,8 @@ function insertSampleData() {
           points: 10
         }
       ]),
-      total_points: 20
+      total_points: 20,
+      grade: 6
     }
   ];
 
@@ -522,10 +593,21 @@ function insertSampleData() {
   });
 
   sampleQuizzes.forEach(quiz => {
-    sqliteDb.run(
-      'INSERT OR REPLACE INTO quizzes (id, lesson_id, questions, total_points) VALUES (?, ?, ?, ?)',
-      [quiz.id, quiz.lesson_id, quiz.questions, quiz.total_points]
-    );
+    // Detect if grade column exists first to avoid errors on older DBs
+    sqliteDb.all('PRAGMA table_info(quizzes)', (err, rows) => {
+      const hasGrade = !err && Array.isArray(rows) && rows.some(r => r.name === 'grade');
+      if (hasGrade) {
+        sqliteDb.run(
+          'INSERT OR REPLACE INTO quizzes (id, lesson_id, questions, total_points, grade) VALUES (?, ?, ?, ?, ?)',
+          [quiz.id, quiz.lesson_id, quiz.questions, quiz.total_points, quiz.grade]
+        );
+      } else {
+        sqliteDb.run(
+          'INSERT OR REPLACE INTO quizzes (id, lesson_id, questions, total_points) VALUES (?, ?, ?, ?)',
+          [quiz.id, quiz.lesson_id, quiz.questions, quiz.total_points]
+        );
+      }
+    });
   });
 }
 
@@ -558,7 +640,7 @@ app.post('/api/sync', async (req, res) => {
 });
 
 // Get lessons
-app.get('/api/lessons', (req, res) => {
+app.get('/api/lessons', authenticateToken, (req, res) => {
   sqliteDb.all('SELECT * FROM lessons ORDER BY difficulty, title', (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -569,7 +651,7 @@ app.get('/api/lessons', (req, res) => {
 });
 
 // Get quizzes
-app.get('/api/quizzes/:lessonId', (req, res) => {
+app.get('/api/quizzes/:lessonId', authenticateToken, (req, res) => {
   const { lessonId } = req.params;
   sqliteDb.get('SELECT * FROM quizzes WHERE lesson_id = ?', [lessonId], (err, row) => {
     if (err) {
@@ -583,8 +665,64 @@ app.get('/api/quizzes/:lessonId', (req, res) => {
   });
 });
 
+// Get quizzes in normalized question format (v2)
+// Shape per item: { id, grade, subject, text, choices, answerIndex, difficulty, ncert, explanation }
+app.get('/api/quizzes-v2/:lessonId', authenticateToken, (req, res) => {
+  const { lessonId } = req.params;
+
+  const getLesson = () => new Promise((resolve, reject) => {
+    sqliteDb.get('SELECT id, subject, difficulty FROM lessons WHERE id = ?', [lessonId], (e, lesson) => {
+      if (e) return reject(e);
+      resolve(lesson || null);
+    });
+  });
+
+  const getQuiz = () => new Promise((resolve, reject) => {
+    sqliteDb.get('SELECT id, lesson_id, questions, total_points, grade FROM quizzes WHERE lesson_id = ?', [lessonId], (e, quiz) => {
+      if (e) return reject(e);
+      resolve(quiz || null);
+    });
+  });
+
+  const mapDifficulty = (num) => {
+    if (num === 1) return 'easy';
+    if (num === 2) return 'medium';
+    return 'hard';
+  };
+
+  Promise.all([getLesson(), getQuiz()])
+    .then(([lesson, quiz]) => {
+      if (!lesson || !quiz) {
+        return res.json([]);
+      }
+      let items = [];
+      try {
+        const parsed = typeof quiz.questions === 'string' ? JSON.parse(quiz.questions) : quiz.questions;
+        if (Array.isArray(parsed)) {
+          items = parsed.map((q) => ({
+            id: q.id,
+            grade: typeof quiz.grade === 'number' ? quiz.grade : 0,
+            subject: lesson.subject,
+            text: q.question,
+            choices: q.options,
+            answerIndex: typeof q.correctAnswer === 'number' ? q.correctAnswer : 0,
+            difficulty: mapDifficulty(lesson.difficulty || 1),
+            ncert: true,
+            explanation: q.explanation || ''
+          }));
+        }
+      } catch (e) {
+        return res.status(500).json({ error: 'Failed to parse quiz questions' });
+      }
+      return res.json(items);
+    })
+    .catch((error) => {
+      return res.status(500).json({ error: error.message || 'Failed to load quiz' });
+    });
+});
+
 // Get leaderboard
-app.get('/api/leaderboard', async (req, res) => {
+app.get('/api/leaderboard', authenticateToken, async (req, res) => {
   try {
     if (mysqlConnection) {
       // Get from MySQL if available
@@ -636,8 +774,53 @@ app.get('/api/leaderboard', async (req, res) => {
   }
 });
 
+// Quizzes by grade and subject from centralized Questions.json
+app.get('/api/quizzes', (req, res) => {
+  try {
+    const gradeParam = req.query.grade;
+    const subjectParam = req.query.subject;
+    const grade = Number(gradeParam);
+    if (!gradeParam || Number.isNaN(grade) || !subjectParam) {
+      return res.status(400).json({ error: 'grade (number) and subject are required' });
+    }
+
+    // Load questions fresh each request to reflect file changes
+    // Serve from public/games/Questions.json so Vite and static build share source
+    const filePath = path.join(__dirname, '..', 'public', 'games', 'Questions.json');
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const data = JSON.parse(raw);
+
+    const subjectLower = String(subjectParam).toLowerCase();
+    const unwrap = (payload) => {
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.questions)) return payload.questions;
+      if (payload?.questions_by_grade && typeof payload.questions_by_grade === 'object') {
+        const arr = [];
+        Object.keys(payload.questions_by_grade).forEach((k) => {
+          const list = payload.questions_by_grade[k];
+          if (Array.isArray(list)) arr.push(...list);
+        });
+        return arr;
+      }
+      return [];
+    };
+
+    const list = unwrap(data);
+    const filtered = list.filter((q) => {
+      const qGrade = typeof q.grade === 'number' ? q.grade : Number(q.grade);
+      const qSubject = (q.subject || '').toString().toLowerCase();
+      return qGrade === grade && qSubject === subjectLower;
+    });
+
+    return res.json(filtered);
+  } catch (e) {
+    console.error('Quizzes endpoint error:', e);
+    return res.status(500).json({ error: 'Failed to load quizzes' });
+  }
+});
+
 // Get teacher analytics
-app.get('/api/analytics/:teacherId', (req, res) => {
+app.get('/api/analytics/:teacherId', authenticateToken, requireRole('teacher'), (req, res) => {
   const { teacherId } = req.params;
   
   // Get student analytics for teacher
@@ -735,7 +918,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Create student
-app.post('/api/students', async (req, res) => {
+app.post('/api/students', authenticateToken, requireRole('school'), async (req, res) => {
   try {
     const { name, class: className, email, password } = req.body;
     if (!name || !email) {
@@ -782,6 +965,7 @@ async function startServer() {
   app.listen(PORT, () => {
     console.log(`STEM Learn API server running on port ${PORT}`);
     console.log(`Health check: http://localhost:${PORT}/api/health`);
+    console.log(`JWT secret loaded: ${JWT_SECRET ? 'yes' : 'no'}`);
   });
 }
 

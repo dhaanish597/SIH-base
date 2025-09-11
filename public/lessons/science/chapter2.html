@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<!-- saved from url=(0061)file:///C:/Users/AISHWARYA/OneDrive/Desktop/SIH/chapter2.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diversity in the Living World - Interactive Learning</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f4f9f9;
+    color: #333;
+  }
+  header {
+    background: #4caf50;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+  .container {
+    display: flex;
+    min-height: 100vh;
+  }
+  aside {
+    width: 250px;
+    background: #2e7d32;
+    color: white;
+    padding: 1rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+  aside h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #76d275;
+    padding-bottom: 0.5rem;
+  }
+  aside ul {
+    list-style: none;
+    padding: 0;
+  }
+  aside ul li {
+    padding: 0.7rem;
+    margin-bottom: 0.3rem;
+    background: #388e3c;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  aside ul li.completed {
+    background: #81c784;
+    text-decoration: line-through;
+  }
+  main {
+    flex: 1;
+    padding: 2rem;
+    background: white;
+    overflow-y: auto;
+  }
+  .slide {
+    display: none;
+    animation: fadeEffect 0.7s;
+  }
+  .slide.active {
+    display: block;
+  }
+  @keyframes fadeEffect {
+    from {opacity: 0;}
+    to {opacity: 1;}
+  }
+  .nav-buttons {
+    text-align: center;
+    margin-top: 1rem;
+  }
+  .nav-buttons button {
+    background: #4caf50;
+    border: none;
+    color: white;
+    padding: 0.5rem 1.2rem;
+    margin: 0 0.3rem;
+    cursor: pointer;
+    font-size: 1rem;
+    border-radius: 4px;
+    transition: background 0.3s;
+  }
+  .nav-buttons button:hover {
+    background: #388e3c;
+  }
+  .slide img {
+    max-width: 100%;
+    height: auto;
+    margin: 1rem 0;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  }
+  h3 {
+    color: #2e7d32;
+  }
+  blockquote {
+    font-style: italic;
+    color: #555;
+    border-left: 4px solid #4caf50;
+    margin: 1rem 0;
+    padding-left: 1rem;
+    background: #e8f5e9;
+  }
+  ul.concepts-list {
+    padding-left: 1rem;
+  }
+</style>
+</head>
+<body>
+<header>Diversity in the Living World </header>
+<div class="container">
+  <aside>
+    <h2>Concepts</h2>
+    <ul id="conceptList">
+      <li data-slide="0" class="completed">Diversity in Plants and Animals <span></span></li>
+      <li data-slide="1" class="">Grouping of Plants</li>
+      <li data-slide="2" class="">Grouping of Animals</li>
+      <li data-slide="3" class="">Adaptations and Habitats</li>
+      <li data-slide="4" class="">Conservation and Biodiversity</li>
+    </ul>
+  </aside>
+  <main>
+    <div class="slide active" id="slide0">
+      <h3>Diversity in Plants and Animals Around Us</h3>
+      <p>The natural world is filled with a vast variety of plants and animals. Each living thing has unique features that make it special.</p>
+      <blockquote>"Trees stand in the Sun and give shade to others. Their fruits are also for others. Likewise, good people bear all hardships and bring welfare to others."</blockquote>
+      <p>In a simple nature walk, one can observe different types of plants — from grasses to tall trees, and a variety of animals including birds, butterflies, monkeys, and more. Each bird has a distinct chirp, reflecting the amazing diversity of nature.</p>
+      <img src="./Diversity in the Living World - Interactive Learning_files/78f1f8198ba5a06038019686c7c3d814.jpg" alt="Diverse plants and trees">
+      <p>Try observing the plants and animals around for their unique characteristics like size, shape, color, and habits.</p>
+    </div>
+    <div class="slide" id="slide1">
+      <h3>Grouping of Plants</h3>
+      <p>Plants can be grouped based on features like height, stem type, and leaf arrangement.</p>
+      <ul class="concepts-list">
+        <li>Herbs: Soft, green stems, usually short (e.g., Tomato plant)</li>
+        <li>Shrubs: Medium height, woody stems that branch near the ground (e.g., Rose plant)</li>
+        <li>Trees: Tall plants with hard, thick woody stems (e.g., Mango tree)</li>
+        <li>Climbers and Creepers: Plants needing support or spreading on ground</li>
+      </ul>
+      <img src="./Diversity in the Living World - Interactive Learning_files/various-fresh-herbs-907728974-cc6c2be53aac46de9e6a4b47a0e630e4.jpg" alt="Herbs example">
+    </div>
+    <div class="slide" id="slide2">
+      <h3>Grouping of Animals</h3>
+      <p>Animals can be grouped by their movement and body parts used for movement.</p>
+      <ul class="concepts-list">
+        <li>Flying animals: Use wings to fly (e.g., Pigeon, Housefly)</li>
+        <li>Walking animals: Use legs to walk or run (e.g., Ant, Goat)</li>
+        <li>Swimming animals: Use fins to swim (e.g., Fish)</li>
+        <li>Amphibians: Can live in water and on land (e.g., Frog)</li>
+      </ul>
+      <img src="./Diversity in the Living World - Interactive Learning_files/swimming-fish-body-water_410516-16126.jpg" alt="Fish swimming">
+    </div>
+    <div class="slide" id="slide3">
+      <h3>Adaptations and Habitats</h3>
+      <p>Plants and animals adapt to their surroundings. Their special features help them survive in diverse environments like deserts, mountains, oceans, and forests.</p>
+      <ul>
+        <li><strong>Desert:</strong> Plants like cactus have thick, fleshy stems for water storage; camels have wide hooves for walking on sand.</li>
+        <li><strong>Mountains:</strong> Trees like deodar have sloping branches to shed snow, and rhododendrons vary their height to survive wind.</li>
+        <li><strong>Oceans:</strong> Fish have streamlined bodies and fins for swimming.</li>
+      </ul>
+      <img src="./Diversity in the Living World - Interactive Learning_files/1343928.jpg" alt="Camel in desert">
+    </div>
+    <div class="slide" id="slide4">
+      <h3>Conservation and Biodiversity</h3>
+      <p>Biodiversity is important for a healthy planet. Loss of habitat leads to decline in species like Bengal tigers and cheetahs. Conservation efforts and protected areas help preserve this diversity.</p>
+      <p>Community protection of sacred groves and government projects like Project Tiger contribute to protecting biodiversity.</p>
+      <img src="./Diversity in the Living World - Interactive Learning_files/IND0701300168.jpg" alt="Bengal tiger">
+    </div>
+    <div class="nav-buttons">
+      <button id="prevBtn">← Previous</button>
+      <button id="nextBtn">Next →</button>
+    </div>
+  </main>
+</div>
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const conceptItems = document.querySelectorAll('#conceptList li');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  let currentSlide = 0;
+
+  function showSlide(index) {
+    if (index < 0) index = slides.length - 1;
+    if (index >= slides.length) index = 0;
+    slides.forEach(slide => slide.classList.remove('active'));
+    slides[index].classList.add('active');
+    currentSlide = index;
+    updateConceptTicks(index);
+  }
+
+  function updateConceptTicks(index) {
+    conceptItems.forEach((item, idx) => {
+      if (idx <= index) {
+        item.classList.add('completed');
+      } else {
+        item.classList.remove('completed');
+      }
+    });
+  }
+
+  prevBtn.addEventListener('click', () => {
+    showSlide(currentSlide - 1);
+  });
+
+  nextBtn.addEventListener('click', () => {
+    showSlide(currentSlide + 1);
+  });
+
+  conceptItems.forEach(item => {
+    item.addEventListener('click', () => {
+      let slideIndex = parseInt(item.getAttribute('data-slide'));
+      showSlide(slideIndex);
+    });
+  });
+
+  // Initialize first slide and sidebar tick marks
+  showSlide(0);
+</script>
+
+
+</body></html>

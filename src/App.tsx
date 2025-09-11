@@ -1,4 +1,5 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Trophy } from 'lucide-react';
 import { Header } from './components/Layout/Header';
@@ -20,6 +21,10 @@ const SchoolAddEvents = React.lazy(() => import('./components/School/SchoolAddEv
 const AdminSchools = React.lazy(() => import('./components/Admin/AdminSchools').then(m => ({ default: m.AdminSchools })));
 const AdminAnalytics = React.lazy(() => import('./components/Admin/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })));
 const AdminUsers = React.lazy(() => import('./components/Admin/AdminUsers').then(m => ({ default: m.AdminUsers })));
+const QuizSelection = React.lazy(() => import('./components/Student/QuizSelection').then(m => ({ default: m.QuizSelection })));
+const GamePlayer = React.lazy(() => import('./components/Student/GamePlayer').then(m => ({ default: m.GamePlayer })));
+const ScienceChapters = React.lazy(() => import('./components/Lessons/ScienceChapters').then(m => ({ default: m.ScienceChapters })));
+const LessonViewer = React.lazy(() => import('./components/Lessons/LessonViewer').then(m => ({ default: m.LessonViewer })));
 import './i18n';
 
 interface User {
@@ -30,6 +35,9 @@ interface User {
 
 function App() {
   const { i18n } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const mainRef = useRef<HTMLDivElement | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
@@ -84,6 +92,24 @@ function App() {
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const closeSidebar = () => setIsSidebarOpen(false);
 
+  // If user navigates away from Quizzes tab, ensure any game route is closed
+  useEffect(() => {
+    const isGameRoute = location.pathname.startsWith('/play-quiz/');
+    if (activeTab !== 'quizzes' && isGameRoute) {
+      navigate('/');
+    }
+  }, [activeTab, location.pathname, navigate]);
+
+  // Ensure we scroll to top of the scrollable main area on route change,
+  // so games are immediately visible without manual scrolling
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+    // Also scroll window for browsers not using the inner scrolling container
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, [location.pathname, location.search]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -120,6 +146,8 @@ function App() {
             </div>
           </div>
         );
+      case 'quizzes':
+        return <QuizSelection />;
       case 'assign-homework':
         return <TeacherAssignHomework />;
       case 'assign-assignments':
@@ -137,7 +165,14 @@ function App() {
                 <div key={subject} className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{subject}</h3>
                   <p className="text-gray-600 mb-4">Explore {subject.toLowerCase()} concepts</p>
-                  <button className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                  <button
+                    onClick={() => {
+                      if (subject === 'Science') {
+                        navigate('/lessons/science');
+                      }
+                    }}
+                    className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
                     Start Learning
                   </button>
                 </div>
@@ -227,9 +262,15 @@ function App() {
           />
         </div>
         
-        <main className="flex-1 overflow-auto focus:outline-none" role="main" tabIndex={-1}>
+        <main ref={mainRef} className="flex-1 overflow-auto focus:outline-none" role="main" tabIndex={-1}>
           <Suspense fallback={<div className="p-6">Loading…</div>}>
-            {renderContent()}
+            <Routes>
+              <Route path="/" element={renderContent()} />
+              <Route path="/quizzes" element={<QuizSelection />} />
+              <Route path="/play-quiz/:gameName" element={<GamePlayer />} />
+              <Route path="/lessons/science" element={<ScienceChapters />} />
+              <Route path="/lessons/science/:chapterFile" element={<LessonViewer />} />
+            </Routes>
           </Suspense>
         </main>
       </div>
