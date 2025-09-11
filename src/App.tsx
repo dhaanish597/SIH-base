@@ -33,6 +33,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     // Register service worker for PWA
@@ -71,6 +72,7 @@ function App() {
     setUser(null);
     localStorage.removeItem('stem_user');
     setActiveTab('dashboard');
+    setSidebarOpen(false);
     // Force re-render to ensure login page is shown
     window.location.reload();
   };
@@ -78,6 +80,14 @@ function App() {
   const changeLanguage = (language: string) => {
     i18n.changeLanguage(language);
     localStorage.setItem('preferred_language', language);
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
   };
 
   if (isLoading) {
@@ -103,7 +113,7 @@ function App() {
         return null;
       case 'leaderboard':
         return (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Leaderboard</h2>
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
               <div className="text-center py-12">
@@ -126,9 +136,9 @@ function App() {
         return <StudentAssignments />;
       case 'lessons':
         return (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Lessons</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {['Mathematics', 'Science', 'Technology', 'Engineering'].map((subject) => (
                 <div key={subject} className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{subject}</h3>
@@ -143,7 +153,7 @@ function App() {
         );
       case 'settings':
         return (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Settings</h2>
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
               <div className="space-y-4">
@@ -195,7 +205,7 @@ function App() {
         return <AdminUsers />;
       default:
         return (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
               {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
             </h2>
@@ -209,10 +219,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header user={user} />
+      <Header user={user} onMenuToggle={toggleSidebar} />
       
-      <div className="flex h-[calc(100vh-80px)]">
-        <div className="w-64 flex-shrink-0">
+      <div className="flex h-[calc(100vh-64px)] sm:h-[calc(100vh-80px)]">
+        <div className="hidden md:block w-64 flex-shrink-0">
           <Sidebar
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -220,6 +230,16 @@ function App() {
             onLogout={handleLogout}
           />
         </div>
+        
+        {/* Mobile sidebar */}
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          userRole={user.role}
+          onLogout={handleLogout}
+          isOpen={sidebarOpen}
+          onClose={closeSidebar}
+        />
         
         <main className="flex-1 overflow-auto" role="main">
           <Suspense fallback={<div className="p-6">Loading…</div>}>

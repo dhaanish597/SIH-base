@@ -56,73 +56,73 @@ export function Login({ onLogin }: LoginProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-3 sm:p-4">
+      <div className="max-w-md w-full mx-auto">
         {/* Logo & Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
             <BookOpen className="w-8 h-8 text-indigo-600" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">STEM Learn</h1>
-          <p className="text-indigo-100">Gamified Learning Platform for Rural Schools</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">STEM Learn</h1>
+          <p className="text-sm sm:text-base text-indigo-100 px-4">Gamified Learning Platform for Rural Schools</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* Role Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Login as:
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, role: 'student' })}
-                  className={`flex items-center justify-center space-x-2 p-3 rounded-lg border-2 transition-all ${
+                  className={`flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 p-2 sm:p-3 rounded-lg border-2 transition-all ${
                     formData.role === 'student'
                       ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
-                  <User className="w-5 h-5" />
-                  <span className="font-medium">Student</span>
+                  <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-xs sm:text-sm font-medium">Student</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, role: 'teacher' })}
-                  className={`flex items-center justify-center space-x-2 p-3 rounded-lg border-2 transition-all ${
+                  className={`flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 p-2 sm:p-3 rounded-lg border-2 transition-all ${
                     formData.role === 'teacher'
                       ? 'border-purple-500 bg-purple-50 text-purple-700'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
-                  <GraduationCap className="w-5 h-5" />
-                  <span className="font-medium">Teacher</span>
+                  <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-xs sm:text-sm font-medium">Teacher</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, role: 'school' })}
-                  className={`flex items-center justify-center space-x-2 p-3 rounded-lg border-2 transition-all ${
+                  className={`flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 p-2 sm:p-3 rounded-lg border-2 transition-all ${
                     formData.role === 'school'
                       ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
-                  <Building2 className="w-5 h-5" />
-                  <span className="font-medium">School</span>
+                  <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-xs sm:text-sm font-medium">School</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, role: 'admin' })}
-                  className={`flex items-center justify-center space-x-2 p-3 rounded-lg border-2 transition-all ${
+                  className={`flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 p-2 sm:p-3 rounded-lg border-2 transition-all ${
                     formData.role === 'admin'
                       ? 'border-rose-500 bg-rose-50 text-rose-700'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
-                  <Shield className="w-5 h-5" />
-                  <span className="font-medium">Admin</span>
+                  <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-xs sm:text-sm font-medium">Admin</span>
                 </button>
               </div>
             </div>
@@ -139,7 +139,7 @@ export function Login({ onLogin }: LoginProps) {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full pl-10 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
                   placeholder="Enter your email"
                 />
               </div>
@@ -157,7 +157,7 @@ export function Login({ onLogin }: LoginProps) {
                   required
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full pl-10 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
                   placeholder="Enter your password"
                 />
               </div>
@@ -167,7 +167,7 @@ export function Login({ onLogin }: LoginProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all ${
+              className={`w-full py-2 sm:py-3 px-4 rounded-lg font-semibold text-white transition-all text-sm sm:text-base ${
                 formData.role === 'student'
                   ? 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700'
                   : 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700'
@@ -178,8 +178,8 @@ export function Login({ onLogin }: LoginProps) {
           </form>
 
           {/* Demo Instructions */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 text-center">
+          <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 rounded-lg">
+            <p className="text-xs sm:text-sm text-gray-600 text-center">
               <strong>Demo Mode:</strong> Use any email/password to login.
               {!navigator.onLine && ' Works offline too!'}
             </p>
@@ -188,8 +188,8 @@ export function Login({ onLogin }: LoginProps) {
 
         {/* Offline Indicator */}
         {!navigator.onLine && (
-          <div className="mt-4 p-3 bg-yellow-500 text-white rounded-lg text-center">
-            <p className="text-sm font-medium">
+          <div className="mt-3 sm:mt-4 p-3 bg-yellow-500 text-white rounded-lg text-center">
+            <p className="text-xs sm:text-sm font-medium">
               📱 Offline Mode Active - Your progress will sync when back online
             </p>
           </div>
