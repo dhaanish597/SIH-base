@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Bubble Pop Game</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+  <style>
+    body { margin: 0; }
+    canvas { display: block; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <h1 style="text-align: center">BUBBLE POP</h1>
+  <script>
+    const config = {
+      type: Phaser.AUTO,
+      width: 620,
+      height: 610,
+      backgroundColor: '#e3f2fd',
+      canvasStyle: 'border: 2px solid black; border-radius: 12px; display: block; margin: 0px auto;',
+      scene: {
+        preload: preload,
+        create: create,
+        update: update
+      }
+    };
+
+    let score = 0;
+    let scoreText;
+    let bubbles = [];
+    let gameOver = false;
+    let timerText;
+
+    const game = new Phaser.Game(config);
+
+    function preload() {
+      this.load.image('bubble', 'party.png'); // replace with your image
+    }
+
+    function create() {
+      scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '24px', fill: '#000' });
+      timerText = this.add.text(500, 10, 'Time: 60', { fontSize: '24px', fill: '#000' });
+
+      let timeLeft = 60; // 1 minute
+
+      // Countdown timer
+      this.time.addEvent({
+        delay: 1000,
+        callback: () => {
+          if (!gameOver) {
+            timeLeft--;
+            timerText.setText('Time: ' + timeLeft);
+            if (timeLeft <= 0) {
+              endGame(this);
+            }
+          }
+        },
+        loop: true
+      });
+
+      // Bubble generation
+      this.time.addEvent({
+        delay: 1600,
+        callback: () => {
+          if (gameOver) return;
+
+          const x = Phaser.Math.Between(50, 600);
+          const y = 600;
+          const bubble = this.add.image(x, y, 'bubble').setScale(0.16).setInteractive();
+
+          // Random value
+          let value, isDecimal;
+          if (Math.random() > 0.5) {
+            value = Phaser.Math.Between(1, 99); // integer
+            isDecimal = false;
+          } else {
+            value = (Math.random() * 100).toFixed(1); // decimal
+            isDecimal = true;
+          }
+
+          bubble.isDecimal = isDecimal;
+          bubble.crossedLine = false; // flag for danger line
+
+          const text = this.add.text(x, y, value, {
+            fontSize: '16px',
+            color: '#000',
+            fontStyle: 'bold'
+          }).setOrigin(0.5);
+
+          // Tween to move bubble upwards
+          this.tweens.add({
+            targets: [bubble, text],
+            y: -50,
+            duration: 7000,
+            ease: 'Linear',
+            onComplete: () => {
+              if (bubble.active) bubble.destroy();
+              if (text.active) text.destroy();
+            }
+          });
+
+          // Click logic
+          bubble.on('pointerdown', () => {
+            if (gameOver || !bubble.active) return;
+
+            if (bubble.isDecimal) {
+              score += 1;
+              scoreText.setText('Score: ' + score);
+            } else {
+              endGame(this); // integer clicked → game over
+            }
+
+            if (bubble.active) bubble.destroy();
+            if (text.active) text.destroy();
+          });
+
+          bubbles.push({ bubble, text });
+        },
+        loop: true
+      });
+    }
+
+    function update() {
+      const dangerLine = 40; // line for red flash
+
+      const toRemove = [];
+
+      bubbles.forEach(pair => {
+        if (pair.bubble.active && pair.text.active) {
+          pair.text.x = pair.bubble.x;
+          pair.text.y = pair.bubble.y;
+
+          // Decimal bubble crosses danger line
+          if (pair.bubble.isDecimal && !pair.bubble.crossedLine && pair.bubble.y <= dangerLine) {
+            pair.bubble.crossedLine = true;
+            score -= 1;
+            scoreText.setText('Score: ' + score);
+
+            pair.bubble.setTint(0xff0000);
+            pair.text.setColor('#ff0000');
+
+            toRemove.push(pair); // schedule for removal
+          }
+        }
+      });
+
+      // Remove bubbles safely
+      toRemove.forEach(pair => {
+        setTimeout(() => {
+          if (pair.bubble.active) pair.bubble.destroy();
+          if (pair.text.active) pair.text.destroy();
+        }, 500);
+      });
+
+      // Clean array
+      bubbles = bubbles.filter(pair => pair.bubble.active && pair.text.active);
+    }
+
+    function endGame(scene) {
+  gameOver = true;
+
+  bubbles.forEach(pair => {
+    if (pair.bubble.active) pair.bubble.destroy();
+    if (pair.text.active) pair.text.destroy();
+  });
+
+  scene.add.text(190, 260, 'GAME OVER', { fontSize: '48px', fill: '#ff8a80', fontStyle: 'bold' });
+  scene.add.text(190, 320, 'Final Score: ' + score, { fontSize: '32px', fill: '#000' });
+
+  // Retry Button
+  let retryBtn = scene.add.text(315, 450, 'Retry', { 
+    fontSize: '28px', 
+    fill: '#fff', 
+    backgroundColor: '#3a5a99', 
+    
+    padding: { x: 12, y: 6 }
+  }).setOrigin(0.5).setInteractive();
+
+  retryBtn.on('pointerdown', () => {
+    score = 0;
+    gameOver = false;
+    bubbles = [];
+    scene.scene.restart(); // restart game
+  });
+
+  // Next Level Button (only if score > 8)
+  if (score >= 8) {
+    let nextBtn = scene.add.text(325, 527, 'Next Level', { 
+      fontSize: '28px', 
+      fill: '#fff', 
+      backgroundColor: '#8bdc8e', 
+      padding: { x: 12, y: 6 }
+    }).setOrigin(0.5).setInteractive();
+
+    nextBtn.on('pointerdown', () => {
+      alert("Next Level coming soon 🚀"); 
+      // later: scene.scene.start('nextScene');
+    });
+  }
+}
+
+  </script>
+</body>
+</html>
