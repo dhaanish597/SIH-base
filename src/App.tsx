@@ -211,8 +211,8 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       <Header user={user} />
       
-      <div className="flex h-[calc(100vh-80px)]">
-        <div className="w-64 flex-shrink-0">
+      <div className="flex flex-col md:flex-row h-[calc(100vh-80px)]">
+        <div className="w-0 md:w-64 md:flex-shrink-0">
           <Sidebar
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -221,7 +221,7 @@ function App() {
           />
         </div>
         
-        <main className="flex-1 overflow-auto" role="main">
+        <main className="flex-1 overflow-auto focus:outline-none" role="main" tabIndex={-1}>
           <Suspense fallback={<div className="p-6">Loading…</div>}>
             {renderContent()}
           </Suspense>

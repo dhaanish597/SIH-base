@@ -1,8 +1,8 @@
-const CACHE_NAME = 'stem-learn-v1';
+const VERSION = 'v2';
+const PRECACHE = `stem-learn-precache-${VERSION}`;
+const RUNTIME = `stem-learn-runtime-${VERSION}`;
 const urlsToCache = [
   '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
   '/manifest.json',
   '/offline.html'
 ];
@@ -10,12 +10,9 @@ const urlsToCache = [
 // Install SW
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(PRECACHE).then((cache) => cache.addAll(urlsToCache))
   );
+  self.skipWaiting();
 });
 
 // Fetch
@@ -28,7 +25,25 @@ self.addEventListener('fetch', (event) => {
   // Network-first for API
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      fetch(event.request).then((response) => {
+        const resClone = response.clone();
+        caches.open(RUNTIME).then((cache) => cache.put(event.request, resClone));
+        return response;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+  // Navigation requests: App Shell fallback
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          return res;
+        })
+        .catch(async () => {
+          const cached = await caches.match('/');
+          return cached || caches.match('/offline.html');
+        })
     );
     return;
   }
@@ -37,7 +52,7 @@ self.addEventListener('fetch', (event) => {
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
       return fetch(event.request).then((res) => {
-        return caches.open(CACHE_NAME).then((cache) => {
+        return caches.open(RUNTIME).then((cache) => {
           cache.put(event.request, res.clone());
           return res;
         });
@@ -79,6 +94,20 @@ async function syncData() {
     console.error('Background sync failed:', error);
   }
 }
+
+// Activate: clean up old caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key.startsWith('stem-learn-') && key !== PRECACHE && key !== RUNTIME)
+          .map((key) => caches.delete(key))
+      )
+    )
+  );
+  self.clients.claim();
+});
 
 function openDB() {
   return new Promise((resolve, reject) => {

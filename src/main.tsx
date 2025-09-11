@@ -8,3 +8,10 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>
 );
+
+// Listen for SW updates to prompt refresh
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    console.log('New content available, refreshing...');
+  });
+}
