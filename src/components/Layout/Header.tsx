@@ -11,9 +11,10 @@ interface HeaderProps {
   onProfileClick?: () => void;
   onSettingsClick?: () => void;
   onMenuToggle?: () => void;
+  isMenuOpen?: boolean;
 }
 
-export function Header({ user, onProfileClick, onSettingsClick, onMenuToggle }: HeaderProps) {
+export function Header({ user, onProfileClick, onSettingsClick, onMenuToggle, isMenuOpen }: HeaderProps) {
   const { t } = useTranslation();
   const { syncStatus } = useOfflineSync();
   const isOnline = navigator.onLine;
@@ -28,7 +29,7 @@ export function Header({ user, onProfileClick, onSettingsClick, onMenuToggle }: 
               onClick={onMenuToggle}
               className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors focus-visible"
               aria-label="Toggle navigation menu"
-              aria-expanded="false"
+              aria-expanded={isMenuOpen ? true : false}
             >
               <Menu className="w-6 h-6 text-gray-600" />
             </button>

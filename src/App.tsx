@@ -33,6 +33,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     // Register service worker for PWA
@@ -79,6 +80,9 @@ function App() {
     i18n.changeLanguage(language);
     localStorage.setItem('preferred_language', language);
   };
+
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+  const closeSidebar = () => setIsSidebarOpen(false);
 
   if (isLoading) {
     return (
@@ -209,15 +213,17 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header user={user} />
+      <Header user={user} onMenuToggle={toggleSidebar} isMenuOpen={isSidebarOpen} />
       
-      <div className="flex flex-col md:flex-row h-[calc(100vh-80px)]">
-        <div className="hidden md:block w-64 flex-shrink-0">
+      <div className="flex flex-col md:flex-row h-[calc(100vh-80px)] md:h-[calc(100vh-80px)]">
+        <div className="w-0 md:w-64 flex-shrink-0">
           <Sidebar
             activeTab={activeTab}
             onTabChange={setActiveTab}
             userRole={user.role}
             onLogout={handleLogout}
+            isOpen={isSidebarOpen}
+            onClose={closeSidebar}
           />
         </div>
         
