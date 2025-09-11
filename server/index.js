@@ -41,7 +41,7 @@ async function initMySQL() {
     mysqlConnection = await mysql.createConnection({
       host: process.env.MYSQL_HOST || 'localhost',
       user: process.env.MYSQL_USER || 'root',
-      password: process.env.MYSQL_PASSWORD || '',
+      password: process.env.MYSQL_PASSWORD || 'dhaanish',
       database: process.env.MYSQL_DATABASE || 'stem_learn'
     });
     console.log('Connected to MySQL database for cloud sync');
@@ -54,52 +54,173 @@ async function initMySQL() {
 
 // Create SQLite tables
 function createSQLiteTables() {
+  // Enforce foreign keys in SQLite
+  sqliteDb.run('PRAGMA foreign_keys = ON');
+
   const tables = [
+    // schools
+    `CREATE TABLE IF NOT EXISTS schools (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      address TEXT,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+
+    // users
     `CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
-      class TEXT,
       password_hash TEXT,
-      role TEXT CHECK(role IN ('student', 'teacher')) NOT NULL,
+      role TEXT CHECK(role IN ('student','teacher','school','admin')) NOT NULL,
+      class TEXT,
+      school_id TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      last_login DATETIME,
+      status TEXT CHECK(status IN ('active','inactive','suspended')) NOT NULL DEFAULT 'active',
+      FOREIGN KEY (school_id) REFERENCES schools (id) ON DELETE SET NULL
+    )`,
+
+    // admins
+    `CREATE TABLE IF NOT EXISTS admins (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT,
+      role TEXT CHECK(role IN ('admin','superadmin')) NOT NULL DEFAULT 'admin',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`,
-    
-    `CREATE TABLE IF NOT EXISTS student_progress (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      lesson_id TEXT NOT NULL,
-      score INTEGER NOT NULL,
-      time_spent INTEGER NOT NULL,
-      completed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      synced INTEGER DEFAULT 0,
-      FOREIGN KEY (user_id) REFERENCES users (id)
-    )`,
-    
-    `CREATE TABLE IF NOT EXISTS badges (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      badge_name TEXT NOT NULL,
-      earned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      synced INTEGER DEFAULT 0,
-      FOREIGN KEY (user_id) REFERENCES users (id)
-    )`,
-    
+
+    // lessons
     `CREATE TABLE IF NOT EXISTS lessons (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
       content TEXT NOT NULL,
       subject TEXT NOT NULL,
       difficulty INTEGER NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      language TEXT,
+      created_by TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
     )`,
-    
+
+    // quizzes
     `CREATE TABLE IF NOT EXISTS quizzes (
       id TEXT PRIMARY KEY,
       lesson_id TEXT NOT NULL,
       questions TEXT NOT NULL,
       total_points INTEGER NOT NULL,
-      FOREIGN KEY (lesson_id) REFERENCES lessons (id)
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (lesson_id) REFERENCES lessons (id) ON DELETE CASCADE
+    )`,
+
+    // homeworks
+    `CREATE TABLE IF NOT EXISTS homeworks (
+      id TEXT PRIMARY KEY,
+      teacher_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      due_date DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (teacher_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // assignments
+    `CREATE TABLE IF NOT EXISTS assignments (
+      id TEXT PRIMARY KEY,
+      teacher_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      due_date DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (teacher_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // student_homework
+    `CREATE TABLE IF NOT EXISTS student_homework (
+      id TEXT PRIMARY KEY,
+      homework_id TEXT NOT NULL,
+      student_id TEXT NOT NULL,
+      status TEXT CHECK(status IN ('pending','completed','late')) NOT NULL DEFAULT 'pending',
+      submitted_at DATETIME,
+      FOREIGN KEY (homework_id) REFERENCES homeworks (id) ON DELETE CASCADE,
+      FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // student_assignments
+    `CREATE TABLE IF NOT EXISTS student_assignments (
+      id TEXT PRIMARY KEY,
+      assignment_id TEXT NOT NULL,
+      student_id TEXT NOT NULL,
+      status TEXT CHECK(status IN ('pending','completed','late')) NOT NULL DEFAULT 'pending',
+      submitted_at DATETIME,
+      FOREIGN KEY (assignment_id) REFERENCES assignments (id) ON DELETE CASCADE,
+      FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // student_progress
+    `CREATE TABLE IF NOT EXISTS student_progress (
+      id TEXT PRIMARY KEY,
+      student_id TEXT NOT NULL,
+      lesson_id TEXT NOT NULL,
+      score INTEGER NOT NULL,
+      time_spent INTEGER NOT NULL,
+      completed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      attempts INTEGER DEFAULT 1,
+      consistency_score REAL,
+      engagement_level REAL,
+      synced INTEGER DEFAULT 0,
+      FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE,
+      FOREIGN KEY (lesson_id) REFERENCES lessons (id) ON DELETE CASCADE
+    )`,
+
+    // badges
+    `CREATE TABLE IF NOT EXISTS badges (
+      id TEXT PRIMARY KEY,
+      student_id TEXT NOT NULL,
+      badge_name TEXT NOT NULL,
+      description TEXT,
+      earned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      synced INTEGER DEFAULT 0,
+      FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // leaderboard
+    `CREATE TABLE IF NOT EXISTS leaderboard (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id TEXT NOT NULL,
+      total_points INTEGER NOT NULL,
+      level INTEGER NOT NULL,
+      rank_position INTEGER,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // events
+    `CREATE TABLE IF NOT EXISTS events (
+      id TEXT PRIMARY KEY,
+      school_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      event_date DATETIME NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (school_id) REFERENCES schools (id) ON DELETE CASCADE
+    )`,
+
+    // analytics
+    `CREATE TABLE IF NOT EXISTS analytics (
+      id TEXT PRIMARY KEY,
+      student_id TEXT NOT NULL,
+      average_score REAL,
+      lessons_completed INTEGER,
+      total_time_spent INTEGER,
+      streak_days INTEGER,
+      consistency_index REAL,
+      engagement_index REAL,
+      last_active DATETIME,
+      FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
     )`
   ];
 
@@ -117,8 +238,33 @@ function createSQLiteTables() {
 
 // Lightweight migrations for SQLite to ensure new columns exist on existing DBs
 function runSQLiteMigrations() {
+  // users
   ensureSQLiteColumn('users', 'class', 'TEXT');
   ensureSQLiteColumn('users', 'password_hash', 'TEXT');
+  ensureSQLiteColumn('users', 'school_id', 'TEXT');
+  ensureSQLiteColumn('users', 'last_login', 'DATETIME');
+  ensureSQLiteColumn('users', 'status', "TEXT CHECK(status IN ('active','inactive','suspended')) NOT NULL DEFAULT 'active'");
+  ensureSQLiteColumn('users', 'role', "TEXT CHECK(role IN ('student','teacher','school','admin')) NOT NULL");
+
+  // lessons
+  ensureSQLiteColumn('lessons', 'language', 'TEXT');
+  ensureSQLiteColumn('lessons', 'created_by', 'TEXT');
+
+  // quizzes
+  ensureSQLiteColumn('quizzes', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+
+  // student_progress
+  ensureSQLiteColumn('student_progress', 'attempts', 'INTEGER DEFAULT 1');
+  ensureSQLiteColumn('student_progress', 'consistency_score', 'REAL');
+  ensureSQLiteColumn('student_progress', 'engagement_level', 'REAL');
+  ensureSQLiteColumn('student_progress', 'synced', 'INTEGER DEFAULT 0');
+
+  // badges
+  ensureSQLiteColumn('badges', 'description', 'TEXT');
+  ensureSQLiteColumn('badges', 'synced', 'INTEGER DEFAULT 0');
+
+  // leaderboard
+  ensureSQLiteColumn('leaderboard', 'rank_position', 'INTEGER');
 }
 
 function ensureSQLiteColumn(table, column, type) {
@@ -143,42 +289,169 @@ function ensureSQLiteColumn(table, column, type) {
 // Create MySQL tables
 async function createMySQLTables() {
   const tables = [
+    // schools
+    `CREATE TABLE IF NOT EXISTS schools (
+      id VARCHAR(255) PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      address TEXT,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password_hash VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+
+    // users
     `CREATE TABLE IF NOT EXISTS users (
       id VARCHAR(255) PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
       email VARCHAR(255) UNIQUE NOT NULL,
-      class VARCHAR(10),
       password_hash VARCHAR(255),
-      role ENUM('student', 'teacher') NOT NULL,
+      role ENUM('student','teacher','school','admin') NOT NULL,
+      class VARCHAR(50),
+      school_id VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      last_login TIMESTAMP NULL,
+      status ENUM('active','inactive','suspended') NOT NULL DEFAULT 'active',
+      CONSTRAINT fk_users_school FOREIGN KEY (school_id) REFERENCES schools (id) ON DELETE SET NULL
+    )`,
+
+    // admins
+    `CREATE TABLE IF NOT EXISTS admins (
+      id VARCHAR(255) PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password_hash VARCHAR(255),
+      role ENUM('admin','superadmin') NOT NULL DEFAULT 'admin',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
-    
+
+    // lessons
+    `CREATE TABLE IF NOT EXISTS lessons (
+      id VARCHAR(255) PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      content TEXT NOT NULL,
+      subject VARCHAR(255) NOT NULL,
+      difficulty INT NOT NULL,
+      language VARCHAR(50),
+      created_by VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_lessons_user FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
+    )`,
+
+    // quizzes
+    `CREATE TABLE IF NOT EXISTS quizzes (
+      id VARCHAR(255) PRIMARY KEY,
+      lesson_id VARCHAR(255) NOT NULL,
+      questions JSON NOT NULL,
+      total_points INT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_quizzes_lesson FOREIGN KEY (lesson_id) REFERENCES lessons (id) ON DELETE CASCADE
+    )`,
+
+    // homeworks
+    `CREATE TABLE IF NOT EXISTS homeworks (
+      id VARCHAR(255) PRIMARY KEY,
+      teacher_id VARCHAR(255) NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      due_date TIMESTAMP NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_homeworks_teacher FOREIGN KEY (teacher_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // assignments
+    `CREATE TABLE IF NOT EXISTS assignments (
+      id VARCHAR(255) PRIMARY KEY,
+      teacher_id VARCHAR(255) NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      due_date TIMESTAMP NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_assignments_teacher FOREIGN KEY (teacher_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // student_homework
+    `CREATE TABLE IF NOT EXISTS student_homework (
+      id VARCHAR(255) PRIMARY KEY,
+      homework_id VARCHAR(255) NOT NULL,
+      student_id VARCHAR(255) NOT NULL,
+      status ENUM('pending','completed','late') NOT NULL DEFAULT 'pending',
+      submitted_at TIMESTAMP NULL,
+      CONSTRAINT fk_sh_homework FOREIGN KEY (homework_id) REFERENCES homeworks (id) ON DELETE CASCADE,
+      CONSTRAINT fk_sh_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // student_assignments
+    `CREATE TABLE IF NOT EXISTS student_assignments (
+      id VARCHAR(255) PRIMARY KEY,
+      assignment_id VARCHAR(255) NOT NULL,
+      student_id VARCHAR(255) NOT NULL,
+      status ENUM('pending','completed','late') NOT NULL DEFAULT 'pending',
+      submitted_at TIMESTAMP NULL,
+      CONSTRAINT fk_sa_assignment FOREIGN KEY (assignment_id) REFERENCES assignments (id) ON DELETE CASCADE,
+      CONSTRAINT fk_sa_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // student_progress
     `CREATE TABLE IF NOT EXISTS student_progress (
       id VARCHAR(255) PRIMARY KEY,
-      user_id VARCHAR(255) NOT NULL,
+      student_id VARCHAR(255) NOT NULL,
       lesson_id VARCHAR(255) NOT NULL,
       score INT NOT NULL,
       time_spent INT NOT NULL,
       completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users (id)
+      attempts INT DEFAULT 1,
+      consistency_score FLOAT,
+      engagement_level FLOAT,
+      synced TINYINT DEFAULT 0,
+      CONSTRAINT fk_sp_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE,
+      CONSTRAINT fk_sp_lesson FOREIGN KEY (lesson_id) REFERENCES lessons (id) ON DELETE CASCADE
     )`,
-    
+
+    // badges
     `CREATE TABLE IF NOT EXISTS badges (
       id VARCHAR(255) PRIMARY KEY,
-      user_id VARCHAR(255) NOT NULL,
+      student_id VARCHAR(255) NOT NULL,
       badge_name VARCHAR(255) NOT NULL,
+      description TEXT,
       earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users (id)
+      synced TINYINT DEFAULT 0,
+      CONSTRAINT fk_badges_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
     )`,
-    
+
+    // leaderboard
     `CREATE TABLE IF NOT EXISTS leaderboard (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id VARCHAR(255) NOT NULL,
+      student_id VARCHAR(255) NOT NULL,
       total_points INT NOT NULL,
       level INT NOT NULL,
-      rank_position INT,
+      rank_position INT NULL,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users (id)
+      CONSTRAINT fk_leaderboard_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // events
+    `CREATE TABLE IF NOT EXISTS events (
+      id VARCHAR(255) PRIMARY KEY,
+      school_id VARCHAR(255) NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      event_date TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_events_school FOREIGN KEY (school_id) REFERENCES schools (id) ON DELETE CASCADE
+    )`,
+
+    // analytics
+    `CREATE TABLE IF NOT EXISTS analytics (
+      id VARCHAR(255) PRIMARY KEY,
+      student_id VARCHAR(255) NOT NULL,
+      average_score FLOAT,
+      lessons_completed INT,
+      total_time_spent INT,
+      streak_days INT,
+      consistency_index FLOAT,
+      engagement_index FLOAT,
+      last_active TIMESTAMP NULL,
+      CONSTRAINT fk_analytics_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
     )`
   ];
 
