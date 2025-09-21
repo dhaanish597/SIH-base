@@ -1,7 +1,6 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Trophy } from 'lucide-react';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
 import { Login } from './components/Auth/Login';
@@ -25,12 +24,17 @@ const QuizSelection = React.lazy(() => import('./components/Student/QuizSelectio
 const GamePlayer = React.lazy(() => import('./components/Student/GamePlayer').then(m => ({ default: m.GamePlayer })));
 const ScienceChapters = React.lazy(() => import('./components/Lessons/ScienceChapters').then(m => ({ default: m.ScienceChapters })));
 const LessonViewer = React.lazy(() => import('./components/Lessons/LessonViewer').then(m => ({ default: m.LessonViewer })));
+const StudentProfile = React.lazy(() => import('./components/Student/StudentProfile').then(m => ({ default: m.StudentProfile })));
+const TeacherProfile = React.lazy(() => import('./components/Teacher/TeacherProfile').then(m => ({ default: m.TeacherProfile })));
+const Leaderboard = React.lazy(() => import('./components/Student/Leaderboard').then(m => ({ default: m.Leaderboard })));
 import './i18n';
 
 interface User {
   id: string;
   name: string;
   role: 'student' | 'teacher' | 'school' | 'admin';
+  class?: string;
+  email?: string;
 }
 
 function App() {
@@ -57,19 +61,59 @@ function App() {
       });
     }
 
-    // Check for cached user
-    const cachedUser = localStorage.getItem('stem_user');
-    if (cachedUser) {
-      try {
-        const userData = JSON.parse(cachedUser);
-        setUser(userData);
-      } catch (error) {
-        console.error('Error parsing cached user data:', error);
-        localStorage.removeItem('stem_user');
-      }
-    }
-    setIsLoading(false);
+    // Load user data
+    loadUserData();
   }, []);
+
+  const loadUserData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Check for cached user first
+      const cachedUser = localStorage.getItem('stem_user');
+      if (cachedUser) {
+        try {
+          const userData = JSON.parse(cachedUser);
+          setUser(userData);
+          return; // Exit early if we have cached user data
+        } catch (error) {
+          console.error('Error parsing cached user data:', error);
+          localStorage.removeItem('stem_user');
+        }
+      }
+
+      // If no cached user, try to fetch from API
+      const token = localStorage.getItem('stem_token');
+      if (token && token !== 'demo_token') {
+        try {
+          // Try to fetch current user data from API
+          const response = await fetch('/api/users/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (response.ok) {
+            const userData = await response.json();
+            setUser(userData);
+            localStorage.setItem('stem_user', JSON.stringify(userData));
+          } else {
+            // If API call fails, clear invalid token
+            localStorage.removeItem('stem_token');
+            localStorage.removeItem('stem_user');
+          }
+        } catch (error) {
+          console.error('Error fetching user data from API:', error);
+          // Clear invalid data
+          localStorage.removeItem('stem_token');
+          localStorage.removeItem('stem_user');
+        }
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogin = (userData: User) => {
     setUser(userData);
@@ -82,6 +126,18 @@ function App() {
     setActiveTab('dashboard');
     // Force re-render to ensure login page is shown
     window.location.reload();
+  };
+
+  const handleUserUpdate = (updatedUser: { id: string; name: string; role: string; class?: string; email?: string }) => {
+    const user: User = {
+      id: updatedUser.id,
+      name: updatedUser.name,
+      role: updatedUser.role as 'student' | 'teacher' | 'school' | 'admin',
+      class: updatedUser.class,
+      email: updatedUser.email
+    };
+    setUser(user);
+    localStorage.setItem('stem_user', JSON.stringify(user));
   };
 
   const changeLanguage = (language: string) => {
@@ -132,20 +188,7 @@ function App() {
         if (user.role === 'admin') return <AdminDashboard />;
         return null;
       case 'leaderboard':
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Leaderboard</h2>
-            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-              <div className="text-center py-12">
-                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <Trophy className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Leaderboard Coming Soon</h3>
-                <p className="text-gray-600">This feature will be implemented soon. Stay tuned for updates!</p>
-              </div>
-            </div>
-          </div>
-        );
+        return <Leaderboard userClass={user?.class} isUserDataLoading={isLoading} />;
       case 'quizzes':
         return <QuizSelection />;
       case 'assign-homework':
@@ -177,6 +220,17 @@ function App() {
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+        );
+      case 'profile':
+        if (user.role === 'student') return <StudentProfile userId={user.id} onUserUpdate={handleUserUpdate} />;
+        if (user.role === 'teacher') return <TeacherProfile userId={user.id} />;
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Profile</h2>
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+              <p className="text-gray-600">Profile management for {user.role} role is coming soon!</p>
             </div>
           </div>
         );
@@ -246,30 +300,63 @@ function App() {
     }
   };
 
+  // Map tab IDs to routes for navigation
+  const tabToRoute: Record<string, string> = {
+    dashboard: '/',
+    lessons: '/lessons',
+    quizzes: '/quizzes',
+    'student-homework': '/',
+    'student-assignments': '/',
+    leaderboard: '/',
+    profile: '/profile',
+    'assign-homework': '/',
+    'assign-assignments': '/',
+    analytics: '/',
+    reports: '/',
+    'add-student': '/',
+    'school-students': '/',
+    'school-events': '/',
+    'school-reports': '/',
+    'school-settings': '/',
+    'admin-schools': '/',
+    'admin-analytics': '/',
+    'admin-users': '/',
+    settings: '/',
+  };
+
+  // Custom tab change handler: set activeTab and navigate
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    const route = tabToRoute[tab] || '/';
+    if (location.pathname !== route) {
+      navigate(route);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header user={user} onMenuToggle={toggleSidebar} isMenuOpen={isSidebarOpen} />
-      
       <div className="flex flex-col md:flex-row h-[calc(100vh-80px)] md:h-[calc(100vh-80px)]">
         <div className="w-0 md:w-64 flex-shrink-0">
           <Sidebar
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={handleTabChange}
             userRole={user.role}
             onLogout={handleLogout}
             isOpen={isSidebarOpen}
             onClose={closeSidebar}
           />
         </div>
-        
         <main ref={mainRef} className="flex-1 overflow-auto focus:outline-none" role="main" tabIndex={-1}>
           <Suspense fallback={<div className="p-6">Loading…</div>}>
             <Routes>
               <Route path="/" element={renderContent()} />
+              <Route path="/lessons" element={renderContent()} />
               <Route path="/quizzes" element={<QuizSelection />} />
               <Route path="/play-quiz/:gameName" element={<GamePlayer />} />
               <Route path="/lessons/science" element={<ScienceChapters />} />
               <Route path="/lessons/science/:chapterFile" element={<LessonViewer />} />
+              <Route path="/profile" element={renderContent()} />
             </Routes>
           </Suspense>
         </main>

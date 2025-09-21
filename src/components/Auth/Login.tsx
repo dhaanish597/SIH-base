@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { BookOpen, Mail, Lock, User, GraduationCap, Building2, Shield } from 'lucide-react';
 
 interface LoginProps {
@@ -7,7 +6,6 @@ interface LoginProps {
 }
 
 export function Login({ onLogin }: LoginProps) {
-  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -19,36 +17,88 @@ export function Login({ onLogin }: LoginProps) {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call with offline fallback
     try {
-      // Mock authentication - in real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, create a mock user
-      const user = {
-        id: `user_${Date.now()}`,
-        name:
-          formData.role === 'teacher'
-            ? 'Teacher Kumar'
-            : formData.role === 'school'
-            ? 'School Admin'
-            : formData.role === 'admin'
-            ? 'Platform Admin'
-            : 'Student Priya',
-        role: formData.role
-      };
+      // Try to authenticate with the backend first
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-      // Store in localStorage for offline access
-      localStorage.setItem('stem_user', JSON.stringify(user));
-      
-      onLogin(user);
+      if (response.ok) {
+        const userData = await response.json();
+        const token = userData.token;
+        
+        // Store token and user data
+        localStorage.setItem('stem_token', token);
+        localStorage.setItem('stem_user', JSON.stringify({
+          id: userData.id,
+          name: userData.name,
+          role: userData.role,
+          class: userData.class
+        }));
+        
+        onLogin({
+          id: userData.id,
+          name: userData.name,
+          role: userData.role,
+          class: userData.class,
+          email: userData.email
+        });
+      } else {
+        // If backend login fails, create a demo user for offline mode
+        const demoUser = {
+          id: `demo_${formData.role}_${Date.now()}`,
+          name:
+            formData.role === 'teacher'
+              ? 'Teacher Kumar'
+              : formData.role === 'school'
+              ? 'School Admin'
+              : formData.role === 'admin'
+              ? 'Platform Admin'
+              : 'Student Priya',
+          role: formData.role,
+          class: formData.role === 'student' ? '9' : undefined,
+          email: formData.email
+        };
+
+        // Store in localStorage for offline access
+        localStorage.setItem('stem_user', JSON.stringify(demoUser));
+        localStorage.setItem('stem_token', 'demo_token');
+        
+        onLogin(demoUser);
+      }
     } catch (error) {
       // Check for cached user in offline mode
       const cachedUser = localStorage.getItem('stem_user');
-      if (cachedUser && !navigator.onLine) {
+      if (cachedUser) {
         onLogin(JSON.parse(cachedUser));
       } else {
         console.error('Login failed:', error);
+        // Create a fallback demo user
+        const fallbackUser = {
+          id: `demo_${formData.role}_${Date.now()}`,
+          name:
+            formData.role === 'teacher'
+              ? 'Teacher Kumar'
+              : formData.role === 'school'
+              ? 'School Admin'
+              : formData.role === 'admin'
+              ? 'Platform Admin'
+              : 'Student Priya',
+          role: formData.role,
+          class: formData.role === 'student' ? '9' : undefined,
+          email: formData.email
+        };
+
+        localStorage.setItem('stem_user', JSON.stringify(fallbackUser));
+        localStorage.setItem('stem_token', 'demo_token');
+        onLogin(fallbackUser);
       }
     } finally {
       setIsLoading(false);

@@ -41,8 +41,8 @@ export function Header({ user, onProfileClick, onSettingsClick, onMenuToggle, is
               <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
             <div className="hidden xs:block sm:block">
-              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">STEM Learn</h1>
-              <p className="text-xs sm:text-sm text-gray-600">Gamified Learning Platform</p>
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Resonate</h1>
+              <p className="text-xs sm:text-sm text-gray-600">A better way to learn</p>
             </div>
           </div>
 

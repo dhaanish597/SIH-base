@@ -5,21 +5,16 @@ import { Users, TrendingUp, BookOpen, Award, Download, FolderSync as Sync, BarCh
 export function TeacherDashboard() {
   const { t } = useTranslation();
 
-  // Mock data for demonstration
+  // Initial/empty values
   const classStats = {
-    totalStudents: 28,
-    activeToday: 22,
-    avgCompletion: 78,
-    totalLessons: 156,
-    badgesEarned: 89
+    totalStudents: 0,
+    activeToday: 0,
+    avgCompletion: 0,
+    totalLessons: 0,
+    badgesEarned: 0
   };
 
-  const recentActivity = [
-    { student: 'Priya S.', activity: 'Completed Math Quiz 3', score: 95, time: '2 hours ago' },
-    { student: 'Arjun K.', activity: 'Started Science Lesson 5', score: null, time: '3 hours ago' },
-    { student: 'Meera P.', activity: 'Earned "Math Wizard" badge', score: null, time: '4 hours ago' },
-    { student: 'Raj M.', activity: 'Completed Chemistry Lab', score: 87, time: '5 hours ago' }
-  ];
+  const recentActivity: Array<{ student: string; activity: string; score: number | null; time: string }> = [];
 
   return (
     <div className="p-6 space-y-6">
@@ -110,8 +105,8 @@ export function TeacherDashboard() {
         <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Engagement</h3>
           <div className="space-y-3">
-            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, index) => {
-              const engagement = Math.floor(Math.random() * 40) + 60; // Mock data
+            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+              const engagement = 0;
               return (
                 <div key={day} className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 w-20">{day}</span>
@@ -135,10 +130,10 @@ export function TeacherDashboard() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Distribution</h3>
           <div className="space-y-3">
             {[
-              { range: '90-100%', count: 8, color: 'bg-green-500' },
-              { range: '80-89%', count: 12, color: 'bg-blue-500' },
-              { range: '70-79%', count: 6, color: 'bg-yellow-500' },
-              { range: '60-69%', count: 2, color: 'bg-orange-500' },
+              { range: '90-100%', count: 0, color: 'bg-green-500' },
+              { range: '80-89%', count: 0, color: 'bg-blue-500' },
+              { range: '70-79%', count: 0, color: 'bg-yellow-500' },
+              { range: '60-69%', count: 0, color: 'bg-orange-500' },
               { range: '< 60%', count: 0, color: 'bg-red-500' }
             ].map((item) => (
               <div key={item.range} className="flex items-center space-x-3">
@@ -148,7 +143,7 @@ export function TeacherDashboard() {
                   <div className="bg-gray-200 rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full ${item.color}`}
-                      style={{ width: `${(item.count / classStats.totalStudents) * 100}%` }}
+                      style={{ width: `${classStats.totalStudents === 0 ? 0 : (item.count / classStats.totalStudents) * 100}%` }}
                     ></div>
                   </div>
                 </div>
@@ -168,27 +163,31 @@ export function TeacherDashboard() {
           </button>
         </div>
         <div className="space-y-3">
-          {recentActivity.map((activity, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-indigo-600">
-                    {activity.student.charAt(0)}
-                  </span>
+          {recentActivity.length === 0 ? (
+            <div className="text-gray-500 text-sm text-center py-4">No recent activity yet.</div>
+          ) : (
+            recentActivity.map((activity, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-indigo-600">
+                      {activity.student.charAt(0)}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{activity.student}</p>
+                    <p className="text-sm text-gray-600">{activity.activity}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900">{activity.student}</p>
-                  <p className="text-sm text-gray-600">{activity.activity}</p>
+                <div className="text-right">
+                  {activity.score && (
+                    <p className="text-sm font-medium text-gray-900">{activity.score}%</p>
+                  )}
+                  <p className="text-xs text-gray-500">{activity.time}</p>
                 </div>
               </div>
-              <div className="text-right">
-                {activity.score && (
-                  <p className="text-sm font-medium text-gray-900">{activity.score}%</p>
-                )}
-                <p className="text-xs text-gray-500">{activity.time}</p>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
