@@ -11,20 +11,52 @@
   </head>
   <body>
     <div id="game-root">Loading game…</div>
+    <script src="/games/shared-questions.js"></script>
     <script>
       (function() {
         const params = new URLSearchParams(location.search);
         const grade = params.get('grade');
         const subject = params.get('subject');
+        const chapter = params.get('chapter');
 
         // Make questions global if game engine expects it
         window.questions = [];
 
         async function loadQuestions() {
           try {
-            const res = await fetch(`/api/quizzes?grade=${encodeURIComponent(grade || '')}&subject=${encodeURIComponent(subject || '')}`);
-            if (!res.ok) throw new Error('Failed to fetch questions');
-            window.questions = await res.json();
+            if (window.GameQuizLoader) {
+              const normalizedQuestions = await window.GameQuizLoader.loadQuestions();
+              window.questions = window.GameQuizLoader.toCarFormat(normalizedQuestions);
+            } else {
+              // Fallback to direct loading
+              const res = await fetch('/games/Questions.json', { cache: 'no-store' });
+              if (!res.ok) throw new Error('Failed to load Questions.json');
+              const data = await res.json();
+              
+              // Filter questions by grade and subject
+              const g = String(grade || '6');
+              const s = (subject || '').toLowerCase();
+              
+              let questions = [];
+              if (data.questions_by_grade && data.questions_by_grade[g] && data.questions_by_grade[g][subject]) {
+                if (chapter && data.questions_by_grade[g][subject][chapter]) {
+                  questions = data.questions_by_grade[g][subject][chapter];
+                } else {
+                  // Get all chapters for the subject
+                  Object.keys(data.questions_by_grade[g][subject]).forEach(chapterKey => {
+                    if (Array.isArray(data.questions_by_grade[g][subject][chapterKey])) {
+                      questions.push(...data.questions_by_grade[g][subject][chapterKey]);
+                    }
+                  });
+                }
+              }
+              
+              window.questions = questions.map(q => ({
+                question: q.text,
+                options: q.choices,
+                answer: q.answerIndex
+              }));
+            }
           } catch (e) {
             console.error(e);
             window.questions = [];
@@ -39,7 +71,11 @@
           }
           root.innerHTML = '';
           const title = document.createElement('h2');
-          title.textContent = `Car Race Quiz - ${subject} (Grade ${grade})`;
+          let titleText = `Car Race Quiz - ${subject} (Grade ${grade})`;
+          if (chapter) {
+            titleText += ` - ${chapter}`;
+          }
+          title.textContent = titleText;
           root.appendChild(title);
           const p = document.createElement('p');
           p.textContent = `Loaded ${window.questions.length} questions. Integrate with game engine here.`;

@@ -10,17 +10,14 @@ export function GamePlayer() {
   const { gameName } = useParams();
   const query = useQuery();
   const subject = query.get('subject') || 'Mathematics';
+  const chapter = query.get('chapter') || '';
+  const grade = query.get('grade') || '6';
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-
-  // Student grade should come from logged-in user; stored in localStorage 'stem_user'
-  const userRaw = typeof window !== 'undefined' ? localStorage.getItem('stem_user') : null;
-  const user = userRaw ? JSON.parse(userRaw) : null;
-  const grade = user && user.class ? encodeURIComponent(user.class) : encodeURIComponent('6');
 
   // Support nested folder for FightingGame
   const src = gameName === 'fightinggame'
-    ? `/games/FightingGame/index.html?grade=${grade}&subject=${encodeURIComponent(subject)}`
-    : `/games/${gameName}.html?grade=${grade}&subject=${encodeURIComponent(subject)}`;
+    ? `/games/FightingGame/index.html?grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`
+    : `/games/${gameName}.html?grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`;
 
   // Ensure cleanup if parent unmounts; adding visibility handling for pausing if needed
   useEffect(() => {

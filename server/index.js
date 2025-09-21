@@ -1533,12 +1533,14 @@ app.get('/api/leaderboard', authenticateToken, async (req, res) => {
   }
 });
 
-// Quizzes by grade and subject from centralized Questions.json
+// Quizzes by grade, subject, and chapter from centralized Questions.json
 app.get('/api/quizzes', (req, res) => {
   try {
     const gradeParam = req.query.grade;
     const subjectParam = req.query.subject;
+    const chapterParam = req.query.chapter;
     const grade = Number(gradeParam);
+    
     if (!gradeParam || Number.isNaN(grade) || !subjectParam) {
       return res.status(400).json({ error: 'grade (number) and subject are required' });
     }
@@ -1546,32 +1548,70 @@ app.get('/api/quizzes', (req, res) => {
     // Load questions fresh each request to reflect file changes
     // Serve from public/games/Questions.json so Vite and static build share source
     const filePath = path.join(__dirname, '..', 'public', 'games', 'Questions.json');
+    console.log('Looking for Questions.json at:', filePath);
+    console.log('File exists:', require('fs').existsSync(filePath));
     const raw = fs.readFileSync(filePath, 'utf8');
     const data = JSON.parse(raw);
+    console.log('Questions data loaded, structure:', Object.keys(data));
 
-    const subjectLower = String(subjectParam).toLowerCase();
-    const unwrap = (payload) => {
-      if (Array.isArray(payload)) return payload;
-      if (Array.isArray(payload?.questions)) return payload.questions;
-      if (payload?.questions_by_grade && typeof payload.questions_by_grade === 'object') {
-        const arr = [];
-        Object.keys(payload.questions_by_grade).forEach((k) => {
-          const list = payload.questions_by_grade[k];
-          if (Array.isArray(list)) arr.push(...list);
+    // Navigate to the specific grade, subject, and chapter
+    const gradeKey = String(grade);
+    const subjectKey = String(subjectParam);
+    const chapterKey = String(chapterParam || '');
+
+    console.log('Quiz request:', { gradeKey, subjectKey, chapterKey });
+    console.log('Available grades:', Object.keys(data.questions_by_grade || {}));
+    if (data.questions_by_grade && data.questions_by_grade[gradeKey]) {
+      console.log('Available subjects for grade', gradeKey, ':', Object.keys(data.questions_by_grade[gradeKey]));
+    }
+
+    let questions = [];
+
+    if (data.questions_by_grade && 
+        data.questions_by_grade[gradeKey] && 
+        data.questions_by_grade[gradeKey][subjectKey]) {
+      
+      if (chapterKey && data.questions_by_grade[gradeKey][subjectKey][chapterKey]) {
+        // Return questions for specific chapter
+        questions = data.questions_by_grade[gradeKey][subjectKey][chapterKey];
+      } else {
+        // Return all questions for the subject (all chapters combined)
+        const subjectData = data.questions_by_grade[gradeKey][subjectKey];
+        questions = [];
+        Object.keys(subjectData).forEach(chapter => {
+          if (Array.isArray(subjectData[chapter])) {
+            questions.push(...subjectData[chapter]);
+          }
         });
-        return arr;
       }
-      return [];
-    };
+    }
 
-    const list = unwrap(data);
-    const filtered = list.filter((q) => {
-      const qGrade = typeof q.grade === 'number' ? q.grade : Number(q.grade);
-      const qSubject = (q.subject || '').toString().toLowerCase();
-      return qGrade === grade && qSubject === subjectLower;
-    });
+    // Fallback to old format if new format doesn't exist
+    if (questions.length === 0) {
+      const subjectLower = String(subjectParam).toLowerCase();
+      const unwrap = (payload) => {
+        if (Array.isArray(payload)) return payload;
+        if (Array.isArray(payload?.questions)) return payload.questions;
+        if (payload?.questions_by_grade && typeof payload.questions_by_grade === 'object') {
+          const arr = [];
+          Object.keys(payload.questions_by_grade).forEach((k) => {
+            const list = payload.questions_by_grade[k];
+            if (Array.isArray(list)) arr.push(...list);
+          });
+          return arr;
+        }
+        return [];
+      };
 
-    return res.json(filtered);
+      const list = unwrap(data);
+      questions = list.filter((q) => {
+        const qGrade = typeof q.grade === 'number' ? q.grade : Number(q.grade);
+        const qSubject = (q.subject || '').toString().toLowerCase();
+        return qGrade === grade && qSubject === subjectLower;
+      });
+    }
+
+    return res.json(questions);
   } catch (e) {
     console.error('Quizzes endpoint error:', e);
     return res.status(500).json({ error: 'Failed to load quizzes' });

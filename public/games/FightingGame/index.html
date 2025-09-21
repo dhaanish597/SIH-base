@@ -14,12 +14,12 @@
     <script src="/games/shared-questions.js"></script>
     <script>
       (function() {
-        const { grade, subject } = window.GameQuizLoader.parseParams();
+        const { grade, subject, chapter } = window.GameQuizLoader.parseParams();
         let normalized = [];
 
         async function loadQuestions() {
           try {
-            normalized = await window.GameQuizLoader.loadQuestions({ grade, subject });
+            normalized = await window.GameQuizLoader.loadQuestions({ grade, subject, chapter });
             // Adapt into the format main.js expects (q/options/answer)
             window.questions = window.GameQuizLoader.toFightingFormat(normalized);
           } catch (e) {
@@ -36,8 +36,12 @@
             return;
           }
           root.innerHTML = '';
+          let titleText = `Fighting Game - ${subject} (Grade ${grade})`;
+          if (chapter) {
+            titleText += ` - ${chapter}`;
+          }
           const title = document.createElement('h2');
-          title.textContent = `Fighting Game - ${subject} (Grade ${grade})`;
+          title.textContent = titleText;
           root.appendChild(title);
           const p = document.createElement('p');
           p.textContent = `Loaded ${normalized.length} questions. Press Space in game to get a question.`;

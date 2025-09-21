@@ -200,9 +200,10 @@
     body { flex-direction: column; align-items: center; }
     #quiz-container, #game-container { max-width: 98vw; }
   }
-</style>
+  </style>
 </head>
 <body>
+  <script src="/games/shared-questions.js"></script>
 
 <div id="quiz-container">
   <div id="timer"></div>
@@ -226,9 +227,18 @@
   let questions = [];
   
   async function loadDynamicQuestions() {
+    // Use the shared questions loader
+    if (window.GameQuizLoader) {
+      const normalizedQuestions = await window.GameQuizLoader.loadQuestions();
+      questions = window.GameQuizLoader.toCarFormat(normalizedQuestions);
+      return;
+    }
+
+    // Fallback to direct loading
     const params = new URLSearchParams(location.search);
     const gradeParam = params.get('grade') || '';
     const subjectParam = params.get('subject') || '';
+    const chapterParam = params.get('chapter') || '';
 
     const parseGrade = (g) => {
       if (typeof g === 'number') return g;

@@ -7,7 +7,8 @@
     const params = new URLSearchParams(location.search);
     return {
       grade: params.get('grade'),
-      subject: params.get('subject')
+      subject: params.get('subject'),
+      chapter: params.get('chapter')
     };
   }
 
@@ -42,10 +43,33 @@
     return m ? Number(m[0]) : NaN;
   }
 
-  function filterQuestions(data, grade, subject) {
+  function filterQuestions(data, grade, subject, chapter) {
     const g = parseGrade(grade);
     const s = normalizeSubject(subject);
     if (!Number.isFinite(g) || !s) return [];
+    
+    // Try new chapter-based structure first
+    if (data.questions_by_grade && 
+        data.questions_by_grade[String(g)] && 
+        data.questions_by_grade[String(g)][subject]) {
+      
+      if (chapter && data.questions_by_grade[String(g)][subject][chapter]) {
+        // Return questions for specific chapter
+        return data.questions_by_grade[String(g)][subject][chapter];
+      } else {
+        // Return all questions for the subject (all chapters combined)
+        const subjectData = data.questions_by_grade[String(g)][subject];
+        const allQuestions = [];
+        Object.keys(subjectData).forEach(chapterKey => {
+          if (Array.isArray(subjectData[chapterKey])) {
+            allQuestions.push(...subjectData[chapterKey]);
+          }
+        });
+        return allQuestions;
+      }
+    }
+    
+    // Fallback to old structure
     const list = unwrapQuestions(data);
     return list.filter((q) => {
       const qGrade = typeof q.grade === 'number' ? q.grade : Number(q.grade);
@@ -87,9 +111,9 @@
   }
 
   async function loadQuestions(params) {
-    const { grade, subject } = params || parseParams();
+    const { grade, subject, chapter } = params || parseParams();
     const all = await fetchAllQuestions();
-    const filtered = filterQuestions(all, grade, subject);
+    const filtered = filterQuestions(all, grade, subject, chapter);
     return toNormalized(filtered);
   }
 
