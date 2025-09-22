@@ -26,6 +26,8 @@ const ScienceChapters = React.lazy(() => import('./components/Lessons/ScienceCha
 const LessonViewer = React.lazy(() => import('./components/Lessons/LessonViewer').then(m => ({ default: m.LessonViewer })));
 const StudentProfile = React.lazy(() => import('./components/Student/StudentProfile').then(m => ({ default: m.StudentProfile })));
 const TeacherProfile = React.lazy(() => import('./components/Teacher/TeacherProfile').then(m => ({ default: m.TeacherProfile })));
+const ProfileRouter = React.lazy(() => import('./components/Profile/Profile').then(m => ({ default: m.default })));
+const Lessons = React.lazy(() => import('./components/Student/Lessons').then(m => ({ default: m.Lessons })));
 const Leaderboard = React.lazy(() => import('./components/Student/Leaderboard').then(m => ({ default: m.Leaderboard })));
 import './i18n';
 
@@ -69,20 +71,7 @@ function App() {
     try {
       setIsLoading(true);
       
-      // Check for cached user first
-      const cachedUser = localStorage.getItem('stem_user');
-      if (cachedUser) {
-        try {
-          const userData = JSON.parse(cachedUser);
-          setUser(userData);
-          return; // Exit early if we have cached user data
-        } catch (error) {
-          console.error('Error parsing cached user data:', error);
-          localStorage.removeItem('stem_user');
-        }
-      }
-
-      // If no cached user, try to fetch from API
+      // Only trust server-verified token; do not auto-login from cached user
       const token = localStorage.getItem('stem_token');
       if (token && token !== 'demo_token') {
         try {
@@ -102,12 +91,26 @@ function App() {
             // If API call fails, clear invalid token
             localStorage.removeItem('stem_token');
             localStorage.removeItem('stem_user');
+            setUser(null);
+            if (location.pathname !== '/login') {
+              navigate('/login', { replace: true });
+            }
           }
         } catch (error) {
           console.error('Error fetching user data from API:', error);
           // Clear invalid data
           localStorage.removeItem('stem_token');
           localStorage.removeItem('stem_user');
+          setUser(null);
+          if (location.pathname !== '/login') {
+            navigate('/login', { replace: true });
+          }
+        }
+      } else {
+        // No token, ensure logged-out state
+        setUser(null);
+        if (location.pathname !== '/login') {
+          navigate('/login', { replace: true });
         }
       }
     } finally {
@@ -118,14 +121,30 @@ function App() {
   const handleLogin = (userData: User) => {
     setUser(userData);
     localStorage.setItem('stem_user', JSON.stringify(userData));
+    setActiveTab('dashboard');
+    if (location.pathname === '/login') {
+      navigate('/', { replace: true });
+    }
   };
 
   const handleLogout = () => {
+    try {
+      // Clear auth-related storage
+      localStorage.removeItem('stem_user');
+      localStorage.removeItem('stem_token');
+      localStorage.removeItem('auth_role');
+      sessionStorage.clear();
+    } catch {}
+
+    // Reset app state
     setUser(null);
-    localStorage.removeItem('stem_user');
     setActiveTab('dashboard');
-    // Force re-render to ensure login page is shown
-    window.location.reload();
+    setIsSidebarOpen(false);
+
+    // Redirect to login without auto-login
+    if (location.pathname !== '/login') {
+      navigate('/login', { replace: true });
+    }
   };
 
   const handleUserUpdate = (updatedUser: { id: string; name: string; role: string; class?: string; email?: string }) => {
@@ -147,6 +166,20 @@ function App() {
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const closeSidebar = () => setIsSidebarOpen(false);
+
+  // Keep route on /login when not authenticated (must be before any early returns)
+  useEffect(() => {
+    if (!user && location.pathname !== '/login') {
+      navigate('/login', { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
+
+  // If authenticated but still on /login, redirect to dashboard
+  useEffect(() => {
+    if (user && location.pathname === '/login') {
+      navigate('/', { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
 
   // If user navigates away from Quizzes tab, ensure any game route is closed
   useEffect(() => {
@@ -174,9 +207,14 @@ function App() {
     );
   }
 
-  // Show login page if no user is authenticated
+  // Show login page route when no user
   if (!user) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <Routes>
+        <Route path="/login" element={<Login onLogin={handleLogin} />} />
+        <Route path="*" element={<Login onLogin={handleLogin} />} />
+      </Routes>
+    );
   }
 
   const renderContent = () => {
@@ -200,40 +238,9 @@ function App() {
       case 'student-assignments':
         return <StudentAssignments />;
       case 'lessons':
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Lessons</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {['Mathematics', 'Science', 'Technology', 'Engineering'].map((subject) => (
-                <div key={subject} className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{subject}</h3>
-                  <p className="text-gray-600 mb-4">Explore {subject.toLowerCase()} concepts</p>
-                  <button
-                    onClick={() => {
-                      if (subject === 'Science') {
-                        navigate('/lessons/science');
-                      }
-                    }}
-                    className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors"
-                  >
-                    Start Learning
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
+        return <Lessons />;
       case 'profile':
-        if (user.role === 'student') return <StudentProfile userId={user.id} onUserUpdate={handleUserUpdate} />;
-        if (user.role === 'teacher') return <TeacherProfile userId={user.id} />;
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Profile</h2>
-            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-              <p className="text-gray-600">Profile management for {user.role} role is coming soon!</p>
-            </div>
-          </div>
-        );
+        return <ProfileRouter />;
       case 'settings':
         return (
           <div className="p-6">
@@ -350,13 +357,14 @@ function App() {
         <main ref={mainRef} className="flex-1 overflow-auto focus:outline-none" role="main" tabIndex={-1}>
           <Suspense fallback={<div className="p-6">Loading…</div>}>
             <Routes>
+              <Route path="/login" element={<Login onLogin={handleLogin} />} />
               <Route path="/" element={renderContent()} />
               <Route path="/lessons" element={renderContent()} />
               <Route path="/quizzes" element={<QuizSelection />} />
               <Route path="/play-quiz/:gameName" element={<GamePlayer />} />
               <Route path="/lessons/science" element={<ScienceChapters />} />
               <Route path="/lessons/science/:chapterFile" element={<LessonViewer />} />
-              <Route path="/profile" element={renderContent()} />
+              <Route path="/profile" element={<ProfileRouter />} />
             </Routes>
           </Suspense>
         </main>

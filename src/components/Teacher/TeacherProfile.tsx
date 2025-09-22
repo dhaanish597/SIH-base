@@ -55,12 +55,14 @@ export function TeacherProfile({ userId }: TeacherProfileProps) {
       const token = localStorage.getItem('stem_token');
       
       // Check if this is a demo user
-      if (userId.startsWith('demo_') || token === 'demo_token') {
-        // Create demo profile data
+      if (userId.startsWith('demo_') || token === 'demo_token' || !token) {
+        // Create demo profile data from stored user if present
+        const stored = localStorage.getItem('stem_user');
+        const storedUser = stored ? JSON.parse(stored) : null;
         const demoData: TeacherProfileData = {
-          id: userId,
-          name: 'Teacher Kumar',
-          email: 'teacher@demo.com',
+          id: storedUser?.id || userId,
+          name: storedUser?.name || 'Teacher Kumar',
+          email: storedUser?.email || 'teacher@demo.com',
           role: 'teacher',
           department: 'Mathematics',
           subjects_taught: ['Mathematics', 'Physics'],
@@ -87,18 +89,30 @@ export function TeacherProfile({ userId }: TeacherProfileProps) {
         return;
       }
 
-      const response = await fetch(`/api/users/${userId}`, {
+      // Primary: fetch logged-in user's own data
+      let data: any | null = null;
+      let response = await fetch(`/api/users/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
+      // Fallback: admin viewing or id-specific
+      if (!response.ok && userId) {
+        response = await fetch(`/api/users/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+
       if (!response.ok) {
         throw new Error('Failed to fetch profile data');
       }
 
-      const data = await response.json();
+      data = await response.json();
       setProfileData(data);
       setEditableFields({
         phone: data.phone || '',
@@ -170,6 +184,19 @@ export function TeacherProfile({ userId }: TeacherProfileProps) {
           language: editableFields.language,
           profile_photo: editableFields.profile_photo
         } : null);
+        // Persist edited fields back to stored user for consistency
+        try {
+          const stored = localStorage.getItem('stem_user');
+          const storedUser = stored ? JSON.parse(stored) : {};
+          const updated = {
+            ...storedUser,
+            id: storedUser?.id || userId,
+            name: storedUser?.name, // teacher name not editable here
+            email: storedUser?.email,
+            role: 'teacher'
+          };
+          localStorage.setItem('stem_user', JSON.stringify(updated));
+        } catch {}
         
         // Clear password fields
         setEditableFields(prev => ({
@@ -192,7 +219,8 @@ export function TeacherProfile({ userId }: TeacherProfileProps) {
         updateData.password = editableFields.password;
       }
 
-      const response = await fetch(`/api/users/${userId}`, {
+      const idToUpdate = profileData?.id || userId;
+      const response = await fetch(`/api/users/${idToUpdate}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

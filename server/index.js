@@ -73,7 +73,7 @@ app.post('/api/login', (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    sqliteDb.get('SELECT id, name, email, class, role, password_hash FROM users WHERE email = ? AND status = "active"', [email], async (err, userRow) => {
+    sqliteDb.get('SELECT id, name, email, class, role, school_id, language, password_hash FROM users WHERE email = ? AND status = "active"', [email], async (err, userRow) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' });
       }
@@ -90,7 +90,7 @@ app.post('/api/login', (req, res) => {
         // Update last_login
         sqliteDb.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [userRow.id], () => {});
 
-        const payload = { id: userRow.id, name: userRow.name, class: userRow.class || null, role: userRow.role };
+        const payload = { id: userRow.id, name: userRow.name, email: userRow.email, class: userRow.class || null, role: userRow.role, school_id: userRow.school_id || null, language: userRow.language || 'en' };
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
         return res.json({ ...payload, token });
       } catch (cmpErr) {
@@ -99,6 +99,213 @@ app.post('/api/login', (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// Current user by token
+app.get('/api/users/me', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    sqliteDb.get(
+      `SELECT id, name, email, role, class, school_id, language, phone, address, profile_photo, created_at, last_login, status
+       FROM users WHERE id = ?`,
+      [userId],
+      (err, row) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        if (!row) return res.status(404).json({ error: 'User not found' });
+        return res.json(row);
+      }
+    );
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to fetch current user' });
+  }
+});
+
+// Profile routes
+app.get('/api/profile/:id', authenticateToken, (req, res) => {
+  try {
+    const userId = req.params.id;
+    sqliteDb.get(
+      `SELECT id, name, email, role, class, school_id, created_at, last_login, status,
+              phone, address, language, profile_photo, roll_number, department,
+              subjects_taught, classes_handled
+       FROM users WHERE id = ?`,
+      [userId],
+      (err, row) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+        if (!row) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Attempt to normalize array-like fields if they are stored as CSV/JSON
+        const normalizeArray = (val) => {
+          if (!val) return undefined;
+          try {
+            const parsed = JSON.parse(val);
+            return Array.isArray(parsed) ? parsed : undefined;
+          } catch {
+            if (typeof val === 'string') {
+              const parts = val.split(',').map(s => s.trim()).filter(Boolean);
+              return parts.length ? parts : undefined;
+            }
+            return undefined;
+          }
+        };
+
+        const user = {
+          id: row.id,
+          name: row.name,
+          email: row.email,
+          role: row.role,
+          class: row.class || null,
+          school_id: row.school_id || null,
+          created_at: row.created_at || null,
+          last_login: row.last_login || null,
+          status: row.status || null,
+          phone: row.phone || null,
+          address: row.address || null,
+          language: row.language || null,
+          profile_photo: row.profile_photo || null,
+          roll_number: row.roll_number || null,
+          department: row.department || null,
+          subjects_taught: normalizeArray(row.subjects_taught),
+          classes_handled: normalizeArray(row.classes_handled)
+        };
+
+        return res.json({ user });
+      }
+    );
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+app.put('/api/profile/:id', authenticateToken, (req, res) => {
+  try {
+    const userId = req.params.id;
+    const {
+      name,
+      phone,
+      address,
+      language,
+      profile_photo
+    } = req.body || {};
+
+    const fields = [];
+    const values = [];
+
+    const addField = (column, value) => {
+      if (typeof value !== 'undefined') {
+        fields.push(`${column} = ?`);
+        values.push(value);
+      }
+    };
+
+    addField('name', name);
+    addField('phone', phone);
+    addField('address', address);
+    addField('language', language);
+    addField('profile_photo', profile_photo);
+
+    if (fields.length === 0) {
+      return res.status(400).json({ error: 'No updatable fields provided' });
+    }
+
+    values.push(userId);
+    const sql = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
+    sqliteDb.run(sql, values, function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Database update error' });
+      }
+
+      // Return the updated profile
+      sqliteDb.get(
+        `SELECT id, name, email, role, class, school_id, created_at, last_login, status,
+                phone, address, language, profile_photo, roll_number, department,
+                subjects_taught, classes_handled
+         FROM users WHERE id = ?`,
+        [userId],
+        (selErr, row) => {
+          if (selErr || !row) {
+            return res.status(200).json({ success: true });
+          }
+
+          const normalizeArray = (val) => {
+            if (!val) return undefined;
+            try {
+              const parsed = JSON.parse(val);
+              return Array.isArray(parsed) ? parsed : undefined;
+            } catch {
+              if (typeof val === 'string') {
+                const parts = val.split(',').map(s => s.trim()).filter(Boolean);
+                return parts.length ? parts : undefined;
+              }
+              return undefined;
+            }
+          };
+
+          const user = {
+            id: row.id,
+            name: row.name,
+            email: row.email,
+            role: row.role,
+            class: row.class || null,
+            school_id: row.school_id || null,
+            created_at: row.created_at || null,
+            last_login: row.last_login || null,
+            status: row.status || null,
+            phone: row.phone || null,
+            address: row.address || null,
+            language: row.language || null,
+            profile_photo: row.profile_photo || null,
+            roll_number: row.roll_number || null,
+            department: row.department || null,
+            subjects_taught: normalizeArray(row.subjects_taught),
+            classes_handled: normalizeArray(row.classes_handled)
+          };
+
+          return res.json({ success: true, user });
+        }
+      );
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// Update profile (alias route as requested)
+app.post('/api/updateProfile', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user?.id || req.body?.id;
+    if (!userId) return res.status(400).json({ error: 'Missing user id' });
+
+    const { name, phone, address, language, profile_photo } = req.body || {};
+
+    const fields = [];
+    const values = [];
+    const add = (col, val) => { if (typeof val !== 'undefined') { fields.push(`${col} = ?`); values.push(val); } };
+    add('name', name);
+    add('phone', phone);
+    add('address', address);
+    add('language', language);
+    add('profile_photo', profile_photo);
+    if (!fields.length) return res.status(400).json({ error: 'No updatable fields provided' });
+
+    values.push(userId);
+    sqliteDb.run(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values, (err) => {
+      if (err) return res.status(500).json({ error: 'Database update error' });
+      sqliteDb.get(`SELECT id, name, email, role, class, school_id, created_at, last_login, status,
+                           phone, address, language, profile_photo, roll_number, department,
+                           subjects_taught, classes_handled FROM users WHERE id = ?`, [userId], (e, row) => {
+        if (e || !row) return res.json({ success: true });
+        return res.json({ success: true, user: row });
+      });
+    });
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to update profile' });
   }
 });
 

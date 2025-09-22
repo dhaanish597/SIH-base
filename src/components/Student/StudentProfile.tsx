@@ -64,14 +64,16 @@ export function StudentProfile({ userId, onUserUpdate }: StudentProfileProps) {
       const token = localStorage.getItem('stem_token');
       
       // Check if this is a demo user
-      if (userId.startsWith('demo_') || token === 'demo_token') {
-        // Create demo profile data
+      if (userId.startsWith('demo_') || token === 'demo_token' || !token) {
+        // Build demo profile data from stored user when available
+        const stored = localStorage.getItem('stem_user');
+        const storedUser = stored ? JSON.parse(stored) : null;
         const demoData: StudentProfileData = {
-          id: userId,
-          name: 'Student Priya',
-          email: 'student@demo.com',
+          id: storedUser?.id || userId,
+          name: storedUser?.name || 'Student Priya',
+          email: storedUser?.email || 'student@demo.com',
           role: 'student',
-          class: '9',
+          class: storedUser?.class || '9',
           roll_number: 'STU001',
           phone: '+91 9876543211',
           address: 'Student Address, Demo City',
@@ -111,18 +113,30 @@ export function StudentProfile({ userId, onUserUpdate }: StudentProfileProps) {
         return;
       }
 
-      const response = await fetch(`/api/users/${userId}`, {
+      // Primary: fetch logged-in user's own data
+      let data: any | null = null;
+      let response = await fetch(`/api/users/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
+      // Fallback: if admin viewing another user or /me failed, try by id when provided
+      if (!response.ok && userId) {
+        response = await fetch(`/api/users/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+
       if (!response.ok) {
         throw new Error('Failed to fetch profile data');
       }
 
-      const data = await response.json();
+      data = await response.json();
       setProfileData(data);
       setEditableFields({
         name: data.name || '',
@@ -200,6 +214,20 @@ export function StudentProfile({ userId, onUserUpdate }: StudentProfileProps) {
           language: editableFields.language,
           profile_photo: editableFields.profile_photo
         } : null);
+        // Persist to localStorage so it reflects after reloads
+        try {
+          const stored = localStorage.getItem('stem_user');
+          const storedUser = stored ? JSON.parse(stored) : {};
+          const updated = {
+            ...storedUser,
+            id: storedUser?.id || userId,
+            name: editableFields.name,
+            class: editableFields.class,
+            email: editableFields.email,
+            role: 'student'
+          };
+          localStorage.setItem('stem_user', JSON.stringify(updated));
+        } catch {}
         
         // Update the user state in the parent component for demo mode
         if (onUserUpdate) {
@@ -223,9 +251,8 @@ export function StudentProfile({ userId, onUserUpdate }: StudentProfileProps) {
 
       const token = localStorage.getItem('stem_token');
       const updateData: any = {
+        // Only allow editable profile fields on this route
         name: editableFields.name,
-        class: editableFields.class,
-        email: editableFields.email,
         phone: editableFields.phone,
         address: editableFields.address,
         language: editableFields.language,
@@ -236,7 +263,8 @@ export function StudentProfile({ userId, onUserUpdate }: StudentProfileProps) {
         updateData.password = editableFields.password;
       }
 
-      const response = await fetch(`/api/users/${userId}`, {
+      const idToUpdate = profileData?.id || userId;
+      const response = await fetch(`/api/users/${idToUpdate}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

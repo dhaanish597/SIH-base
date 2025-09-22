@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { BookOpen, Mail, Lock, User, GraduationCap, Building2, Shield } from 'lucide-react';
 
 interface LoginProps {
-  onLogin: (user: { id: string; name: string; role: 'student' | 'teacher' | 'school' | 'admin' }) => void;
+  onLogin: (user: { id: string; name: string; role: 'student' | 'teacher' | 'school' | 'admin'; class?: string; email?: string }) => void;
 }
 
 export function Login({ onLogin }: LoginProps) {
@@ -40,7 +40,8 @@ export function Login({ onLogin }: LoginProps) {
           id: userData.id,
           name: userData.name,
           role: userData.role,
-          class: userData.class
+          class: userData.class,
+          email: userData.email
         }));
         
         onLogin({
@@ -50,8 +51,8 @@ export function Login({ onLogin }: LoginProps) {
           class: userData.class,
           email: userData.email
         });
-      } else {
-        // If backend login fails, create a demo user for offline mode
+      } else if (!navigator.onLine) {
+        // Offline demo fallback only when offline
         const demoUser = {
           id: `demo_${formData.role}_${Date.now()}`,
           name:
@@ -72,34 +73,12 @@ export function Login({ onLogin }: LoginProps) {
         localStorage.setItem('stem_token', 'demo_token');
         
         onLogin(demoUser);
+      } else {
+        throw new Error('Invalid credentials');
       }
     } catch (error) {
-      // Check for cached user in offline mode
-      const cachedUser = localStorage.getItem('stem_user');
-      if (cachedUser) {
-        onLogin(JSON.parse(cachedUser));
-      } else {
-        console.error('Login failed:', error);
-        // Create a fallback demo user
-        const fallbackUser = {
-          id: `demo_${formData.role}_${Date.now()}`,
-          name:
-            formData.role === 'teacher'
-              ? 'Teacher Kumar'
-              : formData.role === 'school'
-              ? 'School Admin'
-              : formData.role === 'admin'
-              ? 'Platform Admin'
-              : 'Student Priya',
-          role: formData.role,
-          class: formData.role === 'student' ? '9' : undefined,
-          email: formData.email
-        };
-
-        localStorage.setItem('stem_user', JSON.stringify(fallbackUser));
-        localStorage.setItem('stem_token', 'demo_token');
-        onLogin(fallbackUser);
-      }
+      console.error('Login failed:', error);
+      alert('Invalid email or password.');
     } finally {
       setIsLoading(false);
     }

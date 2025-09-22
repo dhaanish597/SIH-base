@@ -177,7 +177,7 @@ export function Leaderboard({ isUserDataLoading, userClass }: LeaderboardProps) 
           {leaderboard.map((entry) => (
             <div
               key={entry.id}
-              className={`flex items-center justify-between p-4 rounded-lg border ${getRankColor(entry.rank)}`}
+              className={`flex items-center justify-between p-4 rounded-lg border ${getRankColor(entry.rank)} ${entry.id === (JSON.parse(localStorage.getItem('stem_user')||'{}').id) ? 'ring-2 ring-indigo-400' : ''}`}
             >
               <div className="flex items-center gap-4">
                 {getRankIcon(entry.rank)}
