@@ -58,6 +58,12 @@ export function StudentProfile({ userId, onUserUpdate }: StudentProfileProps) {
     fetchProfileData();
   }, [userId]);
 
+  useEffect(() => {
+    const onCompleted = () => fetchProfileData();
+    window.addEventListener('quiz:completed', onCompleted);
+    return () => window.removeEventListener('quiz:completed', onCompleted);
+  }, []);
+
   const fetchProfileData = async () => {
     try {
       setIsLoading(true);

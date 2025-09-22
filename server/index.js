@@ -614,6 +614,8 @@ function runSQLiteMigrations() {
         ensureSQLiteColumn('users', 'department', 'TEXT');
         ensureSQLiteColumn('users', 'subjects_taught', 'TEXT');
         ensureSQLiteColumn('users', 'classes_handled', 'TEXT');
+        // Points system
+        ensureSQLiteColumn('users', 'total_points', 'INTEGER DEFAULT 0');
       }
     });
   });
@@ -1559,6 +1561,96 @@ app.get('/api/quizzes/:lessonId', authenticateToken, (req, res) => {
   });
 });
 
+// --- Badge & Points System ---
+function getBadgeForPoints(points) {
+  if (points >= 300) return 'Champion';
+  if (points >= 150) return 'Achiever';
+  if (points >= 50) return 'Learner';
+  return 'Beginner';
+}
+
+// Add points and possibly award a badge
+app.post('/api/quiz-complete', authenticateToken, (req, res) => {
+  const studentId = req.user?.id;
+  const score = typeof req.body?.score === 'number' ? req.body.score : NaN;
+  const lessonId = req.body?.lessonId;
+  const timeSpent = typeof req.body?.timeSpent === 'number' ? req.body.timeSpent : 0;
+  if (!studentId) return res.status(401).json({ error: 'Unauthorized' });
+  if (!Number.isFinite(score) || score < 0) return res.status(400).json({ error: 'Invalid score' });
+
+  sqliteDb.serialize(() => {
+    sqliteDb.get('SELECT total_points FROM users WHERE id = ?', [studentId], (err, userRow) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const prevPoints = userRow?.total_points || 0;
+      const newPoints = prevPoints + score;
+
+      sqliteDb.run('UPDATE users SET total_points = ? WHERE id = ?', [newPoints, studentId], (err2) => {
+        if (err2) return res.status(500).json({ error: err2.message });
+
+        // Upsert leaderboard total_points
+        sqliteDb.run(
+          `INSERT INTO leaderboard (student_id, total_points, level, updated_at)
+           VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+           ON CONFLICT(student_id) DO UPDATE SET total_points = excluded.total_points, updated_at = CURRENT_TIMESTAMP`,
+          [studentId, newPoints],
+          (err3) => {
+            if (err3) return res.status(500).json({ error: err3.message });
+            // Optionally record progress
+            if (lessonId) {
+              // Ensure lesson exists (light upsert)
+              sqliteDb.run(
+                `INSERT OR IGNORE INTO lessons (id, title, content, subject, difficulty) VALUES (?, ?, ?, ?, 1)`,
+                [
+                  lessonId,
+                  String(lessonId),
+                  'Auto-created from game session',
+                  'General'
+                ],
+                () => {}
+              );
+              const progressId = `${studentId}-${lessonId}`;
+              sqliteDb.run(
+                `INSERT OR REPLACE INTO student_progress (id, student_id, lesson_id, score, time_spent, completed_at, attempts)
+                 VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP,
+                   COALESCE((SELECT attempts FROM student_progress WHERE id = ?), 0) + 1
+                 )`,
+                [progressId, studentId, lessonId, score, timeSpent, progressId],
+                (e) => { if (e) console.error('progress upsert error:', e.message); }
+              );
+            }
+
+            const prevBadge = getBadgeForPoints(prevPoints);
+            const newBadge = getBadgeForPoints(newPoints);
+            if (newBadge !== prevBadge && newBadge !== 'Beginner') {
+              sqliteDb.run(
+                'INSERT INTO badges (id, student_id, badge_name, description, earned_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
+                [`${studentId}-${newBadge}-${Date.now()}`, studentId, newBadge, `Reached ${newBadge} level`],
+                (err4) => {
+                  if (err4) console.error('Badge insert failed:', err4.message);
+                  return res.json({ success: true, points: newPoints, badge: newBadge });
+                }
+              );
+            } else {
+              return res.json({ success: true, points: newPoints, badge: newBadge });
+            }
+          }
+        );
+      });
+    });
+  });
+});
+
+// Get current badge for a user
+app.get('/api/get-badge/:userId', authenticateToken, (req, res) => {
+  const studentId = req.params.userId;
+  sqliteDb.get('SELECT total_points FROM users WHERE id = ?', [studentId], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    const points = row?.total_points || 0;
+    const badge = getBadgeForPoints(points);
+    return res.json({ points, badge });
+  });
+});
+
 // Get quizzes in normalized question format (v2)
 // Shape per item: { id, grade, subject, text, choices, answerIndex, difficulty, ncert, explanation }
 app.get('/api/quizzes-v2/:lessonId', authenticateToken, (req, res) => {
@@ -1620,124 +1712,54 @@ app.get('/api/leaderboard', authenticateToken, async (req, res) => {
   try {
     const { class: className } = req.query;
     
-    if (mysqlConnection) {
-      // Get from MySQL if available
-      let query = `SELECT 
-            u.id as id,
-            u.name as name,
-            u.class as class,
-            COALESCE(SUM(sp.score), 0) as total_points
-         FROM users u 
-         LEFT JOIN student_progress sp ON u.id = sp.student_id 
-         WHERE u.role = 'student'`;
-      
-      const params = [];
-      if (className) {
-        query += ` AND u.class = ?`;
-        params.push(className);
+    // SQLite version using users.total_points
+    let query = `SELECT u.id as id, u.name as name, COALESCE(u.class,'-') as class, COALESCE(u.total_points,0) as total_points
+                 FROM users u WHERE u.role = 'student'`;
+    const params = [];
+    if (className) {
+      query += ` AND u.class = ?`;
+      params.push(className);
+    }
+    query += ` ORDER BY u.class, total_points DESC, name ASC`;
+
+    sqliteDb.all(query, params, (err, rows) => {
+      if (err) {
+        console.error('SQLite leaderboard query error:', err);
+        return res.status(500).json({ error: err.message });
       }
-      
-      query += ` GROUP BY u.id, u.name, u.class 
-         ORDER BY u.class, total_points DESC`;
-      
-      const [rows] = await mysqlConnection.execute(query, params);
-      
-      // Calculate ranks within each class
+      // Rank within class
       const classGroups = {};
       rows.forEach(row => {
-        if (!classGroups[row.class]) {
-          classGroups[row.class] = [];
-        }
+        if (!classGroups[row.class]) classGroups[row.class] = [];
         classGroups[row.class].push(row);
       });
-      
       const result = [];
-      Object.keys(classGroups).forEach(className => {
-        const students = classGroups[className];
-        students.forEach((student, index) => {
-          result.push({
-            id: student.id,
-            rank: index + 1,
-            name: student.name,
-            class: student.class || '-',
-            points: student.total_points
-          });
+      Object.keys(classGroups).forEach(cls => {
+        const students = classGroups[cls];
+        students.forEach((s, idx) => {
+          result.push({ id: s.id, rank: idx + 1, name: s.name, class: s.class, points: s.total_points });
         });
       });
-      
       res.json(result);
-    } else {
-      // Fallback to SQLite
-      let query = `SELECT 
-            u.id as id,
-            u.name as name,
-            COALESCE(u.class, '-') as class,
-            COALESCE(SUM(sp.score), 0) as total_points
-         FROM users u 
-         LEFT JOIN student_progress sp ON u.id = sp.student_id 
-         WHERE u.role = 'student'`;
-      
-      const params = [];
-      if (className) {
-        query += ` AND u.class = ?`;
-        params.push(className);
-      }
-      
-      query += ` GROUP BY u.id, u.name, u.class 
-         ORDER BY u.class, total_points DESC`;
-      
-      sqliteDb.all(query, params, (err, rows) => {
-        if (err) {
-          console.error('SQLite leaderboard query error:', err);
-          if (err.code === 'SQLITE_BUSY') {
-            // Return demo data if database is busy
-            return res.json([
-              { id: 'demo-1', rank: 1, name: 'Priya', class: className || '9', points: 120 },
-              { id: 'demo-2', rank: 2, name: 'Arjun', class: className || '9', points: 110 },
-              { id: 'demo-3', rank: 3, name: 'Meera', class: className || '9', points: 95 }
-            ]);
-          }
-          res.status(500).json({ error: err.message });
-          return;
-        }
-        
-        // Calculate ranks within each class
-        const classGroups = {};
-        rows.forEach(row => {
-          if (!classGroups[row.class]) {
-            classGroups[row.class] = [];
-          }
-          classGroups[row.class].push(row);
-        });
-        
-        const result = [];
-        Object.keys(classGroups).forEach(className => {
-          const students = classGroups[className];
-          students.forEach((student, index) => {
-            result.push({
-              id: student.id,
-              rank: index + 1,
-              name: student.name,
-              class: student.class,
-              points: student.total_points
-            });
-          });
-        });
-        
-        if (result.length === 0) {
-          return res.json([
-            { id: 'demo-1', rank: 1, name: 'Priya', class: '10', points: 120 },
-            { id: 'demo-2', rank: 2, name: 'Arjun', class: '9', points: 110 },
-            { id: 'demo-3', rank: 3, name: 'Meera', class: '8', points: 95 }
-          ]);
-        }
-        res.json(result);
-      });
-    }
+    });
   } catch (error) {
     console.error('Leaderboard error:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
+});
+
+// Get user progress list
+app.get('/api/user-progress', authenticateToken, (req, res) => {
+  const studentId = req.user?.id;
+  if (!studentId) return res.status(401).json({ error: 'Unauthorized' });
+  sqliteDb.all(
+    `SELECT lesson_id, score, time_spent, completed_at FROM student_progress WHERE student_id = ? ORDER BY datetime(completed_at) DESC`,
+    [studentId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
+    }
+  );
 });
 
 // Quizzes by grade, subject, and chapter from centralized Questions.json

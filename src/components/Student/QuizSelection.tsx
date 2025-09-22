@@ -31,6 +31,7 @@ export function QuizSelection() {
   const [chapterQuestionCounts, setChapterQuestionCounts] = useState<{ [chapter: string]: number }>({});
   const [loading, setLoading] = useState(true);
   const [userGrade, setUserGrade] = useState<string>('6');
+  const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
 
   // Get user grade from localStorage
   useEffect(() => {
@@ -55,6 +56,24 @@ export function QuizSelection() {
     };
 
     loadUserGrade();
+  }, []);
+
+  // Load completed lessons from server
+  useEffect(() => {
+    const loadProgress = async () => {
+      try {
+        const token = localStorage.getItem('stem_token');
+        if (!token || token === 'demo_token') return;
+        const res = await fetch('/api/user-progress', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) return;
+        const list: Array<{ lesson_id: string }> = await res.json();
+        setCompletedLessons(new Set(list.map(i => i.lesson_id)));
+      } catch {}
+    };
+    loadProgress();
+    const onCompleted = (e: any) => loadProgress();
+    window.addEventListener('quiz:completed', onCompleted);
+    return () => window.removeEventListener('quiz:completed', onCompleted);
   }, []);
 
   // Load available subjects for the user's grade
@@ -224,6 +243,7 @@ export function QuizSelection() {
             {availableChapters.map((chapter) => {
               const totalQuestions = chapterQuestionCounts[chapter] || 0;
               const completion = getChapterCompletion(userGrade, selectedSubject, chapter);
+              const completedServer = completedLessons.has(chapter);
               const isSelected = selectedChapter === chapter;
               
               return (
@@ -241,7 +261,7 @@ export function QuizSelection() {
                     <span className={`text-xs px-2 py-1 rounded-full ${
                       isSelected ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-600'
                     }`}>
-                      {completion.completed}/{totalQuestions}
+                      {completion.completed}/{totalQuestions}{completedServer ? ' • ✓' : ''}
                     </span>
                   </div>
                   <div className="text-xs text-gray-500">

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="g3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#BFDBFE"/>
+      <stop offset="1" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="60" fill="url(#g3)" stroke="#1E40AF" stroke-width="4"/>
+  <circle cx="64" cy="64" r="44" fill="#EFF6FF" stroke="#3B82F6" stroke-width="3"/>
+  <path d="M64 32l10.4 21.1 23.3 3.4-16.9 16.5 4 23.1L64 85.2 43.2 96.1l4-23.1L30.4 56.5l23.3-3.4z" fill="#1D4ED8"/>
+  <text x="64" y="72" text-anchor="middle" font-family="Segoe UI, Arial" font-size="10" fill="#0B3C9C" font-weight="700">Achiever</text>
+</svg>
+

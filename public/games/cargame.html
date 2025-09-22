@@ -536,6 +536,27 @@
     } else {
       popupText.innerHTML = `You answered ${correctCount} of ${questions.length} correctly.<br/>Stars scored: ${starsCount} ${starsCount>1?'stars':'star'}!<br/>Use Retry to try again or Next to start fresh.`;
     }
+
+    // Report score to backend (skip in demo/offline)
+    try {
+      const token = localStorage.getItem('stem_token');
+      const urlParams = new URLSearchParams(window.location.search);
+      const lessonId = urlParams.get('chapter') || urlParams.get('lessonId') || 'unknown';
+      const timeSpent = Math.round((maxTime * questions.length) - (timeLeft));
+      if (token && token !== 'demo_token') {
+        const score = Math.max(0, Math.round((correctCount / Math.max(1, questions.length)) * 100));
+        fetch('/api/quiz-complete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ lessonId, score, timeSpent })
+        }).catch(() => {});
+      }
+      // Notify app to refresh
+      window.dispatchEvent(new CustomEvent('quiz:completed', { detail: { lessonId, score: Math.max(0, Math.round((correctCount / Math.max(1, questions.length)) * 100)) } }));
+    } catch {}
   }
 
   retryBtn.onclick = () => {

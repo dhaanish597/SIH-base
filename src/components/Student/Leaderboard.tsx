@@ -38,6 +38,12 @@ export function Leaderboard({ isUserDataLoading, userClass }: LeaderboardProps) 
     fetchLeaderboard();
   }, [isUserDataLoading, userClass]);
 
+  useEffect(() => {
+    const onCompleted = () => fetchLeaderboard();
+    window.addEventListener('quiz:completed', onCompleted);
+    return () => window.removeEventListener('quiz:completed', onCompleted);
+  }, []);
+
   const fetchLeaderboard = async () => {
     try {
       setIsLoading(true);

@@ -29,6 +29,7 @@ const TeacherProfile = React.lazy(() => import('./components/Teacher/TeacherProf
 const ProfileRouter = React.lazy(() => import('./components/Profile/Profile').then(m => ({ default: m.default })));
 const Lessons = React.lazy(() => import('./components/Student/Lessons').then(m => ({ default: m.Lessons })));
 const Leaderboard = React.lazy(() => import('./components/Student/Leaderboard').then(m => ({ default: m.Leaderboard })));
+const BadgesPage = React.lazy(() => import('./components/Student/BadgesPage').then(m => ({ default: m.BadgesPage })));
 import './i18n';
 
 interface User {
@@ -239,6 +240,8 @@ function App() {
         return <StudentAssignments />;
       case 'lessons':
         return <Lessons />;
+      case 'badges':
+        return <BadgesPage />;
       case 'profile':
         return <ProfileRouter />;
       case 'settings':
@@ -312,6 +315,7 @@ function App() {
     dashboard: '/',
     lessons: '/lessons',
     quizzes: '/quizzes',
+    badges: '/badges',
     'student-homework': '/',
     'student-assignments': '/',
     leaderboard: '/',
@@ -365,6 +369,7 @@ function App() {
               <Route path="/lessons/science" element={<ScienceChapters />} />
               <Route path="/lessons/science/:chapterFile" element={<LessonViewer />} />
               <Route path="/profile" element={<ProfileRouter />} />
+              <Route path="/badges" element={<BadgesPage />} />
             </Routes>
           </Suspense>
         </main>
