@@ -108,7 +108,7 @@ app.get('/api/users/me', authenticateToken, (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
     sqliteDb.get(
-      `SELECT id, name, email, role, class, school_id, language, phone, address, profile_photo, created_at, last_login, status
+      `SELECT id, name, email, role, class, school_id, language, phone, address, profile_photo, created_at, last_login, status, total_points
        FROM users WHERE id = ?`,
       [userId],
       (err, row) => {
@@ -499,8 +499,36 @@ function createSQLiteTables(callback) {
       consistency_score REAL,
       engagement_level REAL,
       synced INTEGER DEFAULT 0,
+      concept_tags TEXT,
+      error_type TEXT,
       FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE,
       FOREIGN KEY (lesson_id) REFERENCES lessons (id) ON DELETE CASCADE
+    )`,
+
+    // concept_mastery
+    `CREATE TABLE IF NOT EXISTS concept_mastery (
+      id TEXT PRIMARY KEY,
+      student_id TEXT NOT NULL,
+      concept_name TEXT NOT NULL,
+      mastery_level REAL CHECK(mastery_level >= 0 AND mastery_level <= 1),
+      confidence_score REAL CHECK(confidence_score >= 0 AND confidence_score <= 1),
+      last_practiced DATETIME,
+      attempts_count INTEGER DEFAULT 0,
+      correct_count INTEGER DEFAULT 0,
+      average_time_spent REAL,
+      FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // student_learning_profile
+    `CREATE TABLE IF NOT EXISTS student_learning_profile (
+      id TEXT PRIMARY KEY,
+      student_id TEXT UNIQUE NOT NULL,
+      preferred_learning_style TEXT CHECK(preferred_learning_style IN ('visual','kinesthetic','reading','mixed')),
+      average_learning_velocity REAL,
+      optimal_difficulty_level REAL CHECK(optimal_difficulty_level >= 0 AND optimal_difficulty_level <= 1),
+      engagement_score REAL CHECK(engagement_score >= 0 AND engagement_score <= 1),
+      last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
     )`,
 
     // badges
@@ -634,6 +662,10 @@ function runSQLiteMigrations() {
   ensureSQLiteColumn('student_progress', 'consistency_score', 'REAL');
   ensureSQLiteColumn('student_progress', 'engagement_level', 'REAL');
   ensureSQLiteColumn('student_progress', 'synced', 'INTEGER DEFAULT 0');
+  ensureSQLiteColumn('student_progress', 'quiz_id', 'TEXT');
+  ensureSQLiteColumn('student_progress', 'progress_percentage', 'INTEGER');
+  ensureSQLiteColumn('student_progress', 'concept_tags', 'TEXT');
+  ensureSQLiteColumn('student_progress', 'error_type', 'TEXT');
 
   // badges
   ensureSQLiteColumn('badges', 'description', 'TEXT');
@@ -641,6 +673,11 @@ function runSQLiteMigrations() {
 
   // leaderboard
   ensureSQLiteColumn('leaderboard', 'rank_position', 'INTEGER');
+  // Ensure unique index for upserts on leaderboard by student
+  sqliteDb.run(
+    'CREATE UNIQUE INDEX IF NOT EXISTS leaderboard_student_id_unique ON leaderboard(student_id)',
+    (err) => { if (err) console.error('Failed to create leaderboard unique index:', err.message); }
+  );
 }
 
 function recreateUsersTable() {
@@ -846,8 +883,36 @@ async function createMySQLTables() {
       consistency_score FLOAT,
       engagement_level FLOAT,
       synced TINYINT DEFAULT 0,
+      concept_tags TEXT,
+      error_type VARCHAR(100),
       CONSTRAINT fk_sp_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE,
       CONSTRAINT fk_sp_lesson FOREIGN KEY (lesson_id) REFERENCES lessons (id) ON DELETE CASCADE
+    )`,
+
+    // concept_mastery
+    `CREATE TABLE IF NOT EXISTS concept_mastery (
+      id VARCHAR(255) PRIMARY KEY,
+      student_id VARCHAR(255) NOT NULL,
+      concept_name VARCHAR(255) NOT NULL,
+      mastery_level FLOAT CHECK(mastery_level >= 0 AND mastery_level <= 1),
+      confidence_score FLOAT CHECK(confidence_score >= 0 AND confidence_score <= 1),
+      last_practiced TIMESTAMP NULL,
+      attempts_count INT DEFAULT 0,
+      correct_count INT DEFAULT 0,
+      average_time_spent FLOAT,
+      CONSTRAINT fk_cm_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // student_learning_profile
+    `CREATE TABLE IF NOT EXISTS student_learning_profile (
+      id VARCHAR(255) PRIMARY KEY,
+      student_id VARCHAR(255) UNIQUE NOT NULL,
+      preferred_learning_style ENUM('visual','kinesthetic','reading','mixed'),
+      average_learning_velocity FLOAT,
+      optimal_difficulty_level FLOAT CHECK(optimal_difficulty_level >= 0 AND optimal_difficulty_level <= 1),
+      engagement_score FLOAT CHECK(engagement_score >= 0 AND engagement_score <= 1),
+      last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT fk_slp_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
     )`,
 
     // badges
@@ -1762,6 +1827,51 @@ app.get('/api/user-progress', authenticateToken, (req, res) => {
   );
 });
 
+// Cumulative per-quiz progress: save/update by (student_id + quiz_id)
+app.post('/api/progress', authenticateToken, (req, res) => {
+  const studentId = req.user?.id;
+  const { lessonId, quizId, score, completed } = req.body || {};
+  if (!studentId) return res.status(401).json({ error: 'Unauthorized' });
+  if (!lessonId || !quizId) return res.status(400).json({ error: 'lessonId and quizId are required' });
+
+  // progress_percentage: 100 if completed true else Math.max(score, 0) or 0
+  const pct = completed === true ? 100 : (typeof score === 'number' && score >= 0 ? Math.min(100, Math.round(score)) : 0);
+  const id = `${studentId}-${quizId}`;
+
+  sqliteDb.run(
+    `INSERT OR REPLACE INTO student_progress (id, student_id, lesson_id, score, time_spent, completed_at, attempts, quiz_id, progress_percentage)
+     VALUES (?, ?, ?, COALESCE(?,0), COALESCE(?,0), CURRENT_TIMESTAMP,
+       COALESCE((SELECT attempts FROM student_progress WHERE id = ?), 0) + 1,
+       ?, ?)
+    `,
+    [id, studentId, lessonId, score || 0, 0, id, quizId, pct],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      return res.json({ success: true });
+    }
+  );
+});
+
+// Count per-lesson quiz completion summary
+app.get('/api/progress/:studentId/:lessonId', authenticateToken, (req, res) => {
+  const { studentId, lessonId } = req.params;
+  if (!studentId || !lessonId) return res.status(400).json({ error: 'studentId and lessonId required' });
+  sqliteDb.all(
+    `SELECT COUNT(*) as total,
+            SUM(CASE WHEN progress_percentage >= 100 THEN 1 ELSE 0 END) as completed
+       FROM student_progress
+      WHERE student_id = ? AND lesson_id = ?`,
+    [studentId, lessonId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const total = rows?.[0]?.total || 0;
+      const completed = rows?.[0]?.completed || 0;
+      const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+      res.json({ completed, total, percentage });
+    }
+  );
+});
+
 // Quizzes by grade, subject, and chapter from centralized Questions.json
 app.get('/api/quizzes', (req, res) => {
   try {
@@ -1952,7 +2062,7 @@ app.get('/api/users/me', authenticateToken, (req, res) => {
   sqliteDb.get(
     `SELECT id, name, email, role, class, school_id, created_at, last_login, status,
             phone, address, language, profile_photo, roll_number, department, 
-            subjects_taught, classes_handled
+            subjects_taught, classes_handled, total_points
      FROM users WHERE id = ?`,
     [userId],
     (err, user) => {
@@ -2171,7 +2281,7 @@ app.get('/api/users/:id', authenticateToken, (req, res) => {
   sqliteDb.get(
     `SELECT id, name, email, role, class, school_id, created_at, last_login, status,
             phone, address, language, profile_photo, roll_number, department, 
-            subjects_taught, classes_handled
+            subjects_taught, classes_handled, total_points
      FROM users WHERE id = ?`,
     [id],
     (err, user) => {
