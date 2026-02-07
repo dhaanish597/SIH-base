@@ -156,8 +156,23 @@ export function StudentProfile({ userId, onUserUpdate }: StudentProfileProps) {
         confirmPassword: ''
       });
     } catch (err) {
-      setError(t('profile.updateFailed'));
-      console.error('Error fetching profile:', err);
+      // Offline fallback: load local points and keep prior demo data
+      const stored = localStorage.getItem('stem_user');
+      const storedUser = stored ? JSON.parse(stored) : null;
+      if (storedUser) {
+        setProfileData(prev => prev || {
+          id: storedUser.id,
+          name: storedUser.name,
+          email: storedUser.email,
+          role: storedUser.role,
+          class: storedUser.class,
+          progress: { lessons_completed: 0, average_score: 0, total_time_spent: 0, total_attempts: 0 },
+          badges: []
+        });
+      } else {
+        setError(t('profile.updateFailed'));
+        console.error('Error fetching profile:', err);
+      }
     } finally {
       setIsLoading(false);
     }

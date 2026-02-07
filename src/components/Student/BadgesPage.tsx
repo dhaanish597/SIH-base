@@ -43,20 +43,31 @@ export function BadgesPage() {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('stem_token');
-      const res = await fetch(`/api/get-badge/${encodeURIComponent(userId)}`, {
-        cache: 'no-store',
-        headers: {
-          'Authorization': `Bearer ${token}`
+      if (token && token !== 'demo_token') {
+        const res = await fetch(`/api/get-badge/${encodeURIComponent(userId)}`, {
+          cache: 'no-store',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`${res.status} ${txt}`);
         }
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`${res.status} ${txt}`);
+        const json = await res.json();
+        setData(json);
+      } else {
+        // Offline/demo fallback: compute from local points
+        const localPoints = Number(localStorage.getItem('offline_points') || '0');
+        const badge = localPoints >= 300 ? 'Champion' : localPoints >= 150 ? 'Achiever' : localPoints >= 50 ? 'Learner' : 'Beginner';
+        setData({ points: localPoints, badge });
       }
-      const json = await res.json();
-      setData(json);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load badges');
+      // Fallback to offline points if possible
+      const localPoints = Number(localStorage.getItem('offline_points') || '0');
+      const badge = localPoints >= 300 ? 'Champion' : localPoints >= 150 ? 'Achiever' : localPoints >= 50 ? 'Learner' : 'Beginner';
+      setData({ points: localPoints, badge });
+      setError(null);
     } finally {
       setLoading(false);
     }

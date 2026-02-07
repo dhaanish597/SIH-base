@@ -543,6 +543,8 @@
       const urlParams = new URLSearchParams(window.location.search);
       const lessonId = urlParams.get('chapter') || urlParams.get('lessonId') || 'unknown';
       const timeSpent = Math.round((maxTime * questions.length) - (timeLeft));
+      const quizId = `${lessonId}-${Date.now()}`;
+      const score = Math.max(0, Math.round((correctCount / Math.max(1, questions.length)) * 100));
       if (token && token !== 'demo_token') {
         const score = Math.max(0, Math.round((correctCount / Math.max(1, questions.length)) * 100));
         fetch('/api/quiz-complete', {
@@ -553,9 +555,33 @@
           },
           body: JSON.stringify({ lessonId, score, timeSpent })
         }).catch(() => {});
+        // Also store per-quiz progress row
+        fetch('/api/progress', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ lessonId, quizId, score, completed: true })
+        }).catch(() => {});
+      } else {
+        // Offline/demo fallback: persist locally so UI can reflect progress & points
+        try {
+          const keyPts = 'offline_points';
+          const prev = Number(localStorage.getItem(keyPts) || '0');
+          localStorage.setItem(keyPts, String(prev + score));
+          // Track completed quiz ids per lesson
+          const keySet = `offline_completed_${lessonId}`;
+          const prevSetRaw = localStorage.getItem(keySet);
+          const prevSet = prevSetRaw ? JSON.parse(prevSetRaw) : [];
+          if (!prevSet.includes(quizId)) {
+            prevSet.push(quizId);
+            localStorage.setItem(keySet, JSON.stringify(prevSet));
+          }
+        } catch {}
       }
       // Notify app to refresh
-      window.dispatchEvent(new CustomEvent('quiz:completed', { detail: { lessonId, score: Math.max(0, Math.round((correctCount / Math.max(1, questions.length)) * 100)) } }));
+      window.dispatchEvent(new CustomEvent('quiz:completed', { detail: { lessonId, score } }));
     } catch {}
   }
 

@@ -17,9 +17,27 @@
   }
 
   async function fetchAllQuestions() {
-    const res = await fetch(FILE_PATH, { cache: 'no-store' });
-    if (!res.ok) throw new Error('Failed to load questions.json');
-    return res.json();
+    try {
+      const res = await fetch(FILE_PATH, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to load questions.json');
+      const json = await res.json();
+      try { localStorage.setItem('cached_questions_json', JSON.stringify(json)); } catch {}
+      return json;
+    } catch (e) {
+      // Offline fallback: use cached copy if present
+      try {
+        const cached = localStorage.getItem('cached_questions_json');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+      // Minimal hardcoded fallback
+      return {
+        questions_by_grade: {
+          '6': {
+            Mathematics: { Basics: [ { text: '2 + 2 = ?', choices: ['3','4','5','6'], answerIndex: 1 } ] }
+          }
+        }
+      };
+    }
   }
 
   function unwrapQuestions(data) {

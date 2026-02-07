@@ -55,27 +55,27 @@ export function Leaderboard({ isUserDataLoading, userClass }: LeaderboardProps) 
       }
       
       const token = localStorage.getItem('stem_token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-      
-      // Make API call to fetch leaderboard filtered by user's class
-      const url = `/api/leaderboard?class=${userClass}`;
-      
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      if (token && token !== 'demo_token') {
+        const url = `/api/leaderboard?class=${userClass}`;
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch leaderboard: ${response.status} ${errorText}`);
         }
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch leaderboard: ${response.status} ${errorText}`);
+        const data = await response.json();
+        setLeaderboard(data);
+      } else {
+        // Offline fallback: build minimal leaderboard from local progress
+        const localPoints = Number(localStorage.getItem('offline_points') || '0');
+        const userRaw = localStorage.getItem('stem_user');
+        const u = userRaw ? JSON.parse(userRaw) : { id: 'demo', name: 'You', class: userClass };
+        setLeaderboard([{ id: u.id, name: u.name || 'You', class: u.class || userClass || '-', points: localPoints, rank: 1 }]);
       }
-
-      const data = await response.json();
-      setLeaderboard(data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load leaderboard';
       setError(errorMessage);
