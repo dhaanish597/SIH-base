@@ -128,10 +128,75 @@
     }));
   }
 
-  async function loadQuestions(params) {
+  async function fetchRecommendedDifficulty(subject) {
+    try {
+      const token = localStorage.getItem('stem_token');
+      if (!token || token === 'demo_token') {
+        return null; // No difficulty recommendation for demo/offline
+      }
+      
+      const response = await fetch(`/api/learner/recommended-difficulty?subject=${encodeURIComponent(subject || '')}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.recommendedDifficulty || data.optimal_difficulty_level || null;
+      }
+    } catch (e) {
+      console.warn('Failed to fetch recommended difficulty:', e);
+    }
+    return null;
+  }
+
+  function getDifficultyLevel(question) {
+    // Check for difficultyLevel (0-1 scale) first
+    if (typeof question.difficultyLevel === 'number') {
+      return question.difficultyLevel;
+    }
+    // Fallback to difficulty string (easy/medium/hard)
+    if (question.difficulty) {
+      const d = String(question.difficulty).toLowerCase();
+      if (d === 'easy') return 0.3;
+      if (d === 'medium') return 0.5;
+      if (d === 'hard') return 0.7;
+    }
+    // Default to medium
+    return 0.5;
+  }
+
+  function filterByDifficulty(questions, targetDifficulty, tolerance = 0.2) {
+    if (targetDifficulty === null || targetDifficulty === undefined) {
+      return questions; // No filtering if no difficulty specified
+    }
+    
+    const minDifficulty = Math.max(0, targetDifficulty - tolerance);
+    const maxDifficulty = Math.min(1, targetDifficulty + tolerance);
+    
+    return questions.filter(q => {
+      const qDifficulty = getDifficultyLevel(q);
+      return qDifficulty >= minDifficulty && qDifficulty <= maxDifficulty;
+    });
+  }
+
+  async function loadQuestions(params, targetDifficulty = null) {
     const { grade, subject, chapter } = params || parseParams();
     const all = await fetchAllQuestions();
-    const filtered = filterQuestions(all, grade, subject, chapter);
+    let filtered = filterQuestions(all, grade, subject, chapter);
+    
+    // If targetDifficulty not provided, fetch recommended difficulty
+    if (targetDifficulty === null && subject) {
+      targetDifficulty = await fetchRecommendedDifficulty(subject);
+    }
+    
+    // Filter by difficulty if we have a target
+    if (targetDifficulty !== null) {
+      filtered = filterByDifficulty(filtered, targetDifficulty, 0.2);
+    }
+    
     return toNormalized(filtered);
   }
 
@@ -140,6 +205,9 @@
     loadQuestions,
     toCarFormat,
     toFightingFormat,
+    fetchRecommendedDifficulty,
+    filterByDifficulty,
+    getDifficultyLevel,
   };
 })();
 

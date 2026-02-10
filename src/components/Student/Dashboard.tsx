@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { 
   Target, 
   Flame, 
@@ -9,7 +10,10 @@ import {
   Star,
   TrendingUp,
   Calendar,
-  Zap
+  Zap,
+  Sparkles,
+  RefreshCw,
+  Clock
 } from 'lucide-react';
 import { useUserStats, useUserProgress } from '../../hooks/useIndexedDB';
 
@@ -41,12 +45,31 @@ type UserProgressItem = {
   synced: boolean;
 };
 
+type Recommendation = {
+  type: 'lesson' | 'quiz';
+  id: string;
+  title: string;
+  subject: string;
+  chapter: string | null;
+  reason: string;
+  priority_score: number;
+  estimatedTime: number;
+  difficulty?: number;
+  lesson_id?: string;
+};
+
 export function StudentDashboard({ userId, userName }: DashboardProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { stats, loading: statsLoading } = useUserStats();
   const { progress, loading: progressLoading } = useUserProgress(userId);
   const typedProgress = (progress as unknown as ProgressItem[]) || [];
   const [greeting, setGreeting] = useState('');
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -54,6 +77,94 @@ export function StudentDashboard({ userId, userName }: DashboardProps) {
     else if (hour < 17) setGreeting('Good Afternoon');
     else setGreeting('Good Evening');
   }, []);
+
+  const fetchRecommendations = async (showLoading = true) => {
+    try {
+      if (showLoading) {
+        setRecommendationsLoading(true);
+      }
+      const token = localStorage.getItem('stem_token');
+      if (!token) {
+        setRecommendationsLoading(false);
+        return;
+      }
+
+      const response = await fetch('/api/recommendations?limit=3', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setRecommendations(result.data);
+          setLastUpdated(new Date());
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+    } finally {
+      setRecommendationsLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    // Initial fetch
+    fetchRecommendations();
+
+    // Set up periodic refresh every 30 seconds
+    refreshIntervalRef.current = setInterval(() => {
+      fetchRecommendations(false); // Don't show loading spinner on auto-refresh
+    }, 30000);
+
+    // Cleanup interval on unmount
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const handleManualRefresh = () => {
+    setRefreshing(true);
+    fetchRecommendations();
+  };
+
+  const handleRecommendationClick = (rec: Recommendation) => {
+    if (rec.type === 'lesson') {
+      // Navigate to lessons page, optionally filter by subject
+      if (rec.subject) {
+        const subjectLower = rec.subject.toLowerCase();
+        navigate(`/lessons/${subjectLower}`);
+      } else {
+        navigate('/lessons');
+      }
+    } else if (rec.type === 'quiz') {
+      // Navigate to quiz selection with pre-selected subject/chapter
+      const currentUser = JSON.parse(localStorage.getItem('stem_user') || '{}');
+      const userGrade = currentUser.class || '9';
+      const subject = rec.subject || 'Mathematics';
+      const chapter = rec.chapter || '';
+      
+      // Navigate to quiz selection page
+      navigate(`/quizzes?subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`);
+    }
+  };
+
+  const formatTimeAgo = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffSecs < 10) return 'just now';
+    if (diffSecs < 60) return `${diffSecs}s ago`;
+    if (diffMins < 60) return `${diffMins}m ago`;
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   if (statsLoading || progressLoading) {
     return (
@@ -92,6 +203,99 @@ export function StudentDashboard({ userId, userName }: DashboardProps) {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Recommended for You */}
+      <section className="space-y-4" aria-labelledby="recommendations-heading">
+        <div className="flex items-center justify-between">
+          <h2 id="recommendations-heading" className="text-responsive-lg font-bold text-gray-900">
+            Recommended for You
+          </h2>
+          <div className="flex items-center space-x-3">
+            {lastUpdated && (
+              <div className="flex items-center space-x-1 text-xs text-gray-500">
+                <Clock className="w-3 h-3" />
+                <span>Updated {formatTimeAgo(lastUpdated)}</span>
+              </div>
+            )}
+            <button
+              onClick={handleManualRefresh}
+              disabled={refreshing || recommendationsLoading}
+              className="flex items-center space-x-1 px-3 py-1.5 text-sm text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Refresh recommendations"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          </div>
+        </div>
+        
+        {recommendationsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div className="h-8 bg-gray-200 rounded w-full"></div>
+              </div>
+            ))}
+          </div>
+        ) : recommendations.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {recommendations.map((rec, index) => (
+              <div 
+                key={`${rec.type}-${rec.id}-${index}`}
+                className="card hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => handleRecommendationClick(rec)}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
+                      {rec.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {rec.subject}
+                    </p>
+                  </div>
+                  {rec.type === 'lesson' ? (
+                    <BookOpen className="w-5 h-5 text-indigo-600 flex-shrink-0 ml-2" />
+                  ) : (
+                    <Brain className="w-5 h-5 text-purple-600 flex-shrink-0 ml-2" />
+                  )}
+                </div>
+                
+                {rec.reason && (
+                  <div className="mb-3">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                      {rec.reason}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">
+                    ~{rec.estimatedTime} min
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRecommendationClick(rec);
+                    }}
+                    className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    Start Learning
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="card text-center py-8">
+            <Sparkles className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <p className="text-gray-500">No recommendations available at the moment.</p>
+            <p className="text-sm text-gray-400 mt-2">Complete some lessons to get personalized recommendations!</p>
+          </div>
+        )}
       </section>
 
       {/* Stats Cards */}

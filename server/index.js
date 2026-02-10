@@ -9,6 +9,14 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
+const db = require('./db');
+const learnerModel = require('./services/learnerModel');
+const recommendationEngine = require('./services/recommendationEngine');
+const feedbackEngine = require('./services/feedbackEngine');
+const analyticsService = require('./services/analyticsService');
+const pacingEngine = require('./services/pacingEngine');
+const adminAnalyticsService = require('./services/adminAnalyticsService');
+const experimentation = require('./services/experimentation');
 // Note: We'll read questions from disk on each request so updates to the file are picked up without restart
 
 const app = express();
@@ -312,6 +320,8 @@ app.post('/api/updateProfile', authenticateToken, (req, res) => {
 // Initialize SQLite (for offline analytics)
 function initSQLite() {
   sqliteDb = new sqlite3.Database('./data/local_analytics.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
+    // Set database in db module for services
+    db.setSQLiteDb(sqliteDb);
     if (err) {
       console.error('Error opening SQLite database:', err.message);
     } else {
@@ -362,6 +372,8 @@ async function initMySQL() {
       password: process.env.MYSQL_PASSWORD || 'dhaanish',
       database: process.env.MYSQL_DATABASE || 'stem_learn'
     });
+    // Set database in db module for services
+    db.setMySQLConnection(mysqlConnection);
     console.log('Connected to MySQL database for cloud sync');
     await createMySQLTables();
   } catch (error) {
@@ -527,6 +539,9 @@ function createSQLiteTables(callback) {
       average_learning_velocity REAL,
       optimal_difficulty_level REAL CHECK(optimal_difficulty_level >= 0 AND optimal_difficulty_level <= 1),
       engagement_score REAL CHECK(engagement_score >= 0 AND engagement_score <= 1),
+      time_spent_visual REAL DEFAULT 0,
+      time_spent_reading REAL DEFAULT 0,
+      time_spent_practice REAL DEFAULT 0,
       last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
     )`,
@@ -575,6 +590,45 @@ function createSQLiteTables(callback) {
       consistency_index REAL,
       engagement_index REAL,
       last_active DATETIME,
+      FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // experiments
+    `CREATE TABLE IF NOT EXISTS experiments (
+      id TEXT PRIMARY KEY,
+      student_id TEXT UNIQUE NOT NULL,
+      strategy TEXT CHECK(strategy IN ('mastery_based','sequence_based','engagement_based')) NOT NULL,
+      learning_gains REAL,
+      engagement_score REAL CHECK(engagement_score >= 0 AND engagement_score <= 1),
+      completion_rate REAL CHECK(completion_rate >= 0 AND completion_rate <= 1),
+      assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // error_patterns
+    `CREATE TABLE IF NOT EXISTS error_patterns (
+      id TEXT PRIMARY KEY,
+      student_id TEXT NOT NULL,
+      concept_name TEXT NOT NULL,
+      error_type TEXT NOT NULL,
+      occurrence_count INTEGER DEFAULT 1,
+      first_occurred DATETIME DEFAULT CURRENT_TIMESTAMP,
+      last_occurred DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // engagement_patterns
+    `CREATE TABLE IF NOT EXISTS engagement_patterns (
+      id TEXT PRIMARY KEY,
+      student_id TEXT NOT NULL,
+      session_date DATE NOT NULL,
+      session_duration INTEGER DEFAULT 0,
+      questions_answered INTEGER DEFAULT 0,
+      correct_answers INTEGER DEFAULT 0,
+      total_time_spent INTEGER DEFAULT 0,
+      engagement_score REAL CHECK(engagement_score >= 0 AND engagement_score <= 1),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
     )`
   ];
@@ -642,6 +696,11 @@ function runSQLiteMigrations() {
         ensureSQLiteColumn('users', 'department', 'TEXT');
         ensureSQLiteColumn('users', 'subjects_taught', 'TEXT');
         ensureSQLiteColumn('users', 'classes_handled', 'TEXT');
+        
+        // Ensure student_learning_profile has time tracking columns
+        ensureSQLiteColumn('student_learning_profile', 'time_spent_visual', 'REAL DEFAULT 0');
+        ensureSQLiteColumn('student_learning_profile', 'time_spent_reading', 'REAL DEFAULT 0');
+        ensureSQLiteColumn('student_learning_profile', 'time_spent_practice', 'REAL DEFAULT 0');
         // Points system
         ensureSQLiteColumn('users', 'total_points', 'INTEGER DEFAULT 0');
       }
@@ -669,6 +728,84 @@ function runSQLiteMigrations() {
 
   // badges
   ensureSQLiteColumn('badges', 'description', 'TEXT');
+
+  // experiments table (create if doesn't exist)
+  sqliteDb.all("SELECT name FROM sqlite_master WHERE type='table' AND name='experiments'", (err, tables) => {
+    if (!err && (!tables || tables.length === 0)) {
+      sqliteDb.run(
+        `CREATE TABLE IF NOT EXISTS experiments (
+          id TEXT PRIMARY KEY,
+          student_id TEXT UNIQUE NOT NULL,
+          strategy TEXT CHECK(strategy IN ('mastery_based','sequence_based','engagement_based')) NOT NULL,
+          learning_gains REAL,
+          engagement_score REAL CHECK(engagement_score >= 0 AND engagement_score <= 1),
+          completion_rate REAL CHECK(completion_rate >= 0 AND completion_rate <= 1),
+          assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+        )`,
+        (createErr) => {
+          if (createErr) {
+            console.error('Error creating experiments table:', createErr.message);
+          } else {
+            console.log('Created experiments table');
+          }
+        }
+      );
+    }
+  });
+
+  // error_patterns table (create if doesn't exist)
+  sqliteDb.all("SELECT name FROM sqlite_master WHERE type='table' AND name='error_patterns'", (err, tables) => {
+    if (!err && (!tables || tables.length === 0)) {
+      sqliteDb.run(
+        `CREATE TABLE IF NOT EXISTS error_patterns (
+          id TEXT PRIMARY KEY,
+          student_id TEXT NOT NULL,
+          concept_name TEXT NOT NULL,
+          error_type TEXT NOT NULL,
+          occurrence_count INTEGER DEFAULT 1,
+          first_occurred DATETIME DEFAULT CURRENT_TIMESTAMP,
+          last_occurred DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+        )`,
+        (createErr) => {
+          if (createErr) {
+            console.error('Error creating error_patterns table:', createErr.message);
+          } else {
+            console.log('Created error_patterns table');
+          }
+        }
+      );
+    }
+  });
+
+  // engagement_patterns table (create if doesn't exist)
+  sqliteDb.all("SELECT name FROM sqlite_master WHERE type='table' AND name='engagement_patterns'", (err, tables) => {
+    if (!err && (!tables || tables.length === 0)) {
+      sqliteDb.run(
+        `CREATE TABLE IF NOT EXISTS engagement_patterns (
+          id TEXT PRIMARY KEY,
+          student_id TEXT NOT NULL,
+          session_date DATE NOT NULL,
+          session_duration INTEGER DEFAULT 0,
+          questions_answered INTEGER DEFAULT 0,
+          correct_answers INTEGER DEFAULT 0,
+          total_time_spent INTEGER DEFAULT 0,
+          engagement_score REAL CHECK(engagement_score >= 0 AND engagement_score <= 1),
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+        )`,
+        (createErr) => {
+          if (createErr) {
+            console.error('Error creating engagement_patterns table:', createErr.message);
+          } else {
+            console.log('Created engagement_patterns table');
+          }
+        }
+      );
+    }
+  });
   ensureSQLiteColumn('badges', 'synced', 'INTEGER DEFAULT 0');
 
   // leaderboard
@@ -911,6 +1048,9 @@ async function createMySQLTables() {
       average_learning_velocity FLOAT,
       optimal_difficulty_level FLOAT CHECK(optimal_difficulty_level >= 0 AND optimal_difficulty_level <= 1),
       engagement_score FLOAT CHECK(engagement_score >= 0 AND engagement_score <= 1),
+      time_spent_visual FLOAT DEFAULT 0,
+      time_spent_reading FLOAT DEFAULT 0,
+      time_spent_practice FLOAT DEFAULT 0,
       last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       CONSTRAINT fk_slp_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
     )`,
@@ -960,6 +1100,45 @@ async function createMySQLTables() {
       engagement_index FLOAT,
       last_active TIMESTAMP NULL,
       CONSTRAINT fk_analytics_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // experiments
+    `CREATE TABLE IF NOT EXISTS experiments (
+      id VARCHAR(255) PRIMARY KEY,
+      student_id VARCHAR(255) UNIQUE NOT NULL,
+      strategy ENUM('mastery_based','sequence_based','engagement_based') NOT NULL,
+      learning_gains FLOAT,
+      engagement_score FLOAT CHECK(engagement_score >= 0 AND engagement_score <= 1),
+      completion_rate FLOAT CHECK(completion_rate >= 0 AND completion_rate <= 1),
+      assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT fk_experiments_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // error_patterns
+    `CREATE TABLE IF NOT EXISTS error_patterns (
+      id VARCHAR(255) PRIMARY KEY,
+      student_id VARCHAR(255) NOT NULL,
+      concept_name VARCHAR(255) NOT NULL,
+      error_type VARCHAR(100) NOT NULL,
+      occurrence_count INT DEFAULT 1,
+      first_occurred TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      last_occurred TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT fk_ep_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
+    )`,
+
+    // engagement_patterns
+    `CREATE TABLE IF NOT EXISTS engagement_patterns (
+      id VARCHAR(255) PRIMARY KEY,
+      student_id VARCHAR(255) NOT NULL,
+      session_date DATE NOT NULL,
+      session_duration INT DEFAULT 0,
+      questions_answered INT DEFAULT 0,
+      correct_answers INT DEFAULT 0,
+      total_time_spent INT DEFAULT 0,
+      engagement_score FLOAT CHECK(engagement_score >= 0 AND engagement_score <= 1),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_engp_student FOREIGN KEY (student_id) REFERENCES users (id) ON DELETE CASCADE
     )`
   ];
 
@@ -1852,6 +2031,464 @@ app.post('/api/progress', authenticateToken, (req, res) => {
   );
 });
 
+// Learner Model API Endpoints
+
+// Update concept mastery
+app.post('/api/learner/update-mastery', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { conceptName, isCorrect, timeSpent, errorType } = req.body;
+    
+    if (!conceptName || typeof isCorrect !== 'boolean' || typeof timeSpent !== 'number') {
+      return res.status(400).json({ error: 'conceptName, isCorrect (boolean), and timeSpent (number) are required' });
+    }
+
+    const result = await learnerModel.updateConceptMastery(studentId, conceptName, isCorrect, timeSpent);
+
+    // Optionally update student_progress with error_type if provided
+    if (errorType) {
+      // This would typically be done when recording progress, but we can log it here
+      // The error_type would be stored in the student_progress table when a lesson/quiz is completed
+    }
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error updating concept mastery:', error);
+    res.status(500).json({ error: error.message || 'Failed to update concept mastery' });
+  }
+});
+
+// Get student knowledge state
+app.get('/api/learner/knowledge-state', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const knowledgeState = await learnerModel.getStudentKnowledgeState(studentId);
+    res.json({ success: true, data: knowledgeState });
+  } catch (error) {
+    console.error('Error fetching knowledge state:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch knowledge state' });
+  }
+});
+
+// Get learning style
+app.get('/api/learner/learning-style', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const styleData = await learnerModel.detectLearningStyle(studentId);
+    res.json(styleData);
+  } catch (error) {
+    console.error('Error detecting learning style:', error);
+    res.status(500).json({ error: error.message || 'Failed to detect learning style' });
+  }
+});
+
+// Get recommended difficulty
+app.get('/api/learner/recommended-difficulty', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const subject = req.query.subject || 'General';
+    const recommendation = await learnerModel.getRecommendedDifficulty(studentId, subject);
+    res.json({ success: true, data: recommendation });
+  } catch (error) {
+    console.error('Error fetching recommended difficulty:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch recommended difficulty' });
+  }
+});
+
+// Update learning profile
+app.post('/api/learner/update-profile', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { timeSpent, questionsAnswered, correctAnswers, modality } = req.body;
+    
+    if (typeof timeSpent !== 'number' || typeof questionsAnswered !== 'number' || typeof correctAnswers !== 'number') {
+      return res.status(400).json({ error: 'timeSpent, questionsAnswered, and correctAnswers (all numbers) are required' });
+    }
+
+    const activityData = {
+      timeSpent,
+      questionsAnswered,
+      correctAnswers,
+      modality: modality || null
+    };
+
+    const result = await learnerModel.updateLearningProfile(studentId, activityData);
+    
+    // Detect learning style after session
+    try {
+      await learnerModel.detectLearningStyle(studentId);
+    } catch (styleErr) {
+      console.error('Error detecting learning style:', styleErr);
+      // Don't fail the request if style detection fails
+    }
+    
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error updating learning profile:', error);
+    res.status(500).json({ error: error.message || 'Failed to update learning profile' });
+  }
+});
+
+// Recommendation Engine API Endpoints
+
+// Get recommended content
+app.get('/api/recommendations', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const limit = parseInt(req.query.limit) || 5;
+    const subject = req.query.subject || null;
+
+    const recommendations = await recommendationEngine.getRecommendedContent(studentId, {
+      limit,
+      subject
+    });
+
+    res.json({ success: true, data: recommendations });
+  } catch (error) {
+    console.error('Error fetching recommendations:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch recommendations' });
+  }
+});
+
+// Get personalized learning path
+app.get('/api/recommendations/learning-path', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const subject = req.query.subject;
+    if (!subject) {
+      return res.status(400).json({ error: 'subject query parameter is required' });
+    }
+
+    const learningPath = await recommendationEngine.getPersonalizedLearningPath(studentId, subject);
+    res.json({ success: true, data: learningPath });
+  } catch (error) {
+    console.error('Error fetching learning path:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch learning path' });
+  }
+});
+
+// Get review recommendations
+app.get('/api/recommendations/review', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const reviewRecommendations = await recommendationEngine.getReviewRecommendations(studentId);
+    res.json({ success: true, data: reviewRecommendations });
+  } catch (error) {
+    console.error('Error fetching review recommendations:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch review recommendations' });
+  }
+});
+
+// Feedback Engine API Endpoints
+
+// Post-quiz feedback
+app.post('/api/feedback/quiz-complete', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { quizId, answers, lessonId, totalTimeSpent } = req.body;
+    
+    if (!quizId || !answers || !Array.isArray(answers)) {
+      return res.status(400).json({ error: 'quizId and answers array are required' });
+    }
+
+    // Step 1: Update concept mastery and track error patterns for each answer
+    // Extract conceptTags and update mastery for each concept
+    const conceptMasteryUpdates = [];
+    const processedConcepts = new Set(); // Track to avoid duplicate updates per concept per quiz
+    
+    for (const answer of answers) {
+      const { conceptTags, isCorrect, timeSpent, errorType } = answer;
+      
+      // Update mastery for each concept in the question
+      if (conceptTags && Array.isArray(conceptTags) && conceptTags.length > 0) {
+        for (const conceptName of conceptTags) {
+          // Only update once per concept per quiz (to avoid double updates from feedbackEngine)
+          const conceptKey = `${conceptName}-${isCorrect}`;
+          if (!processedConcepts.has(conceptKey)) {
+            processedConcepts.add(conceptKey);
+            
+            try {
+              await learnerModel.updateConceptMastery(
+                studentId,
+                conceptName,
+                isCorrect,
+                timeSpent || 0
+              );
+              conceptMasteryUpdates.push({ concept: conceptName, isCorrect, timeSpent: timeSpent || 0 });
+            } catch (err) {
+              console.error(`Error updating mastery for concept ${conceptName}:`, err);
+            }
+          }
+          
+          // Track error patterns if answer is incorrect (always track, even if mastery was already updated)
+          if (!isCorrect && errorType) {
+            const errorPatternId = `${studentId}-${conceptName}-${errorType}`;
+            sqliteDb.run(
+              `INSERT INTO error_patterns (id, student_id, concept_name, error_type, occurrence_count, last_occurred)
+               VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+               ON CONFLICT(id) DO UPDATE SET 
+                 occurrence_count = occurrence_count + 1,
+                 last_occurred = CURRENT_TIMESTAMP`,
+              [errorPatternId, studentId, conceptName, errorType],
+              (err) => {
+                if (err) {
+                  console.error('Error tracking error pattern:', err);
+                }
+              }
+            );
+          }
+        }
+      }
+    }
+
+    // Generate feedback using feedback engine (this may also update mastery, but that's okay - EMA handles it)
+    const feedback = await feedbackEngine.generatePostQuizFeedback(studentId, {
+      quizId,
+      answers
+    });
+
+    // Calculate overall score
+    const totalCorrect = answers.filter(a => a.isCorrect).length;
+    const score = answers.length > 0 ? Math.round((totalCorrect / answers.length) * 100) : 0;
+
+    // Extract all concept tags from answers
+    const allConceptTags = [];
+    answers.forEach(answer => {
+      if (answer.conceptTags && Array.isArray(answer.conceptTags)) {
+        answer.conceptTags.forEach(tag => {
+          if (!allConceptTags.includes(tag)) {
+            allConceptTags.push(tag);
+          }
+        });
+      }
+    });
+
+    // Determine dominant error type
+    const errorTypeCounts = {};
+    answers.forEach(answer => {
+      if (!answer.isCorrect && answer.errorType) {
+        errorTypeCounts[answer.errorType] = (errorTypeCounts[answer.errorType] || 0) + 1;
+      }
+    });
+    const dominantErrorType = Object.keys(errorTypeCounts).length > 0
+      ? Object.keys(errorTypeCounts).reduce((a, b) => errorTypeCounts[a] > errorTypeCounts[b] ? a : b)
+      : null;
+
+    // Update student_progress table
+    if (lessonId) {
+      const progressId = `${studentId}-${quizId}`;
+      const conceptTagsJson = JSON.stringify(allConceptTags);
+      
+      sqliteDb.run(
+        `INSERT OR REPLACE INTO student_progress 
+         (id, student_id, lesson_id, score, time_spent, completed_at, attempts, concept_tags, error_type)
+         VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP,
+           COALESCE((SELECT attempts FROM student_progress WHERE id = ?), 0) + 1,
+           ?, ?)
+        `,
+        [
+          progressId,
+          studentId,
+          lessonId,
+          score,
+          totalTimeSpent || 0,
+          progressId,
+          conceptTagsJson,
+          dominantErrorType
+        ],
+        (err) => {
+          if (err) {
+            console.error('Error updating student_progress:', err);
+          }
+        }
+      );
+    }
+
+    // Step 2: Track engagement patterns
+    const sessionDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const engagementPatternId = `${studentId}-${sessionDate}-${Date.now()}`; // Add timestamp for uniqueness
+    const sessionDuration = totalTimeSpent || 0; // in seconds
+    const questionsAnswered = answers.length;
+    const correctAnswers = totalCorrect;
+    
+    // Calculate engagement score for this session
+    // Based on: completion rate, accuracy, and time spent
+    const accuracy = questionsAnswered > 0 ? correctAnswers / questionsAnswered : 0;
+    const timePerQuestion = questionsAnswered > 0 ? sessionDuration / questionsAnswered : 0;
+    // Higher engagement if: high accuracy, reasonable time per question (not too fast, not too slow)
+    const timeScore = timePerQuestion > 0 && timePerQuestion < 300 ? Math.min(1.0, timePerQuestion / 60) : 0.5;
+    const engagementScore = (accuracy * 0.6) + (timeScore * 0.4);
+    
+    sqliteDb.run(
+      `INSERT INTO engagement_patterns 
+       (id, student_id, session_date, session_duration, questions_answered, correct_answers, total_time_spent, engagement_score)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        engagementPatternId,
+        studentId,
+        sessionDate,
+        sessionDuration,
+        questionsAnswered,
+        correctAnswers,
+        sessionDuration,
+        engagementScore
+      ],
+      (err) => {
+        if (err) {
+          console.error('Error tracking engagement pattern:', err);
+        }
+      }
+    );
+
+    // Step 3: Update learning profile with activity data
+    // Recalculate learning velocity based on session data
+    try {
+      await learnerModel.updateLearningProfile(studentId, {
+        timeSpent: totalTimeSpent || 0,
+        questionsAnswered,
+        correctAnswers,
+        modality: 'interactive' // Quiz is interactive/practice
+      });
+      
+      // Detect learning style after session
+      try {
+        await learnerModel.detectLearningStyle(studentId);
+      } catch (styleErr) {
+        console.error('Error detecting learning style:', styleErr);
+        // Don't fail the request if style detection fails
+      }
+    } catch (profileErr) {
+      console.error('Error updating learning profile:', profileErr);
+      // Don't fail the request if profile update fails
+    }
+
+    res.json({ success: true, data: feedback });
+  } catch (error) {
+    console.error('Error generating quiz feedback:', error);
+    res.status(500).json({ error: error.message || 'Failed to generate feedback' });
+  }
+});
+
+// Get real-time hint
+app.get('/api/feedback/hint', authenticateToken, (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const questionId = req.query.questionId;
+    const attemptNumber = parseInt(req.query.attemptNumber) || 1;
+    const studentAnswer = req.query.studentAnswer || null;
+
+    if (!questionId) {
+      return res.status(400).json({ error: 'questionId query parameter is required' });
+    }
+
+    const hint = feedbackEngine.generateRealTimeHint(questionId, studentAnswer, attemptNumber);
+    res.json({ success: true, data: hint });
+  } catch (error) {
+    console.error('Error generating hint:', error);
+    res.status(500).json({ error: error.message || 'Failed to generate hint' });
+  }
+});
+
+// Get concept explanation
+app.get('/api/feedback/explain', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const concept = req.query.concept;
+    if (!concept) {
+      return res.status(400).json({ error: 'concept query parameter is required' });
+    }
+
+    // Determine student level based on their mastery of this concept
+    let studentLevel = 'beginner';
+    try {
+      const knowledgeState = await learnerModel.getStudentKnowledgeState(studentId);
+      
+      // Check if concept is in mastered, learning, or weak
+      const mastered = knowledgeState.mastered_concepts.find(c => 
+        c.concept_name.toLowerCase() === concept.toLowerCase()
+      );
+      const learning = knowledgeState.learning_concepts.find(c => 
+        c.concept_name.toLowerCase() === concept.toLowerCase()
+      );
+      const weak = knowledgeState.weak_concepts.find(c => 
+        c.concept_name.toLowerCase() === concept.toLowerCase()
+      );
+
+      if (mastered) {
+        studentLevel = 'advanced';
+      } else if (learning) {
+        studentLevel = 'intermediate';
+      } else if (weak) {
+        studentLevel = 'beginner';
+      }
+    } catch (err) {
+      console.error('Error determining student level:', err);
+      // Default to beginner if we can't determine
+    }
+
+    const explanation = await feedbackEngine.explainConcept(concept, studentLevel);
+    
+    // Format response with examples array
+    res.json({
+      success: true,
+      data: {
+        concept: explanation.concept,
+        explanation: explanation.explanation,
+        examples: explanation.example ? [explanation.example] : [],
+        level: explanation.level,
+        source: explanation.source
+      }
+    });
+  } catch (error) {
+    console.error('Error explaining concept:', error);
+    res.status(500).json({ error: error.message || 'Failed to explain concept' });
+  }
+});
+
 // Count per-lesson quiz completion summary
 app.get('/api/progress/:studentId/:lessonId', authenticateToken, (req, res) => {
   const { studentId, lessonId } = req.params;
@@ -1958,31 +2595,120 @@ app.get('/api/quizzes', (req, res) => {
 });
 
 // Get teacher analytics
-app.get('/api/analytics/:teacherId', authenticateToken, requireRole('teacher'), (req, res) => {
-  const { teacherId } = req.params;
-  
-  // Get student analytics for teacher
-  sqliteDb.all(
-    `SELECT 
-      u.name as student_name,
-      u.id as student_id,
-      COUNT(sp.id) as lessons_completed,
-      AVG(sp.score) as avg_score,
-      SUM(sp.time_spent) as total_time_spent,
-      MAX(sp.completed_at) as last_activity
-     FROM users u 
-     LEFT JOIN student_progress sp ON u.id = sp.user_id 
-     WHERE u.role = 'student'
-     GROUP BY u.id, u.name 
-     ORDER BY avg_score DESC`,
-    (err, rows) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.json(rows);
+app.get('/api/analytics/:teacherId', authenticateToken, requireRole('teacher'), async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    
+    // Verify the teacherId matches the authenticated user
+    if (req.user.id !== teacherId) {
+      return res.status(403).json({ error: 'You can only access your own analytics' });
     }
-  );
+    
+    const analytics = await analyticsService.getClassAnalytics(teacherId);
+    res.json(analytics);
+  } catch (error) {
+    console.error('Error fetching class analytics:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch analytics' });
+  }
+});
+
+// Get detailed student analytics
+app.get('/api/analytics/student/:studentId', authenticateToken, requireRole('teacher'), async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const teacherId = req.user.id;
+    
+    const analytics = await analyticsService.getStudentDetailedAnalytics(teacherId, studentId);
+    res.json(analytics);
+  } catch (error) {
+    console.error('Error fetching student analytics:', error);
+    if (error.message.includes('not found') || error.message.includes('does not belong')) {
+      return res.status(404).json({ error: error.message });
+    }
+    res.status(500).json({ error: error.message || 'Failed to fetch student analytics' });
+  }
+});
+
+// Get performance distribution
+app.get('/api/analytics/performance-distribution', authenticateToken, requireRole('teacher'), async (req, res) => {
+  try {
+    const teacherId = req.user.id;
+    
+    const distribution = await analyticsService.getPerformanceDistribution(teacherId);
+    res.json(distribution);
+  } catch (error) {
+    console.error('Error fetching performance distribution:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch performance distribution' });
+  }
+});
+
+// Get recent activity
+app.get('/api/analytics/recent-activity', authenticateToken, requireRole('teacher'), async (req, res) => {
+  try {
+    const teacherId = req.user.id;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    const activities = await analyticsService.getRecentActivity(teacherId, limit);
+    res.json(activities);
+  } catch (error) {
+    console.error('Error fetching recent activity:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch recent activity' });
+  }
+});
+
+// Get optimal pacing
+app.get('/api/pacing/optimal', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const subject = req.query.subject || null;
+    
+    // Verify user is a student
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ error: 'This endpoint is only available for students' });
+    }
+    
+    const pacing = await pacingEngine.calculateOptimalPacing(studentId, subject);
+    res.json(pacing);
+  } catch (error) {
+    console.error('Error calculating optimal pacing:', error);
+    res.status(500).json({ error: error.message || 'Failed to calculate optimal pacing' });
+  }
+});
+
+// Check if student should take a break
+app.get('/api/pacing/should-break', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const currentSessionTime = parseFloat(req.query.sessionTime) || 0;
+    
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ error: 'This endpoint is only available for students' });
+    }
+    
+    const breakInfo = await pacingEngine.shouldTakeBreak(studentId, currentSessionTime);
+    res.json(breakInfo);
+  } catch (error) {
+    console.error('Error checking break status:', error);
+    res.status(500).json({ error: error.message || 'Failed to check break status' });
+  }
+});
+
+// Adjust content pace based on performance
+app.post('/api/pacing/adjust', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    const recentPerformance = req.body.recentPerformance || null;
+    
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ error: 'This endpoint is only available for students' });
+    }
+    
+    const adjustment = await pacingEngine.adjustContentPace(studentId, recentPerformance);
+    res.json(adjustment);
+  } catch (error) {
+    console.error('Error adjusting content pace:', error);
+    res.status(500).json({ error: error.message || 'Failed to adjust content pace' });
+  }
 });
 
 // Sync functions
@@ -2053,6 +2779,75 @@ app.get('/api/health', (req, res) => {
     sqlite: sqliteDb ? 'connected' : 'disconnected',
     mysql: mysqlConnection ? 'connected' : 'disconnected'
   });
+});
+
+// Admin Analytics API Endpoint
+app.get('/api/admin/analytics', authenticateToken, requireRole('admin'), async (req, res) => {
+  try {
+    const analytics = await adminAnalyticsService.getPlatformAnalytics();
+    res.json(analytics);
+  } catch (error) {
+    console.error('Error fetching platform analytics:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch platform analytics' });
+  }
+});
+
+// Experimentation API Endpoints
+
+// Get student's assigned strategy
+app.get('/api/experiments/strategy', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.query.studentId || req.user?.id;
+    
+    if (!studentId) {
+      return res.status(400).json({ error: 'Student ID is required' });
+    }
+
+    // Verify user is accessing their own data or is admin
+    if (req.user.role !== 'admin' && req.user.id !== studentId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const strategy = await experimentation.getStudentStrategy(studentId);
+    res.json({ studentId, strategy });
+  } catch (error) {
+    console.error('Error getting student strategy:', error);
+    res.status(500).json({ error: error.message || 'Failed to get student strategy' });
+  }
+});
+
+// Track experiment outcomes (called after learning sessions)
+app.post('/api/experiments/track', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { learningGains, engagement, completion } = req.body;
+
+    const result = await experimentation.trackOutcomes(studentId, {
+      learningGains,
+      engagement,
+      completion
+    });
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error tracking experiment outcomes:', error);
+    res.status(500).json({ error: error.message || 'Failed to track outcomes' });
+  }
+});
+
+// Get experiment statistics (admin only)
+app.get('/api/experiments/stats', authenticateToken, requireRole('admin'), async (req, res) => {
+  try {
+    const stats = await experimentation.getExperimentStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching experiment stats:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch experiment stats' });
+  }
 });
 
 // Get current user profile (me)

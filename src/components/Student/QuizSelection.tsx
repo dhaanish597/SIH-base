@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Sparkles, Zap } from 'lucide-react';
 import { 
   getSubjectsForGrade, 
   getChaptersForSubject, 
@@ -7,6 +8,19 @@ import {
   getChapterCompletion,
   getAvailableGrades
 } from '../../utils/questionsData';
+
+type Recommendation = {
+  type: 'lesson' | 'quiz';
+  id: string;
+  title: string;
+  subject: string;
+  chapter: string | null;
+  reason: string;
+  priority_score: number;
+  estimatedTime: number;
+  difficulty?: number;
+  lesson_id?: string;
+};
 
 const games = [
   { id: 'cargame', name: 'Car Race Game', thumbnail: '/thumbnails/cargameLogo.jpeg' },
@@ -32,6 +46,9 @@ export function QuizSelection() {
   const [loading, setLoading] = useState(true);
   const [userGrade, setUserGrade] = useState<string>('6');
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Get user grade from localStorage
   useEffect(() => {
@@ -129,6 +146,52 @@ export function QuizSelection() {
     setSelectedChapter('');
   }, [selectedSubject]);
 
+  // Fetch recommendations on mount
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        setRecommendationsLoading(true);
+        const token = localStorage.getItem('stem_token');
+        if (!token) {
+          setRecommendationsLoading(false);
+          return;
+        }
+
+        const response = await fetch('/api/recommendations?limit=5', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            // Filter to only show quiz recommendations
+            const quizRecommendations = result.data.filter((rec: Recommendation) => rec.type === 'quiz');
+            setRecommendations(quizRecommendations);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
+      } finally {
+        setRecommendationsLoading(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, []);
+
+  // Show toast message
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => {
+        setToastMessage(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
   const startGame = () => {
     if (!selectedSubject || !selectedChapter) {
       alert('Please select both a subject and a chapter before starting the game.');
@@ -136,6 +199,31 @@ export function QuizSelection() {
     }
     
     navigate(`/play-quiz/${selectedGame}?grade=${encodeURIComponent(userGrade)}&subject=${encodeURIComponent(selectedSubject)}&chapter=${encodeURIComponent(selectedChapter)}`);
+  };
+
+  const handleRecommendedQuizClick = (rec: Recommendation) => {
+    // Auto-populate selections
+    if (rec.subject) {
+      setSelectedSubject(rec.subject);
+    }
+    if (rec.chapter) {
+      setSelectedChapter(rec.chapter);
+    }
+    // Default to cargame if not specified
+    setSelectedGame('cargame');
+    
+    // Show toast
+    setToastMessage('Starting recommended quiz...');
+    
+    // Small delay to show toast, then start game
+    setTimeout(() => {
+      if (rec.subject && rec.chapter) {
+        navigate(`/play-quiz/cargame?grade=${encodeURIComponent(userGrade)}&subject=${encodeURIComponent(rec.subject)}&chapter=${encodeURIComponent(rec.chapter)}`);
+      } else {
+        // If missing data, just set selections and let user click start
+        startGame();
+      }
+    }, 500);
   };
 
   // Calculate quizzes remaining for selected chapter
@@ -163,7 +251,78 @@ export function QuizSelection() {
 
   return (
     <div className="p-6">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-4 right-4 bg-indigo-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-2 animate-pulse transform transition-all duration-300">
+          <Zap className="w-5 h-5" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       <h1 className="text-2xl font-bold mb-4">Choose a Game</h1>
+      
+      {/* Recommended Quizzes Section */}
+      {recommendations.length > 0 && (
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 rounded-xl p-6 text-white mb-4">
+            <div className="flex items-center space-x-2 mb-4">
+              <Sparkles className="w-6 h-6" />
+              <h2 className="text-2xl font-bold">Recommended Quizzes</h2>
+            </div>
+            <p className="text-purple-100 mb-4">Personalized quizzes based on your learning progress</p>
+            
+            {recommendationsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="bg-white/20 rounded-lg p-4 animate-pulse">
+                    <div className="h-4 bg-white/30 rounded w-3/4 mb-3"></div>
+                    <div className="h-3 bg-white/30 rounded w-1/2 mb-4"></div>
+                    <div className="h-8 bg-white/30 rounded w-full"></div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {recommendations.slice(0, 5).map((rec, index) => (
+                  <div
+                    key={`${rec.type}-${rec.id}-${index}`}
+                    className="bg-white/10 backdrop-blur-sm rounded-lg p-4 hover:bg-white/20 transition-all cursor-pointer border border-white/20 hover:border-white/40 hover:shadow-lg"
+                    onClick={() => handleRecommendedQuizClick(rec)}
+                  >
+                    <div className="mb-3">
+                      <h3 className="font-semibold text-white mb-1 line-clamp-2 text-sm">
+                        {rec.title}
+                      </h3>
+                      <p className="text-purple-100 text-xs mb-2">
+                        {rec.subject}
+                        {rec.chapter && ` • ${rec.chapter}`}
+                      </p>
+                    </div>
+                    
+                    {rec.reason && (
+                      <div className="mb-3">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-white/20 text-white">
+                          {rec.reason.length > 30 ? rec.reason.substring(0, 30) + '...' : rec.reason}
+                        </span>
+                      </div>
+                    )}
+                    
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRecommendedQuizClick(rec);
+                      }}
+                      className="w-full bg-white text-indigo-600 px-4 py-2 rounded-lg font-semibold hover:bg-indigo-50 transition-colors text-sm mt-2"
+                    >
+                      Start Quiz
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       
       {/* Quizzes Remaining Counter */}
       {selectedChapter && (

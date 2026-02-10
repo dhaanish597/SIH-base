@@ -8,7 +8,10 @@ export interface Question {
   text: string;
   choices: string[];
   answerIndex: number;
-  difficulty: string;
+  difficulty: string; // Legacy: "easy", "medium", "hard" - kept for backward compatibility
+  difficultyLevel?: number; // New: 0-1 scale (0 = easiest, 1 = hardest)
+  conceptTags?: string[]; // New: e.g., ["linear_equations", "algebra"]
+  errorType?: string; // New: "calculation", "concept", "application", "careless" (only set when wrong)
   ncert: boolean;
   explanation: string;
 }
@@ -93,4 +96,37 @@ export function getChapterCompletion(grade: string, subject: string, chapter: st
   // TODO: Implement progress tracking from localStorage
   // For now, return 0 completed questions
   return { completed: 0, total: 0 };
+}
+
+// Convert string difficulty to numeric difficultyLevel (0-1)
+export function convertDifficultyToLevel(difficulty: string): number {
+  const difficultyMap: { [key: string]: number } = {
+    'easy': 0.2,
+    'beginner': 0.2,
+    'medium': 0.5,
+    'intermediate': 0.5,
+    'hard': 0.8,
+    'advanced': 0.8,
+    'expert': 0.95,
+  };
+  
+  const normalized = difficulty?.toLowerCase().trim() || 'medium';
+  return difficultyMap[normalized] ?? 0.5;
+}
+
+// Ensure question has required fields, adding defaults if missing
+export function enrichQuestion(question: Question): Question {
+  const enriched = { ...question };
+  
+  // Add difficultyLevel if missing
+  if (typeof enriched.difficultyLevel !== 'number') {
+    enriched.difficultyLevel = convertDifficultyToLevel(enriched.difficulty);
+  }
+  
+  // Add conceptTags if missing (empty array)
+  if (!enriched.conceptTags || !Array.isArray(enriched.conceptTags)) {
+    enriched.conceptTags = [];
+  }
+  
+  return enriched;
 }

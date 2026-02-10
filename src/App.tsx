@@ -30,6 +30,7 @@ import ProfileRouter from './components/Profile/Profile';
 import { Lessons } from './components/Student/Lessons';
 import { Leaderboard } from './components/Student/Leaderboard';
 import { BadgesPage } from './components/Student/BadgesPage';
+import { StudentDetailView } from './components/Teacher/StudentDetailView';
 import './i18n';
 
 interface User {
@@ -370,6 +371,7 @@ function App() {
               <Route path="/lessons/science/:chapterFile" element={<LessonViewer />} />
               <Route path="/profile" element={<ProfileRouter />} />
               <Route path="/badges" element={<BadgesPage />} />
+              <Route path="/analytics/student/:studentId" element={<StudentDetailView />} />
             </Routes>
           </Suspense>
         </main>
