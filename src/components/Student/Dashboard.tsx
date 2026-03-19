@@ -16,6 +16,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useUserStats, useUserProgress } from '../../hooks/useIndexedDB';
+import { ChatbotWidget } from './ChatbotWidget';
 
 interface DashboardProps {
   userId: string;
@@ -426,6 +427,9 @@ export function StudentDashboard({ userId, userName }: DashboardProps) {
           )}
         </div>
       </section>
+
+      {/* Floating chatbot widget */}
+      <ChatbotWidget />
     </main>
   );
 }

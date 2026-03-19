@@ -17,6 +17,7 @@ const analyticsService = require('./services/analyticsService');
 const pacingEngine = require('./services/pacingEngine');
 const adminAnalyticsService = require('./services/adminAnalyticsService');
 const experimentation = require('./services/experimentation');
+const chatbotService = require('./services/chatbotService');
 // Note: We'll read questions from disk on each request so updates to the file are picked up without restart
 
 const app = express();
@@ -2208,6 +2209,40 @@ app.get('/api/recommendations/review', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error fetching review recommendations:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch review recommendations' });
+  }
+});
+
+// Chatbot API Endpoints (Grade-aware student doubt solver)
+app.post('/api/chatbot/ask', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const body = req.body || {};
+    const question = typeof body.question === 'string' ? body.question : '';
+    const subject = body.subject || 'General';
+    const grade = body.grade || req.user?.class || '9';
+    const conversation = Array.isArray(body.conversation) ? body.conversation : [];
+
+    if (!question || !String(question).trim()) {
+      return res.status(400).json({ error: 'question is required' });
+    }
+
+    const data = await chatbotService.askChatbot({
+      studentId,
+      grade,
+      subject,
+      question,
+      conversation,
+    });
+
+    return res.json({ success: true, data });
+  } catch (error) {
+    // Don't log full conversation; keep logs minimal
+    console.error('Error in chatbot ask:', error?.message || error);
+    return res.status(500).json({ error: 'Failed to get chatbot response' });
   }
 });
 
