@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Quest Academy — Gamified Learning</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="pixel.css" />
+<style>
+  body { background: var(--bg-deep); }
+  .frame {
+    background: var(--bg-arena);
+    border: 4px solid #000;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 0 -10px #000, 0 30px 60px -10px rgba(107,75,255,0.3);
+  }
+  .desktop-frame {
+    width: 1280px;
+    height: 800px;
+    overflow: hidden;
+    position: relative;
+  }
+  .desktop-frame > .scroll {
+    height: 100%; overflow-y: auto; overflow-x: hidden;
+    scrollbar-width: thin; scrollbar-color: var(--violet) var(--bg-elev-1);
+  }
+  .desktop-frame > .scroll::-webkit-scrollbar { width: 10px; }
+  .desktop-frame > .scroll::-webkit-scrollbar-track { background: var(--bg-elev-1); }
+  .desktop-frame > .scroll::-webkit-scrollbar-thumb { background: var(--violet); border-radius: 10px; }
+  .phone-frame {
+    width: 390px; height: 800px;
+    background: #000;
+    border-radius: 44px;
+    border: 8px solid #1a1a26;
+    padding: 8px;
+    box-shadow: 0 0 0 2px #000, 0 30px 60px -10px rgba(24,214,255,0.2);
+    overflow: hidden;
+    position: relative;
+  }
+  .phone-frame > .screen {
+    width: 100%; height: 100%;
+    border-radius: 36px;
+    overflow: hidden;
+    background: var(--bg-arena);
+    position: relative;
+  }
+  .phone-frame > .screen > .scroll {
+    height: 100%; overflow-y: auto; overflow-x: hidden;
+  }
+  .notch {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    width: 110px; height: 28px; background: #000; border-radius: 0 0 18px 18px;
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <rect width="100" height="100" fill="#0E1023"/>
+    <polygon points="50,18 70,28 70,55 50,82 30,55 30,28" fill="#6B4BFF" stroke="#FFC93C" stroke-width="3"/>
+    <text x="50" y="60" text-anchor="middle" fill="#FFC93C" font-family="Bowlby One" font-size="28">Q</text>
+  </svg>
+</template>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="atoms.jsx"></script>
+<script type="text/babel" src="nav.jsx"></script>
+<script type="text/babel" src="cards.jsx"></script>
+<script type="text/babel" src="page-home.jsx"></script>
+<script type="text/babel" src="page-home-b.jsx"></script>
+<script type="text/babel" src="pages.jsx"></script>
+<script type="text/babel" src="app-extras.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const PLAYER = {
+  name: 'Kira',
+  level: 14,
+  title: 'Apprentice Tactician',
+  xp: 1840,
+  xpMax: 2500,
+  coins: 1770,
+  streak: 12,
+};
+
+function DesktopApp({ direction = 'A' }) {
+  const [page, setPage] = useState('home');
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const fireXP = useXPPopup();
+
+  useEffect(() => {
+    if (page === 'home' && direction === 'A') {
+      const t = setTimeout(() => setShowLevelUp(false), 100); // armed but not auto
+      return () => clearTimeout(t);
+    }
+  }, [page, direction]);
+
+  const Home = direction === 'B' ? HomePageB : HomePage;
+
+  return (
+    <div className="arena-bg" style={{ minHeight:'100%' }}>
+      <GameNav active={page} onNav={setPage}
+        level={PLAYER.level} xp={PLAYER.xp} xpMax={PLAYER.xpMax}
+        coins={PLAYER.coins} gems={87} streak={PLAYER.streak} />
+      {page === 'home' && <Home player={PLAYER} fireXP={fireXP} />}
+      {page === 'games' && <GamesPage fireXP={fireXP} />}
+      {page === 'quests' && <QuestsPage />}
+      {page === 'subjects' && <SubjectsPage />}
+      {page === 'battle' && <BattlePage />}
+      {page === 'leaderboard' && <LeaderboardPage player={PLAYER} />}
+      {page === 'shop' && <ShopPage player={PLAYER} />}
+      <LevelUpModal open={showLevelUp} onClose={()=>setShowLevelUp(false)} level={15} />
+    </div>
+  );
+}
+
+function MobileApp({ view = 'home' }) {
+  const [page, setPage] = useState(view);
+  const fireXP = useXPPopup();
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column' }}>
+      <div style={{ flex: 1, overflow:'hidden' }}>
+        {page === 'home' && <MobileHome player={PLAYER} fireXP={fireXP} />}
+        {page === 'quiz' && <MobileQuiz fireXP={fireXP} />}
+        {page === 'quests' && (
+          <div style={{ padding: 14, overflowY:'auto', height:'100%' }} className="arena-bg">
+            <h1 className="h2" style={{ marginBottom: 12 }}>⚔ QUESTS</h1>
+            <div style={{ display:'flex', flexDirection:'column', gap: 10 }}>
+              <QuestCard tag="weekly" title="Master Algebra Ch.4" desc="Complete chapter 4" reward={500} value={2} max={10} timeLeft="3d 12h" />
+              <QuestCard tag="daily" title="Slay 5 Math Mobs" desc="Defeat 5 problems" reward={50} value={3} max={5} />
+              <QuestCard tag="daily" title="Train 15 min" desc="Study any subject" reward={30} value={15} max={15} complete />
+            </div>
+          </div>
+        )}
+      </div>
+      <GameNav isMobile active={page} onNav={(k)=> setPage(k === 'leaderboard' ? 'home' : k === 'battle' ? 'quiz' : k === 'quests' ? 'quests' : 'home')}
+        level={PLAYER.level} xp={PLAYER.xp} xpMax={PLAYER.xpMax}
+        coins={PLAYER.coins} gems={87} streak={PLAYER.streak} />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <XPPopupProvider>
+      <DesignCanvas
+        title="Quest Academy"
+        subtitle="Gamified learning · Clash Royale × Duolingo · teens 13-17"
+        defaultLayout="row"
+      >
+        <DCSection id="home-directions" title="① Home — pick a direction">
+          <DCArtboard id="home-a" label="Direction A · Arena Hero (Clash-style)" width={1280} height={800}>
+            <div className="frame desktop-frame">
+              <div className="scroll"><DesktopApp direction="A" /></div>
+            </div>
+          </DCArtboard>
+          <DCArtboard id="home-b" label="Direction B · HUD Stats (sharper, cyan-forward)" width={1280} height={800}>
+            <div className="frame desktop-frame">
+              <div className="scroll"><DesktopApp direction="B" /></div>
+            </div>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="full-app" title="② Full prototype — click the nav, all 7 pages live (Direction A)">
+          <DCArtboard id="full" label="Desktop · all pages (use top nav)" width={1280} height={800}>
+            <div className="frame desktop-frame">
+              <div className="scroll"><DesktopApp direction="A" /></div>
+            </div>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="mobile" title="③ Mobile companion">
+          <DCArtboard id="m-home" label="Mobile · Home" width={406} height={816}>
+            <div className="phone-frame">
+              <div className="notch" />
+              <div className="screen"><div className="scroll"><MobileApp view="home" /></div></div>
+            </div>
+          </DCArtboard>
+          <DCArtboard id="m-quiz" label="Mobile · Quiz w/ correct/wrong" width={406} height={816}>
+            <div className="phone-frame">
+              <div className="notch" />
+              <div className="screen"><MobileApp view="quiz" /></div>
+            </div>
+          </DCArtboard>
+          <DCArtboard id="m-quests" label="Mobile · Quests" width={406} height={816}>
+            <div className="phone-frame">
+              <div className="notch" />
+              <div className="screen"><MobileApp view="quests" /></div>
+            </div>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="moments" title="④ Moments — level up, achievements">
+          <DCArtboard id="levelup" label="Level Up modal" width={520} height={500}>
+            <div style={{ width: 520, height: 500, background:'rgba(7,7,15,0.9)', borderRadius: 20, border:'2px solid var(--line)', display:'grid', placeItems:'center', position:'relative', overflow:'hidden' }}>
+              <LevelUpModalInline level={15} />
+            </div>
+          </DCArtboard>
+          <DCArtboard id="hud" label="Top HUD bar (close-up)" width={760} height={140}>
+            <div style={{ width: 760, height: 140, background:'var(--bg-arena)', display:'grid', placeItems:'center', borderRadius: 12, border:'2px solid var(--line)' }}>
+              <HudStrip xp={PLAYER.xp} xpMax={PLAYER.xpMax} coins={PLAYER.coins} gems={87} streak={PLAYER.streak} level={PLAYER.level} />
+            </div>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+    </XPPopupProvider>
+  );
+}
+
+// inline level up (without overlay) for the moments artboard
+function LevelUpModalInline({ level }) {
+  return (
+    <div style={{
+      background:'var(--bg-elev-1)',
+      border:'4px solid var(--gold)',
+      borderRadius: 16, padding: 28, maxWidth: 380, textAlign:'center',
+      boxShadow:'0 0 60px var(--gold)',
+      position:'relative',
+    }}>
+      <div className="f-hud" style={{ fontSize: 13, color:'var(--gold)', letterSpacing:'0.3em' }}>★ LEVEL UP ★</div>
+      <div className="f-display pulse-glow" style={{ fontSize: 84, color:'var(--gold)', textShadow:'0 4px 0 #000', lineHeight: 1, margin:'8px 0' }}>{level}</div>
+      <div className="f-display" style={{ fontSize: 20, color:'var(--ink-1)' }}>You leveled up!</div>
+      <div style={{ color:'var(--ink-2)', marginTop: 8 }}>+200 coins · New skin unlocked</div>
+      <div style={{ display:'flex', gap: 10, marginTop: 18 }}>
+        <button className="btn btn-ghost btn-sm" style={{ flex: 1 }}>LATER</button>
+        <button className="btn btn-gold btn-sm" style={{ flex: 1 }}>CLAIM</button>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

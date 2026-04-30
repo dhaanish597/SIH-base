@@ -338,6 +338,7 @@
     <div id="car"></div>
   </div>
 </div>
+<!-- Difficulty indicator will be added dynamically -->
 
 <div id="popup-bg" style="display:none;">
   <div id="popup">
@@ -354,6 +355,10 @@
   // Load questions dynamically using shared loader
   let questions = [];
   let normalized = [];
+  let allNormalized = []; // Store all questions for dynamic filtering
+  let currentDifficulty = null; // Current difficulty level (0-1)
+  let consecutiveCorrect = 0;
+  let consecutiveIncorrect = 0;
 
   function mapQuestions(raw) {
     return (Array.isArray(raw) ? raw : []).map((q) => ({
@@ -365,11 +370,106 @@
 
   async function ensureQuestionsLoaded() {
     try {
-      normalized = await window.GameQuizLoader.loadQuestions();
+      const params = window.GameQuizLoader.parseParams();
+      // Fetch recommended difficulty before loading questions
+      const recommendedDifficulty = await window.GameQuizLoader.fetchRecommendedDifficulty(params.subject);
+      currentDifficulty = recommendedDifficulty;
+      
+      // Load all questions first
+      allNormalized = await window.GameQuizLoader.loadQuestions(params, null); // Load all without filtering
+      
+      // Then filter by difficulty
+      if (currentDifficulty !== null) {
+        const filtered = window.GameQuizLoader.filterByDifficulty(allNormalized, currentDifficulty, 0.2);
+        normalized = filtered.length > 0 ? filtered : allNormalized; // Fallback to all if filtered is empty
+      } else {
+        normalized = allNormalized;
+      }
+      
       questions = window.GameQuizLoader.toCarFormat(normalized);
+      
+      // Update difficulty indicator
+      updateDifficultyIndicator();
     } catch {
       questions = [];
       normalized = [];
+      allNormalized = [];
+    }
+  }
+
+  function updateDifficultyIndicator() {
+    let indicator = document.getElementById('difficulty-indicator');
+    if (!indicator) {
+      // Create difficulty indicator if it doesn't exist
+      indicator = document.createElement('div');
+      indicator.id = 'difficulty-indicator';
+      indicator.style.cssText = 'position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; z-index: 1000;';
+      document.body.appendChild(indicator);
+    }
+    
+    if (currentDifficulty === null) {
+      indicator.textContent = 'Difficulty: Medium';
+      indicator.style.background = 'rgba(255, 193, 7, 0.9)';
+      return;
+    }
+    
+    let label, color;
+    if (currentDifficulty < 0.4) {
+      label = 'Easy';
+      color = 'rgba(40, 167, 69, 0.9)'; // Green
+    } else if (currentDifficulty < 0.7) {
+      label = 'Medium';
+      color = 'rgba(255, 193, 7, 0.9)'; // Yellow
+    } else {
+      label = 'Hard';
+      color = 'rgba(220, 53, 69, 0.9)'; // Red
+    }
+    
+    indicator.textContent = `Difficulty: ${label}`;
+    indicator.style.background = color;
+  }
+
+  function adjustDifficulty(isCorrect) {
+    if (isCorrect) {
+      consecutiveCorrect++;
+      consecutiveIncorrect = 0;
+      
+      // If 3 correct in a row, increase difficulty
+      if (consecutiveCorrect >= 3 && currentDifficulty !== null) {
+        currentDifficulty = Math.min(1.0, currentDifficulty + 0.1);
+        consecutiveCorrect = 0; // Reset counter
+        filterQuestionsByDifficulty();
+        updateDifficultyIndicator();
+      }
+    } else {
+      consecutiveIncorrect++;
+      consecutiveCorrect = 0;
+      
+      // If 2 wrong in a row, decrease difficulty
+      if (consecutiveIncorrect >= 2 && currentDifficulty !== null) {
+        currentDifficulty = Math.max(0.0, currentDifficulty - 0.1);
+        consecutiveIncorrect = 0; // Reset counter
+        filterQuestionsByDifficulty();
+        updateDifficultyIndicator();
+      }
+    }
+  }
+
+  function filterQuestionsByDifficulty() {
+    if (currentDifficulty === null || allNormalized.length === 0) return;
+    
+    // Filter available questions by current difficulty
+    const filtered = window.GameQuizLoader.filterByDifficulty(allNormalized, currentDifficulty, 0.2);
+    
+    if (filtered.length > 0) {
+      // Rebuild normalized and questions arrays
+      normalized = filtered;
+      questions = window.GameQuizLoader.toCarFormat(normalized);
+      
+      // If current question index is beyond filtered length, reset to 0
+      if (currentQuestion >= questions.length) {
+        currentQuestion = 0;
+      }
     }
   }
 
@@ -378,6 +478,8 @@
   let timeLeft=maxTime;
   let timerInterval;
   let correctCount=0;
+  let answerHistory = []; // Track all answers for feedback
+  let questionStartTime = 0; // Track when each question starts
 
   const car=document.getElementById('car');
   const carGame=document.getElementById('carGame');
@@ -441,6 +543,7 @@
       showPopup("Quiz Over", false);
       return;
     }
+    questionStartTime = Date.now(); // Record question start time
     questionElem.textContent=`Q${currentQuestion+1}. ${questions[currentQuestion].question}`;
     optionsElem.innerHTML='';
     questions[currentQuestion].options.forEach((opt, idx) => {
@@ -456,13 +559,35 @@
 
   function selectAnswer(selectedIdx){
     clearInterval(timerInterval);
-    const correctIdx= questions[currentQuestion].answer;
-    if(selectedIdx===correctIdx){
+    const question = questions[currentQuestion];
+    const normalizedQ = normalized[currentQuestion] || {};
+    const correctIdx= question.answer;
+    const isCorrect = selectedIdx === correctIdx;
+    // Calculate time spent on this question (in seconds, convert to milliseconds)
+    const timeSpent = questionStartTime > 0 
+      ? Math.round((Date.now() - questionStartTime) / 1000) // Convert to seconds
+      : Math.round((maxTime - timeLeft)); // Fallback: use time remaining
+    
+    // Adjust difficulty based on performance
+    adjustDifficulty(isCorrect);
+    
+    // Track answer for feedback
+    answerHistory.push({
+      questionId: normalizedQ.id || `q${currentQuestion}`,
+      isCorrect: isCorrect,
+      conceptTags: normalizedQ.conceptTags || normalizedQ.concept_tags || [],
+      timeSpent: timeSpent,
+      errorType: isCorrect ? null : (normalizedQ.errorType || 'concept'), // Default to 'concept' if wrong
+      studentAnswer: selectedIdx,
+      correctAnswer: correctIdx
+    });
+    
+    if(isCorrect){
       resultElem.textContent = "Correct! 🚗 Car moves forward!";
       moveCar(true);
       correctCount++;
     } else {
-      const exp = (normalized[currentQuestion] && normalized[currentQuestion].explanation) || '';
+      const exp = normalizedQ.explanation || '';
       resultElem.textContent = exp ? `Incorrect! ${exp}` : "Incorrect! 🚗 Car moves backward!";
       moveCar(false);
     }
@@ -483,6 +608,26 @@
   }
 
   function timeOut(){
+    // Track timeout as incorrect answer
+    const question = questions[currentQuestion];
+    const normalizedQ = normalized[currentQuestion] || {};
+    const timeSpent = questionStartTime > 0 
+      ? Math.round((Date.now() - questionStartTime) / 1000)
+      : maxTime;
+    
+    // Adjust difficulty (timeout counts as incorrect)
+    adjustDifficulty(false);
+    
+    answerHistory.push({
+      questionId: normalizedQ.id || `q${currentQuestion}`,
+      isCorrect: false,
+      conceptTags: normalizedQ.conceptTags || normalizedQ.concept_tags || [],
+      timeSpent: timeSpent,
+      errorType: 'careless', // Timeout is typically careless error
+      studentAnswer: null,
+      correctAnswer: question.answer
+    });
+    
     resultElem.textContent = "Time's up! 🚗 Car moves backward!";
     moveCar(false);
     Array.from(optionsElem.children).forEach(b=>b.disabled=true);
@@ -543,6 +688,8 @@
       const urlParams = new URLSearchParams(window.location.search);
       const lessonId = urlParams.get('chapter') || urlParams.get('lessonId') || 'unknown';
       const timeSpent = Math.round((maxTime * questions.length) - (timeLeft));
+      const quizId = `${lessonId}-${Date.now()}`;
+      const score = Math.max(0, Math.round((correctCount / Math.max(1, questions.length)) * 100));
       if (token && token !== 'demo_token') {
         const score = Math.max(0, Math.round((correctCount / Math.max(1, questions.length)) * 100));
         fetch('/api/quiz-complete', {
@@ -553,9 +700,56 @@
           },
           body: JSON.stringify({ lessonId, score, timeSpent })
         }).catch(() => {});
+        // Also store per-quiz progress row
+        fetch('/api/progress', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ lessonId, quizId, score, completed: true })
+        }).catch(() => {});
+      } else {
+        // Offline/demo fallback: persist locally so UI can reflect progress & points
+        try {
+          const keyPts = 'offline_points';
+          const prev = Number(localStorage.getItem(keyPts) || '0');
+          localStorage.setItem(keyPts, String(prev + score));
+          // Track completed quiz ids per lesson
+          const keySet = `offline_completed_${lessonId}`;
+          const prevSetRaw = localStorage.getItem(keySet);
+          const prevSet = prevSetRaw ? JSON.parse(prevSetRaw) : [];
+          if (!prevSet.includes(quizId)) {
+            prevSet.push(quizId);
+            localStorage.setItem(keySet, JSON.stringify(prevSet));
+          }
+        } catch {}
       }
       // Notify app to refresh
-      window.dispatchEvent(new CustomEvent('quiz:completed', { detail: { lessonId, score: Math.max(0, Math.round((correctCount / Math.max(1, questions.length)) * 100)) } }));
+      window.dispatchEvent(new CustomEvent('quiz:completed', { detail: { lessonId, score } }));
+      
+      // Send detailed quiz results to parent via postMessage
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const lessonId = urlParams.get('chapter') || urlParams.get('lessonId') || 'unknown';
+        const quizId = `${lessonId}-${Date.now()}`;
+        const totalTimeSpent = Math.round((maxTime * questions.length) - (timeLeft));
+        
+        // Send detailed results to parent window
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({
+            type: 'quiz-complete',
+            results: {
+              quizId: quizId,
+              answers: answerHistory,
+              lessonId: lessonId,
+              totalTimeSpent: totalTimeSpent
+            }
+          }, window.location.origin);
+        }
+      } catch (e) {
+        console.error('Error sending quiz results:', e);
+      }
     } catch {}
   }
 
@@ -571,6 +765,19 @@
   function resetGame(){
     currentQuestion=0;
     correctCount=0;
+    answerHistory = []; // Reset answer history
+    consecutiveCorrect = 0; // Reset consecutive counters
+    consecutiveIncorrect = 0;
+    // Reset difficulty to initial recommended difficulty
+    (async () => {
+      const params = window.GameQuizLoader.parseParams();
+      const recommendedDifficulty = await window.GameQuizLoader.fetchRecommendedDifficulty(params.subject);
+      if (recommendedDifficulty !== null) {
+        currentDifficulty = recommendedDifficulty;
+        filterQuestionsByDifficulty();
+        updateDifficultyIndicator();
+      }
+    })();
     carPos=getStartLinePosition();
     car.style.left=carPos+'px';
     carGame.classList.remove('deadend');

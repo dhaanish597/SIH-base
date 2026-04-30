@@ -1,0 +1,163 @@
+{
+  "_comment": "Gamified Learning Platform — Design Tokens",
+  "_references": "Clash Royale (Supercell), Duolingo, Habitica, Hearthstone, Fortnite",
+
+  "colors": {
+    "brand": {
+      "primary":    "#7C3AED",
+      "primaryHover":"#6D28D9",
+      "primaryGlow": "rgba(124,58,237,0.35)"
+    },
+
+    "game": {
+      "correct":    "#58CC02",
+      "correctDark":"#46A302",
+      "correctShadow":"#3A8501",
+
+      "active":     "#1CB0F6",
+      "activeDark": "#0099E0",
+      "activeShadow":"#007AB8",
+
+      "wrong":      "#FF4B4B",
+      "wrongDark":  "#E63C3C",
+
+      "xp":         "#FFC800",
+      "xpDark":     "#E6B400",
+      "xpGlow":     "rgba(255,200,0,0.3)",
+
+      "streak":     "#FF9600",
+      "streakDark": "#E68700",
+
+      "elixir":     "#D946EF",
+      "elixirDark": "#9333EA",
+      "elixirGlow": "rgba(217,70,239,0.3)",
+
+      "legendary":  "#FFD700",
+      "epic":       "#A855F7",
+      "rare":       "#3B82F6",
+      "common":     "#6B7280"
+    },
+
+    "backgrounds": {
+      "arena":      "#0D0D1A",
+      "card":       "#1A1A2E",
+      "cardHover":  "#1E2040",
+      "panel":      "#16213E",
+      "surface":    "#0F172A",
+      "overlay":    "rgba(0,0,0,0.7)"
+    },
+
+    "text": {
+      "primary":    "#F0F4FF",
+      "secondary":  "#94A3B8",
+      "muted":      "#475569",
+      "xp":         "#FFC800",
+      "correct":    "#58CC02",
+      "danger":     "#FF4B4B"
+    },
+
+    "borders": {
+      "card":       "#2D3748",
+      "active":     "#4A9EFF",
+      "legendary":  "#FFD700",
+      "epic":       "#A855F7",
+      "rare":       "#3B82F6",
+      "quest":      "#4ADE80"
+    },
+
+    "rarity": {
+      "common":     { "bg": "#374151", "border": "#6B7280", "text": "#D1D5DB" },
+      "rare":       { "bg": "#1E3A5F", "border": "#3B82F6", "text": "#93C5FD" },
+      "epic":       { "bg": "#2E1065", "border": "#A855F7", "text": "#D8B4FE" },
+      "legendary":  { "bg": "#451A03", "border": "#FFD700", "text": "#FDE68A" }
+    },
+
+    "classes": {
+      "warrior":    { "accent": "#EF4444", "bg": "rgba(239,68,68,0.1)",  "border": "rgba(239,68,68,0.3)"  },
+      "wizard":     { "accent": "#6366F1", "bg": "rgba(99,102,241,0.1)", "border": "rgba(99,102,241,0.3)" },
+      "healer":     { "accent": "#22C55E", "bg": "rgba(34,197,94,0.1)",  "border": "rgba(34,197,94,0.3)"  },
+      "rogue":      { "accent": "#F59E0B", "bg": "rgba(245,158,11,0.1)", "border": "rgba(245,158,11,0.3)" }
+    }
+  },
+
+  "typography": {
+    "fontDisplay":  "'Fredoka One', 'Nunito', cursive",
+    "fontBody":     "'Nunito', 'DM Sans', sans-serif",
+    "fontMono":     "'JetBrains Mono', monospace",
+    "fontHUD":      "'Oswald', 'Barlow Condensed', sans-serif",
+
+    "googleFonts":  "https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&family=Oswald:wght@400;600;700&display=swap",
+
+    "sizes": {
+      "hud":        "22px",
+      "cardTitle":  "14px",
+      "cardBody":   "12px",
+      "badge":      "10px",
+      "stat":       "11px",
+      "xpValue":    "12px"
+    },
+
+    "weights": {
+      "regular":    400,
+      "semibold":   600,
+      "bold":       700,
+      "black":      800
+    }
+  },
+
+  "spacing": {
+    "xs":   "4px",
+    "sm":   "8px",
+    "md":   "12px",
+    "lg":   "16px",
+    "xl":   "24px",
+    "xxl":  "32px"
+  },
+
+  "radii": {
+    "sm":   "6px",
+    "md":   "10px",
+    "lg":   "14px",
+    "xl":   "20px",
+    "pill": "100px",
+    "circle":"50%"
+  },
+
+  "shadows": {
+    "cardIdle":   "0 4px 0 #3A3A5C",
+    "cardHover":  "0 6px 0 #3A3A5C, 0 0 20px rgba(124,58,237,0.2)",
+    "cardActive": "0 1px 0 #3A3A5C",
+    "buttonCorrect":"0 4px 0 #3A8501",
+    "buttonActive": "0 4px 0 #007AB8",
+    "xpGlow":     "0 0 16px rgba(255,200,0,0.4)",
+    "elixirGlow": "0 0 12px rgba(217,70,239,0.5)",
+    "legendaryGlow":"0 0 24px rgba(255,215,0,0.4)"
+  },
+
+  "animations": {
+    "correctFlash":  "correctFlash 0.4s ease",
+    "wrongShake":    "wrongShake 0.4s ease",
+    "xpPopup":       "xpPopup 0.6s ease forwards",
+    "pulseGlow":     "pulseGlow 1.5s ease-in-out infinite",
+    "levelUp":       "levelUp 0.8s cubic-bezier(0.175,0.885,0.32,1.275)",
+    "cardDeal":      "cardDeal 0.3s cubic-bezier(0.175,0.885,0.32,1.275)",
+    "streakBounce":  "streakBounce 0.5s cubic-bezier(0.175,0.885,0.32,1.275)"
+  },
+
+  "zIndex": {
+    "hud":      100,
+    "modal":    200,
+    "tooltip":  300,
+    "levelUp":  400
+  },
+
+  "gameMechanics": {
+    "maxLives":       5,
+    "maxElixir":      10,
+    "xpPerLesson":    100,
+    "xpPerCorrect":   10,
+    "xpLevelBase":    1000,
+    "streakFreeze":   1,
+    "dailyGoalXP":    200
+  }
+}

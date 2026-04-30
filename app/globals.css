@@ -1,0 +1,763 @@
+@import url('../game-components.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   QUEST ACADEMY — DESIGN TOKENS
+   Vibe: Clash Royale dark arena × Duolingo button feel.
+   FLAT colors, hard-drop shadows. NO purple/cyan AI gradients.
+   ========================================================================== */
+:root {
+  /* ---------- BASE / SURFACE ---------- */
+  --bg-deep:        #07070F;
+  --bg-arena:       #0E1023;
+  --bg-elev-1:      #161930;
+  --bg-elev-2:      #1F2342;
+  --bg-elev-3:      #2A2F55;
+  --line:           #2D3260;
+  --line-soft:      rgba(255,255,255,0.06);
+
+  /* Legacy aliases (kept so existing components don't break) */
+  --color-bg-base:        #07070F;
+  --color-bg-surface:     #161930;
+  --color-bg-elevated:    #1F2342;
+  --color-bg-overlay:     #0E1023;
+
+  /* ---------- INK ---------- */
+  --ink-1:          #F5F7FF;
+  --ink-2:          #B7BEE0;
+  --ink-3:          #6F77A6;
+  --ink-dim:        #424878;
+
+  /* Legacy text aliases */
+  --color-text-primary:   #F5F7FF;
+  --color-text-secondary: #B7BEE0;
+  --color-text-muted:     #6F77A6;
+
+  /* ---------- BRAND / ACCENTS (flat, never gradient) ---------- */
+  --violet:         #6B4BFF;
+  --violet-deep:    #3A2399;
+  --violet-bright:  #8A6DFF;
+
+  --cyan:           #18D6FF;
+  --cyan-deep:      #0B6E87;
+
+  --gold:           #FFC93C;
+  --gold-deep:      #B8852A;
+  --gold-glow:      #FFE08A;
+
+  --silver:         #C9D2E0;
+  --silver-deep:    #6B7588;
+
+  --bronze:         #D08850;
+  --bronze-deep:    #7E4F2A;
+
+  --hot:            #FF5A4D;
+  --hot-deep:       #A8281D;
+
+  --green:          #2DD46E;
+  --green-deep:     #178541;
+
+  --orange:         #FF8A2B;
+  --orange-deep:    #B14E00;
+
+  --pink:           #FF4D8A;
+  --pink-deep:      #9F1844;
+
+  /* Legacy brand aliases */
+  --color-primary:        #6B4BFF;
+  --color-primary-glow:   #8A6DFF;
+  --color-secondary:      #18D6FF;
+  --color-secondary-glow: #18D6FF;
+  --color-accent-gold:    #FFC93C;
+  --color-accent-green:   #2DD46E;
+  --color-accent-red:     #FF5A4D;
+  --color-accent-pink:    #FF4D8A;
+  --color-border:         #2D3260;
+  --color-border-active:  #6B4BFF;
+
+  /* ---------- SUBJECT COLORS ---------- */
+  --s-math:         #3B82F6;
+  --s-science:      #2DD46E;
+  --s-english:      #18D6FF;
+  --s-history:      #FFA72B;
+  --s-geo:          #14B8A6;
+  --s-coding:       #FF5A4D;
+
+  /* ---------- HARD-DROP SHADOWS (Duolingo press) ---------- */
+  --hd-violet:  0 5px 0 0 var(--violet-deep);
+  --hd-cyan:    0 5px 0 0 var(--cyan-deep);
+  --hd-gold:    0 5px 0 0 var(--gold-deep);
+  --hd-green:   0 5px 0 0 var(--green-deep);
+  --hd-hot:     0 5px 0 0 var(--hot-deep);
+  --hd-orange:  0 5px 0 0 var(--orange-deep);
+  --hd-pink:    0 5px 0 0 var(--pink-deep);
+  --hd-dark:    0 5px 0 0 #050610;
+
+  /* Soft glow tokens for highlights only — never used as fills */
+  --shadow-glow-primary:   0 0 18px rgba(107,75,255,0.45);
+  --shadow-glow-secondary: 0 0 18px rgba(24,214,255,0.45);
+  --shadow-glow-gold:      0 0 18px rgba(255,201,60,0.55);
+
+  /* Type scale */
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 16px;
+  --text-lg:   18px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  30px;
+  --text-4xl:  36px;
+  --text-5xl:  48px;
+  --text-game: 64px;
+
+  /* Type families */
+  --f-display: 'Bowlby One', 'Fredoka One', system-ui, sans-serif;
+  --f-body:    'Nunito', system-ui, sans-serif;
+  --f-hud:     'Oswald', 'Bebas Neue', system-ui, sans-serif;
+  --f-mono:    'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ==========================================================================
+   GLOBAL
+   ========================================================================== */
+* { box-sizing: border-box; }
+html, body, #root {
+  background: var(--bg-deep);
+  color: var(--ink-1);
+  min-height: 100%;
+}
+body {
+  margin: 0;
+  font-family: var(--f-body);
+  font-weight: 600;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: rgba(107,75,255,0.4); color: #F5F7FF; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-arena); }
+::-webkit-scrollbar-thumb {
+  background: var(--violet);
+  border-radius: 8px;
+  border: 2px solid var(--bg-deep);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--violet-bright); }
+
+:focus-visible {
+  outline: 2px solid var(--violet-bright);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   ARENA BACKGROUND — flat dark navy with subtle grid + soft vignette.
+   No purple gradient mesh. The bg is a near-flat color, the violet hint
+   only shows at the very top and is barely visible.
+   ========================================================================== */
+.arena-bg, .arcade-bg {
+  position: relative;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(107,75,255,0.10), transparent 60%),
+    radial-gradient(900px 500px at 100% 100%, rgba(24,214,255,0.06), transparent 60%),
+    var(--bg-arena);
+}
+.arena-bg::before,
+.arcade-bg::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  z-index: 0;
+}
+
+/* Drifting twinkle field — kept for atmosphere, opacity dialed down */
+.arcade-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, rgba(255,201,60,0.55), transparent 50%),
+    radial-gradient(1px 1px at 28% 72%, rgba(24,214,255,0.5), transparent 50%),
+    radial-gradient(1.5px 1.5px at 47% 33%, rgba(255,201,60,0.4), transparent 50%),
+    radial-gradient(1px 1px at 62% 88%, rgba(138,109,255,0.5), transparent 50%),
+    radial-gradient(1.5px 1.5px at 78% 12%, rgba(24,214,255,0.5), transparent 50%),
+    radial-gradient(1px 1px at 91% 55%, rgba(138,109,255,0.4), transparent 50%),
+    radial-gradient(1.5px 1.5px at 5% 92%, rgba(255,201,60,0.5), transparent 50%),
+    radial-gradient(1px 1px at 38% 5%, rgba(24,214,255,0.4), transparent 50%);
+  animation: arcadeDrift 32s linear infinite;
+}
+@keyframes arcadeDrift {
+  0%   { transform: translateY(0) translateX(0); }
+  50%  { transform: translateY(-10px) translateX(5px); }
+  100% { transform: translateY(0) translateX(0); }
+}
+
+.scanlines::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.04) 0 1px,
+    transparent 1px 3px
+  );
+  mix-blend-mode: overlay;
+}
+
+/* ==========================================================================
+   BUTTONS — Duolingo hard-drop press
+   ========================================================================== */
+.btn,
+.btn-primary,
+.btn-secondary,
+.arcade-btn-primary,
+.arcade-btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 10px;
+  font-family: var(--f-hud);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 14px 22px;
+  border-radius: 12px;
+  font-size: 15px;
+  line-height: 1;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s;
+  user-select: none;
+  border: 2px solid rgba(0,0,0,0.4);
+  position: relative;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.btn:hover, .arcade-btn-primary:hover, .arcade-btn-secondary:hover {
+  transform: translateY(-2px); filter: brightness(1.08);
+}
+.btn:active, .arcade-btn-primary:active, .arcade-btn-secondary:active {
+  transform: translateY(4px);
+}
+.btn:disabled, .arcade-btn-primary:disabled, .arcade-btn-secondary:disabled {
+  opacity: 0.55; cursor: not-allowed; transform: none; filter: none;
+}
+
+.btn-primary, .arcade-btn-primary {
+  background: var(--violet); color: #fff;
+  box-shadow: var(--hd-violet);
+}
+.btn-primary:active, .arcade-btn-primary:active {
+  box-shadow: 0 1px 0 0 var(--violet-deep);
+}
+
+.btn-cyan {
+  background: var(--cyan); color: #062430;
+  box-shadow: var(--hd-cyan);
+}
+.btn-cyan:active { box-shadow: 0 1px 0 0 var(--cyan-deep); }
+
+.btn-gold {
+  background: var(--gold); color: #2A1B00;
+  box-shadow: var(--hd-gold);
+}
+.btn-gold:active { box-shadow: 0 1px 0 0 var(--gold-deep); }
+
+.btn-green {
+  background: var(--green); color: #062416;
+  box-shadow: var(--hd-green);
+}
+.btn-green:active { box-shadow: 0 1px 0 0 var(--green-deep); }
+
+.btn-hot {
+  background: var(--hot); color: #2A0805;
+  box-shadow: var(--hd-hot);
+}
+.btn-hot:active { box-shadow: 0 1px 0 0 var(--hot-deep); }
+
+.btn-ghost, .arcade-btn-secondary {
+  background: transparent;
+  border: 2px solid var(--line);
+  color: var(--ink-1);
+  box-shadow: 0 5px 0 0 #050610;
+}
+.btn-ghost:hover, .arcade-btn-secondary:hover {
+  border-color: var(--cyan); color: var(--cyan);
+}
+.btn-ghost:active, .arcade-btn-secondary:active {
+  box-shadow: 0 1px 0 0 #050610;
+}
+
+.btn-sm { padding: 9px 14px; font-size: 13px; }
+.btn-sm.btn-primary, .btn-sm.arcade-btn-primary { box-shadow: 0 4px 0 0 var(--violet-deep); }
+.btn-sm.btn-cyan { box-shadow: 0 4px 0 0 var(--cyan-deep); }
+.btn-sm.btn-gold { box-shadow: 0 4px 0 0 var(--gold-deep); }
+.btn-sm.btn-green { box-shadow: 0 4px 0 0 var(--green-deep); }
+.btn-sm.btn-hot { box-shadow: 0 4px 0 0 var(--hot-deep); }
+.btn-sm.btn-ghost, .btn-sm.arcade-btn-secondary { box-shadow: 0 4px 0 0 #050610; }
+.btn-block { width: 100%; }
+
+/* ==========================================================================
+   CARDS
+   ========================================================================== */
+.card,
+.arcade-card {
+  background: var(--bg-elev-1);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  position: relative;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+}
+.arcade-card:hover, .card:hover {
+  border-color: var(--violet);
+}
+.card-pad { padding: 18px; }
+.arcade-card-elevated { background: var(--bg-elev-2); }
+
+/* Rarity edges */
+.r-common  { border-color: #4A5180; }
+.r-rare    { border-color: var(--s-math);   box-shadow: 0 0 0 1px var(--s-math), 0 0 24px -4px var(--s-math); }
+.r-epic    { border-color: var(--violet-bright);   box-shadow: 0 0 0 1px var(--violet-bright),  0 0 28px -4px var(--violet-bright); }
+.r-legend  { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 0 32px -4px var(--gold); }
+@keyframes legendPulse {
+  0%,100% { box-shadow: 0 0 0 1px var(--gold), 0 0 24px -4px var(--gold); }
+  50%     { box-shadow: 0 0 0 2px var(--gold), 0 0 40px -2px var(--gold); }
+}
+.r-legend { animation: legendPulse 2.4s ease-in-out infinite; }
+
+/* ==========================================================================
+   PILLS / CHIPS / TAGS
+   ========================================================================== */
+.pill,
+.arcade-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--f-hud); font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  background: rgba(0,0,0,0.35);
+  line-height: 1;
+}
+.pill-gold,   .arcade-chip-gold   { color: var(--gold);          background: #2B1F00; box-shadow: 0 3px 0 0 var(--gold-deep); }
+.pill-violet                      { color: var(--violet-bright); background: #1A1340; box-shadow: 0 3px 0 0 var(--violet-deep); }
+.pill-cyan,   .arcade-chip-cyan   { color: var(--cyan);          background: #042A36; box-shadow: 0 3px 0 0 var(--cyan-deep); }
+.pill-orange                      { color: var(--orange);        background: #2B1500; box-shadow: 0 3px 0 0 var(--orange-deep); }
+.pill-green                       { color: var(--green);         background: #062818; box-shadow: 0 3px 0 0 var(--green-deep); }
+.pill-hot, .arcade-chip-red       { color: var(--hot);           background: #2A0805; box-shadow: 0 3px 0 0 var(--hot-deep); }
+.pill-silver                      { color: var(--silver);        background: #1A1F2A; box-shadow: 0 3px 0 0 var(--silver-deep); }
+
+/* Default chip alias to violet */
+.arcade-chip {
+  color: var(--violet-bright);
+  background: #1A1340;
+  box-shadow: 0 3px 0 0 var(--violet-deep);
+  border-color: var(--violet-bright);
+}
+
+/* ==========================================================================
+   INPUTS
+   ========================================================================== */
+.arcade-input {
+  width: 100%;
+  background: var(--bg-arena);
+  color: var(--ink-1);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: var(--f-body);
+  font-weight: 600;
+  font-size: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.arcade-input::placeholder { color: var(--ink-3); font-weight: 600; }
+.arcade-input:focus {
+  outline: none;
+  border-color: var(--violet-bright);
+  box-shadow: 0 0 0 3px rgba(107,75,255,0.2);
+}
+
+/* ==========================================================================
+   XP / PROGRESS BAR
+   ========================================================================== */
+.xp-bar,
+.arcade-xp-track {
+  position: relative;
+  height: 14px;
+  background: #0A0B18;
+  border: 2px solid #000;
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 0 rgba(0,0,0,0.6);
+}
+.xp-bar > i,
+.arcade-xp-fill {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+  border-radius: 999px;
+  position: relative;
+  box-shadow:
+    inset 0 -3px 0 rgba(0,0,0,0.25),
+    inset 0 2px 0 rgba(255,255,255,0.5);
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.arcade-xp-fill { background: var(--violet-bright); }
+.xp-bar > i::after,
+.arcade-xp-fill::after {
+  content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 8px;
+  background: var(--gold-glow); border-radius: 999px;
+  box-shadow: 0 0 10px var(--gold-glow);
+}
+.arcade-xp-fill::after {
+  background: #C8B8FF;
+  box-shadow: 0 0 10px var(--violet-bright);
+}
+.xp-bar.violet > i { background: var(--violet-bright); }
+.xp-bar.violet > i::after { background: #C8B8FF; box-shadow: 0 0 10px var(--violet-bright); }
+.xp-bar.cyan > i { background: var(--cyan); }
+.xp-bar.cyan > i::after { background: #B0F0FF; box-shadow: 0 0 10px var(--cyan); }
+.xp-bar.green > i { background: var(--green); }
+.xp-bar.green > i::after { background: #9CFFC0; box-shadow: 0 0 10px var(--green); }
+.xp-bar.hot > i { background: var(--hot); }
+.xp-bar.hot > i::after { background: #FFB6AE; box-shadow: 0 0 10px var(--hot); }
+.xp-bar.tall { height: 18px; }
+
+/* ==========================================================================
+   ROLE TAB (Login)
+   ========================================================================== */
+.role-tab {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-elev-1);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink-2);
+  font-family: var(--f-hud);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.12s, background 0.15s, color 0.15s, border-color 0.15s;
+  box-shadow: 0 4px 0 0 #050610;
+}
+.role-tab:hover { color: var(--ink-1); border-color: var(--violet-bright); }
+.role-tab[aria-selected="true"] {
+  background: var(--violet);
+  border-color: var(--violet-bright);
+  color: #fff;
+  box-shadow: 0 4px 0 0 var(--violet-deep);
+}
+.role-tab[aria-selected="true"]:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 0 var(--violet-deep);
+}
+
+/* ==========================================================================
+   LOGO WORDMARK
+   ========================================================================== */
+.arcade-title {
+  font-family: var(--f-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--ink-1);
+  text-shadow: 0 3px 0 #000, 0 0 18px rgba(255,201,60,0.3);
+}
+
+.f-display { font-family: var(--f-display); font-weight: 400; letter-spacing: 0.01em; }
+.f-hud     { font-family: var(--f-hud); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ==========================================================================
+   ANIMATIONS
+   ========================================================================== */
+@keyframes arcadeShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+.arcade-shake { animation: arcadeShake 0.4s ease; }
+
+@keyframes confetti {
+  0%   { transform: translateY(0) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+.animate-confetti { animation: confetti linear forwards; }
+
+@keyframes arcadeXpFloat {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  60%  { opacity: 1; transform: translateY(-40px) scale(1.15); }
+  100% { opacity: 0; transform: translateY(-72px) scale(0.85); }
+}
+.arcade-xp-float { animation: arcadeXpFloat 1s ease forwards; }
+
+@keyframes pulseGlow {
+  0%,100% { filter: drop-shadow(0 0 4px currentColor); }
+  50%     { filter: drop-shadow(0 0 16px currentColor); }
+}
+.pulse-glow { animation: pulseGlow 1.6s ease-in-out infinite; }
+
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-in { animation: pageIn 0.25s ease-out; }
+
+/* ==========================================================================
+   RESPONSIVE CONTAINER
+   ========================================================================== */
+.container-responsive {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+@media (min-width: 640px)  { .container-responsive { max-width: 640px; } }
+@media (min-width: 768px)  { .container-responsive { max-width: 768px; } }
+@media (min-width: 1024px) { .container-responsive { max-width: 1024px; } }
+@media (min-width: 1280px) { .container-responsive { max-width: 1280px; } }
+
+/* ==========================================================================
+   APP UTILITY CLASSES — used by app/ components
+   ========================================================================== */
+
+/* Navigation */
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-family: var(--f-hud);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+  text-decoration: none;
+}
+.nav-item-active {
+  background: rgba(107,75,255,0.18);
+  color: var(--violet-bright);
+}
+.nav-item-inactive {
+  color: var(--ink-3);
+}
+.nav-item-inactive:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--ink-1);
+}
+
+/* Badges / chips */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: var(--f-hud);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+.badge-primary {
+  background: rgba(107,75,255,0.2);
+  color: var(--violet-bright);
+  border-color: rgba(107,75,255,0.35);
+}
+.badge-info {
+  background: rgba(24,214,255,0.15);
+  color: var(--cyan);
+  border-color: rgba(24,214,255,0.3);
+}
+.badge-success {
+  background: rgba(45,212,110,0.15);
+  color: var(--green);
+  border-color: rgba(45,212,110,0.3);
+}
+.badge-warning {
+  background: rgba(255,201,60,0.15);
+  color: var(--gold);
+  border-color: rgba(255,201,60,0.3);
+}
+.badge-danger {
+  background: rgba(255,90,77,0.15);
+  color: var(--hot);
+  border-color: rgba(255,90,77,0.3);
+}
+
+/* Progress bars */
+.progress-track {
+  background: #0A0B18;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--violet);
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.22,1,0.36,1);
+  position: relative;
+}
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  right: 2px; top: 1px; bottom: 1px; width: 6px;
+  background: rgba(255,255,255,0.4);
+  border-radius: 999px;
+}
+
+/* Form input (standalone alias for .arcade-input) */
+.input {
+  width: 100%;
+  background: var(--bg-arena);
+  color: var(--ink-1);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: var(--f-body);
+  font-weight: 600;
+  font-size: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input::placeholder { color: var(--ink-3); }
+.input:focus {
+  outline: none;
+  border-color: var(--violet-bright);
+  box-shadow: 0 0 0 3px rgba(107,75,255,0.2);
+}
+
+/* Ghost/secondary button alias */
+.btn-secondary {
+  background: transparent;
+  border: 2px solid var(--line);
+  color: var(--ink-1);
+  box-shadow: 0 5px 0 0 #050610;
+}
+.btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+.btn-secondary:active { box-shadow: 0 1px 0 0 #050610; }
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-elev-1) 25%, var(--bg-elev-2) 50%, var(--bg-elev-1) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s infinite;
+  border-radius: 10px;
+}
+@keyframes skeletonShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Staggered children fade-in */
+.stagger-children > * {
+  animation: fadeInUp 0.3s ease-out both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.10s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.20s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.30s; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in { animation: fadeIn 0.25s ease-out; }
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--violet); }
+
+/* pb-safe for iPhone home bar */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* Tailwind-compat aliases used across app/ components */
+.bg-bg-base     { background: var(--bg-deep); }
+.bg-bg-surface  { background: var(--bg-elev-1); }
+.bg-bg-elevated { background: var(--bg-elev-2); }
+.bg-bg-overlay  { background: var(--bg-arena); }
+.text-text-primary   { color: var(--ink-1); }
+.text-text-secondary { color: var(--ink-2); }
+.text-text-muted     { color: var(--ink-3); }
+.text-brand-primary  { color: var(--violet); }
+.text-brand-primaryGlow { color: var(--violet-bright); }
+.text-brand-secondary { color: var(--cyan); }
+.text-accent-gold  { color: var(--gold); }
+.text-accent-green { color: var(--green); }
+.text-accent-red   { color: var(--hot); }
+.border-brand-primary { border-color: var(--violet); }
+.border-brand-secondary { border-color: var(--cyan); }
+
+/* ==========================================================================
+   QUEST ACADEMY DASHBOARD — Responsive layout helpers
+   ========================================================================== */
+.qa-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+}
+.qa-quest-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+.qa-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.qa-skill-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+}
+@media (max-width: 1024px) {
+  .qa-dashboard-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .qa-quest-grid   { grid-template-columns: 1fr; }
+  .qa-two-col      { grid-template-columns: 1fr; }
+  .qa-skill-grid   { grid-template-columns: 1fr; }
+}
+
+/* Desktop GameNav — shown on md+ */
+.qa-desktop-nav { display: none; }
+@media (min-width: 768px) { .qa-desktop-nav { display: block; } }
+
+/* Mobile nav bar — hidden on md+ */
+.qa-mobile-nav { display: block; }
+@media (min-width: 768px) { .qa-mobile-nav { display: none; } }
+
+/* Mobile bottom nav */
+.qa-mobile-bottom-nav { display: grid; }
+@media (min-width: 768px) { .qa-mobile-bottom-nav { display: none; } }
+
+/* Main content padding for mobile bottom nav */
+.qa-main-content { padding-bottom: 72px; }
+@media (min-width: 768px) { .qa-main-content { padding-bottom: 0; } }
+.shadow-glow-sm { box-shadow: var(--shadow-glow-primary); }

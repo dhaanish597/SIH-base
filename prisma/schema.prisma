@@ -1,0 +1,911 @@
+// =============================================================================
+// SIH Platform - Prisma schema
+// Postgres on Supabase. Mirrors existing SQLite tables + adds spec-required
+// tables for coins, quests, shop, multiplayer lobbies/matches, audit logs,
+// refresh tokens, classes, and a normalized question bank.
+// =============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  STUDENT
+  TEACHER
+  SCHOOL
+  ADMIN
+  SUPERADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+  EXPERT
+  MASTER
+}
+
+enum LearningStyle {
+  VISUAL
+  KINESTHETIC
+  READING
+  MIXED
+}
+
+enum AssignmentStatus {
+  PENDING
+  COMPLETED
+  LATE
+  GRADED
+}
+
+enum QuestionType {
+  MCQ
+  FILL_BLANK
+  DRAG_DROP
+  IMAGE_MCQ
+  FREE_TEXT
+  EQUATION
+  SEQUENCING
+}
+
+enum QuestionStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum GameType {
+  CAR
+  PLANTS
+  FIGHTING
+  QUIZ_BATTLE
+  MATH_DUNGEON
+  WORD_FORGE
+  SCIENCE_LAB
+  HISTORY_CONQUEST
+}
+
+enum GameMode {
+  SOLO
+  MULTIPLAYER
+  COOP
+}
+
+enum LobbyStatus {
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum CoinTransactionType {
+  EARN
+  SPEND
+  ADJUSTMENT
+}
+
+enum QuestType {
+  DAILY
+  WEEKLY
+  SPECIAL
+  TEACHER_ASSIGNED
+}
+
+enum QuestStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
+  ABANDONED
+}
+
+enum ItemCategory {
+  OUTFIT
+  ACCESSORY
+  BACKGROUND
+  HERO_SKIN
+  AVATAR
+  LAB_COAT
+  HISTORICAL_AVATAR
+  EMOJI_PACK
+}
+
+enum BadgeType {
+  SUBJECT
+  GAME
+  STREAK
+  COLLAB
+  MILESTONE
+  SEASONAL
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  APPROVE
+  REJECT
+  IMPORT
+  EXPORT
+  GRANT
+  REVOKE
+}
+
+enum ExperimentStrategy {
+  MASTERY_BASED
+  SEQUENCE_BASED
+  ENGAGEMENT_BASED
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy: schools and users
+// ---------------------------------------------------------------------------
+
+model School {
+  id                    String    @id @default(cuid())
+  name                  String
+  schoolCode            String    @unique
+  address               String?
+  email                 String    @unique
+  passwordHash          String?
+  isActive              Boolean   @default(true)
+  subscriptionTier      String?
+  subscriptionExpiresAt DateTime?
+  featureFlags          Json?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  users      User[]
+  classes    Class[]
+  events     Event[]
+  questions  Question[]
+  auditLogs  AuditLog[]
+  lobbies    GameLobby[]
+
+  @@index([schoolCode])
+  @@map("schools")
+}
+
+model User {
+  id             String     @id @default(cuid())
+  name           String
+  email          String?    @unique
+  studentId      String?    @unique
+  pinHash        String?
+  passwordHash   String?
+  role           Role
+  class          String?
+  schoolId       String?
+  status         UserStatus @default(ACTIVE)
+  phone          String?
+  address        String?
+  language       String     @default("en")
+  profilePhoto   String?
+  rollNumber     String?
+  department     String?
+  subjectsTaught String[]
+  classesHandled String[]
+
+  // Progression
+  totalPoints    Int       @default(0)
+  totalCoins     Int       @default(0)
+  level          Int       @default(1)
+  xp             Int       @default(0)
+  streakDays     Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActiveDate DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  lastLogin DateTime?
+
+  school School? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+
+  classEnrollments      ClassEnrollment[]
+  classesTaught         Class[]                 @relation("ClassTeacher")
+  refreshTokens         RefreshToken[]
+  progress              StudentProgress[]
+  conceptMastery        ConceptMastery[]
+  learningProfile       StudentLearningProfile?
+  badges                UserBadge[]
+  homeworkAssignments   StudentHomework[]
+  assignmentSubmissions StudentAssignment[]
+  homeworksCreated      Homework[]
+  assignmentsCreated    Assignment[]
+  errorPatterns         ErrorPattern[]
+  engagementPatterns    EngagementPattern[]
+  experiments           Experiment[]
+  questsProgress        UserQuestProgress[]
+  inventory             UserInventoryItem[]
+  coinTransactions      CoinTransaction[]
+  gameSessions          GameSession[]
+  matchParticipations   MatchParticipant[]
+  lessonsCreated        Lesson[]
+  questionsCreated      Question[]
+  auditLogs             AuditLog[]
+  hostedLobbies         GameLobby[]             @relation("LobbyHost")
+
+  @@index([schoolId, role])
+  @@index([studentId])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Classes (proper class/section model)
+// ---------------------------------------------------------------------------
+
+model Class {
+  id         String   @id @default(cuid())
+  schoolId   String
+  name       String
+  gradeLevel Int
+  section    String?
+  teacherId  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  school          School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  teacher         User?             @relation("ClassTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  enrollments     ClassEnrollment[]
+  gameAssignments GameAssignment[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId, gradeLevel])
+  @@map("classes")
+}
+
+model ClassEnrollment {
+  id         String   @id @default(cuid())
+  classId    String
+  studentId  String
+  enrolledAt DateTime @default(now())
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId])
+  @@map("class_enrollments")
+}
+
+// ---------------------------------------------------------------------------
+// Curriculum: subjects -> chapters -> topics -> questions
+// ---------------------------------------------------------------------------
+
+model Subject {
+  id      String  @id @default(cuid())
+  name    String  @unique
+  iconKey String?
+
+  chapters  Chapter[]
+  questions Question[]
+  lessons   Lesson[]
+
+  @@map("subjects")
+}
+
+model Chapter {
+  id         String @id @default(cuid())
+  subjectId  String
+  gradeLevel Int
+  name       String
+  orderIndex Int    @default(0)
+
+  subject   Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topics    Topic[]
+  questions Question[]
+  lessons   Lesson[]
+
+  @@unique([subjectId, gradeLevel, name])
+  @@index([subjectId, gradeLevel])
+  @@map("chapters")
+}
+
+model Topic {
+  id          String  @id @default(cuid())
+  chapterId   String
+  name        String
+  description String?
+  orderIndex  Int     @default(0)
+
+  chapter   Chapter    @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  questions Question[]
+
+  @@unique([chapterId, name])
+  @@map("topics")
+}
+
+model Question {
+  id                String         @id @default(cuid())
+  legacyId          String?        @unique // e.g. "G6-M-Q0001" from JSON
+  schoolId          String?
+  subjectId         String
+  chapterId         String?
+  topicId           String?
+  gradeLevel        Int
+  type              QuestionType
+  text              String
+  imageUrl          String?
+  // Type-specific data stored as JSON for flexibility
+  choices           Json?
+  answerIndex       Int?
+  correctAnswer     String?
+  acceptableAnswers String[]       @default([])
+  sequenceItems     Json?
+  dragItems         Json?
+  // Metadata
+  difficulty        Difficulty
+  difficultyLevel   Float          @default(0.5)
+  conceptTags       String[]       @default([])
+  ncert             Boolean        @default(false)
+  explanation       String?
+  hintText          String?
+  status            QuestionStatus @default(APPROVED)
+  createdById       String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  school    School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  chapter   Chapter? @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  topic     Topic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  createdBy User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([subjectId, gradeLevel, difficulty])
+  @@index([schoolId, status])
+  @@index([conceptTags])
+  @@map("questions")
+}
+
+// ---------------------------------------------------------------------------
+// Lessons & quizzes (legacy — kept for current API compatibility)
+// ---------------------------------------------------------------------------
+
+model Lesson {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  subjectId   String?
+  chapterId   String?
+  difficulty  Int      @default(1)
+  language    String   @default("en")
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subject   Subject?          @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  chapter   Chapter?          @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  createdBy User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  progress  StudentProgress[]
+  quizzes   Quiz[]
+
+  @@map("lessons")
+}
+
+model Quiz {
+  id          String   @id @default(cuid())
+  lessonId    String
+  title       String?
+  questions   Json
+  totalPoints Int      @default(0)
+  gradeLevel  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@map("quizzes")
+}
+
+// ---------------------------------------------------------------------------
+// Homework / Assignments (teacher → student)
+// ---------------------------------------------------------------------------
+
+model Homework {
+  id          String    @id @default(cuid())
+  teacherId   String
+  classId     String?
+  title       String
+  description String?
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+
+  teacher          User              @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  studentHomeworks StudentHomework[]
+
+  @@map("homeworks")
+}
+
+model Assignment {
+  id          String    @id @default(cuid())
+  teacherId   String
+  classId     String?
+  title       String
+  description String?
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+
+  teacher            User                @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  studentAssignments StudentAssignment[]
+
+  @@map("assignments")
+}
+
+model StudentHomework {
+  id          String           @id @default(cuid())
+  homeworkId  String
+  studentId   String
+  status      AssignmentStatus @default(PENDING)
+  submittedAt DateTime?
+  score       Int?
+
+  homework Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  student  User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([homeworkId, studentId])
+  @@map("student_homework")
+}
+
+model StudentAssignment {
+  id           String           @id @default(cuid())
+  assignmentId String
+  studentId    String
+  status       AssignmentStatus @default(PENDING)
+  submittedAt  DateTime?
+  score        Int?
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student    User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+  @@map("student_assignments")
+}
+
+model GameAssignment {
+  id           String      @id @default(cuid())
+  classId      String
+  teacherId    String
+  gameType     GameType
+  subjectId    String?
+  chapterId    String?
+  topicId      String?
+  difficulty   Difficulty?
+  dueDate      DateTime?
+  instructions String?
+  createdAt    DateTime    @default(now())
+
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@map("game_assignments")
+}
+
+// ---------------------------------------------------------------------------
+// Learning analytics
+// ---------------------------------------------------------------------------
+
+model StudentProgress {
+  id               String   @id @default(cuid())
+  studentId        String
+  lessonId         String
+  score            Int
+  timeSpent        Int
+  attempts         Int      @default(1)
+  consistencyScore Float?
+  engagementLevel  Float?
+  conceptTags      String[] @default([])
+  errorType        String?
+  synced           Boolean  @default(true)
+  completedAt      DateTime @default(now())
+
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lesson  Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, lessonId])
+  @@index([completedAt])
+  @@map("student_progress")
+}
+
+model ConceptMastery {
+  id               String    @id @default(cuid())
+  studentId        String
+  conceptName      String
+  masteryLevel     Float
+  confidenceScore  Float?
+  lastPracticed    DateTime?
+  attemptsCount    Int       @default(0)
+  correctCount     Int       @default(0)
+  averageTimeSpent Float?
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, conceptName])
+  @@map("concept_mastery")
+}
+
+model StudentLearningProfile {
+  id                      String         @id @default(cuid())
+  studentId               String         @unique
+  preferredLearningStyle  LearningStyle?
+  averageLearningVelocity Float?
+  optimalDifficultyLevel  Float?
+  engagementScore         Float?
+  timeSpentVisual         Float          @default(0)
+  timeSpentReading        Float          @default(0)
+  timeSpentPractice       Float          @default(0)
+  lastUpdated             DateTime       @updatedAt
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("student_learning_profiles")
+}
+
+model ErrorPattern {
+  id              String   @id @default(cuid())
+  studentId       String
+  conceptName     String
+  errorType       String
+  occurrenceCount Int      @default(1)
+  firstOccurred   DateTime @default(now())
+  lastOccurred    DateTime @default(now())
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, conceptName, errorType])
+  @@map("error_patterns")
+}
+
+model EngagementPattern {
+  id                String   @id @default(cuid())
+  studentId         String
+  sessionDate       DateTime @db.Date
+  sessionDuration   Int      @default(0)
+  questionsAnswered Int      @default(0)
+  correctAnswers    Int      @default(0)
+  totalTimeSpent    Int      @default(0)
+  engagementScore   Float?
+  createdAt         DateTime @default(now())
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, sessionDate])
+  @@map("engagement_patterns")
+}
+
+model Experiment {
+  id              String             @id @default(cuid())
+  studentId       String             @unique
+  strategy        ExperimentStrategy
+  learningGains   Float?
+  engagementScore Float?
+  completionRate  Float?
+  assignedAt      DateTime           @default(now())
+  lastUpdated     DateTime           @updatedAt
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("experiments")
+}
+
+// ---------------------------------------------------------------------------
+// Badges & leaderboard
+// ---------------------------------------------------------------------------
+
+model BadgeDefinition {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  name        String
+  description String
+  type        BadgeType
+  iconUrl     String?
+  threshold   Int?
+  meta        Json?
+
+  userBadges UserBadge[]
+
+  @@map("badge_definitions")
+}
+
+model UserBadge {
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+  meta     Json?
+
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge BadgeDefinition @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model LeaderboardSnapshot {
+  id           String   @id @default(cuid())
+  schoolId     String
+  scope        String
+  scopeId      String?
+  studentId    String
+  totalPoints  Int
+  level        Int
+  rankPosition Int
+  weekKey      String?
+  capturedAt   DateTime @default(now())
+
+  @@unique([schoolId, scope, scopeId, studentId, weekKey])
+  @@index([schoolId, weekKey, rankPosition])
+  @@map("leaderboard_snapshots")
+}
+
+// ---------------------------------------------------------------------------
+// Game sessions, lobbies, matches
+// ---------------------------------------------------------------------------
+
+model GameSession {
+  id                 String      @id @default(cuid())
+  studentId          String
+  gameType           GameType
+  mode               GameMode
+  matchId            String?
+  subjectId          String?
+  chapterId          String?
+  topicId            String?
+  gradeLevel         Int?
+  difficulty         Difficulty?
+  startedAt          DateTime    @default(now())
+  endedAt            DateTime?
+  durationSec        Int?
+  questionsAttempted Int         @default(0)
+  questionsCorrect   Int         @default(0)
+  score              Int         @default(0)
+  xpEarned           Int         @default(0)
+  coinsEarned        Int         @default(0)
+  starsEarned        Int?
+  perQuestionData    Json?
+  outcome            String?
+
+  student User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  match   GameMatch? @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@index([studentId, gameType])
+  @@index([startedAt])
+  @@map("game_sessions")
+}
+
+model GameLobby {
+  id         String      @id @default(cuid())
+  schoolId   String
+  hostId     String
+  classCode  String?     @unique
+  gameType   GameType
+  mode       GameMode
+  subjectId  String?
+  chapterId  String?
+  topicId    String?
+  difficulty Difficulty?
+  maxPlayers Int         @default(2)
+  status     LobbyStatus @default(WAITING)
+  createdAt  DateTime    @default(now())
+  startedAt  DateTime?
+  endedAt    DateTime?
+
+  school School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  host   User       @relation("LobbyHost", fields: [hostId], references: [id], onDelete: Cascade)
+  match  GameMatch?
+
+  @@index([schoolId, status])
+  @@index([classCode])
+  @@map("game_lobbies")
+}
+
+model GameMatch {
+  id        String    @id @default(cuid())
+  lobbyId   String    @unique
+  gameType  GameType
+  mode      GameMode
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  winnerId  String?
+  matchData Json?
+
+  lobby        GameLobby          @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  participants MatchParticipant[]
+  sessions     GameSession[]
+
+  @@map("game_matches")
+}
+
+model MatchParticipant {
+  id         String    @id @default(cuid())
+  matchId    String
+  studentId  String
+  team       String?
+  finalScore Int       @default(0)
+  rank       Int?
+  joinedAt   DateTime  @default(now())
+  leftAt     DateTime?
+
+  match   GameMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  student User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, studentId])
+  @@map("match_participants")
+}
+
+// ---------------------------------------------------------------------------
+// Coins, shop, inventory
+// ---------------------------------------------------------------------------
+
+model CoinTransaction {
+  id          String              @id @default(cuid())
+  userId      String
+  amount      Int
+  type        CoinTransactionType
+  source      String
+  refId       String?
+  description String?
+  createdAt   DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("coin_transactions")
+}
+
+model ShopItem {
+  id          String       @id @default(cuid())
+  key         String       @unique
+  name        String
+  description String?
+  category    ItemCategory
+  iconUrl     String
+  priceCoins  Int
+  priceXp     Int?
+  unlockLevel Int?
+  isActive    Boolean      @default(true)
+
+  inventory UserInventoryItem[]
+
+  @@map("shop_items")
+}
+
+model UserInventoryItem {
+  id         String   @id @default(cuid())
+  userId     String
+  itemId     String
+  acquiredAt DateTime @default(now())
+  isEquipped Boolean  @default(false)
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item ShopItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@map("user_inventory_items")
+}
+
+// ---------------------------------------------------------------------------
+// Quests
+// ---------------------------------------------------------------------------
+
+model Quest {
+  id           String    @id @default(cuid())
+  key          String    @unique
+  type         QuestType
+  title        String
+  description  String
+  goal         Json
+  rewardXp     Int       @default(0)
+  rewardCoins  Int       @default(0)
+  rewardItemId String?
+  startsAt     DateTime?
+  endsAt       DateTime?
+  isActive     Boolean   @default(true)
+
+  userProgress UserQuestProgress[]
+
+  @@map("quests")
+}
+
+model UserQuestProgress {
+  id          String      @id @default(cuid())
+  userId      String
+  questId     String
+  progress    Int         @default(0)
+  goalCount   Int
+  status      QuestStatus @default(ACTIVE)
+  startedAt   DateTime    @default(now())
+  completedAt DateTime?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quest Quest @relation(fields: [questId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questId])
+  @@index([userId, status])
+  @@map("user_quest_progress")
+}
+
+// ---------------------------------------------------------------------------
+// XP levels lookup
+// ---------------------------------------------------------------------------
+
+model LevelDefinition {
+  level      Int    @id
+  title      String
+  xpRequired Int
+
+  @@map("level_definitions")
+}
+
+// ---------------------------------------------------------------------------
+// Events (school calendar)
+// ---------------------------------------------------------------------------
+
+model Event {
+  id          String   @id @default(cuid())
+  schoolId    String
+  title       String
+  description String?
+  eventDate   DateTime
+  createdAt   DateTime @default(now())
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@map("events")
+}
+
+// ---------------------------------------------------------------------------
+// Audit log
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  schoolId   String?
+  actorId    String?
+  action     AuditAction
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+
+  school School? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  actor  User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([schoolId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("audit_logs")
+}

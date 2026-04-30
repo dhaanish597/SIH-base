@@ -1,0 +1,146 @@
+/* ============================================================
+   PIXEL ART — pure CSS box-shadow sprites (no images)
+   Each sprite is a single tiny div with a giant box-shadow
+   string drawing colored "pixels" relative to the element.
+   ============================================================ */
+
+/* Base: a 1x1 element that scales via transform. Inner :before paints pixels. */
+.psprite {
+  width: 1px; height: 1px;
+  position: absolute;
+  transform-origin: 0 0;
+  image-rendering: pixelated;
+}
+.psprite-wrap {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  image-rendering: pixelated;
+}
+
+/* ============================================================
+   AVATAR FRAME — diamond/octagon pixel frame
+   Just provide a colored block + clip-path for octagon
+   ============================================================ */
+.pframe {
+  position: relative;
+  width: 96px; height: 96px;
+  display: grid; place-items: center;
+  background:
+    linear-gradient(135deg, #2A2F55 0%, #161930 100%);
+  clip-path: polygon(
+    20% 0, 80% 0, 100% 20%, 100% 80%,
+    80% 100%, 20% 100%, 0 80%, 0 20%
+  );
+  border: 0;
+}
+.pframe::before {
+  content: ""; position: absolute; inset: 4px;
+  clip-path: polygon(
+    20% 0, 80% 0, 100% 20%, 100% 80%,
+    80% 100%, 20% 100%, 0 80%, 0 20%
+  );
+  background: var(--bg-elev-2);
+}
+.pframe.gold::before   { background: linear-gradient(180deg, #3a2a05, #1c1404); }
+.pframe.gold          { background: var(--gold); }
+.pframe.violet::before { background: linear-gradient(180deg, #1A1340, #0c0822); }
+.pframe.violet        { background: var(--violet); }
+.pframe.cyan::before   { background: linear-gradient(180deg, #042A36, #02141a); }
+.pframe.cyan          { background: var(--cyan); }
+.pframe.silver::before { background: linear-gradient(180deg, #1A1F2A, #0c0f15); }
+.pframe.silver        { background: var(--silver); }
+.pframe.bronze::before { background: linear-gradient(180deg, #2a1408, #150a04); }
+.pframe.bronze        { background: var(--bronze); }
+
+/* ============================================================
+   PIXEL CHARACTERS — drawn with grid of colored cells
+   We render as a flex grid of tiny squares using inline data.
+   In React we generate from a string map for ease.
+   ============================================================ */
+.pgrid {
+  display: grid;
+  gap: 0;
+  position: relative;
+  z-index: 2;
+}
+.pgrid > i {
+  display: block;
+}
+
+/* coin spinner — animated */
+@keyframes coinFlip {
+  0%, 100% { transform: scaleX(1); }
+  50%      { transform: scaleX(0.2); filter: brightness(1.4); }
+}
+.coin-spin { animation: coinFlip 1.6s ease-in-out infinite; display: inline-block; }
+
+/* heart pulse */
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  20%      { transform: scale(1.15); }
+  40%      { transform: scale(0.95); }
+}
+.heart-beat { animation: heartBeat 1.2s ease-in-out infinite; display: inline-block; }
+
+/* fire wiggle for streak */
+@keyframes fireWiggle {
+  0%,100% { transform: rotate(-3deg) translateY(0); }
+  50%     { transform: rotate(3deg) translateY(-2px); }
+}
+.fire-wiggle { animation: fireWiggle 0.9s ease-in-out infinite; display: inline-block; transform-origin: bottom center; }
+
+/* ============================================================
+   PIXEL DIAMOND (gem)
+   ============================================================ */
+.gem {
+  width: 22px; height: 22px;
+  position: relative;
+  display: inline-block;
+  background: var(--cyan);
+  clip-path: polygon(50% 0, 100% 35%, 80% 100%, 20% 100%, 0 35%);
+  box-shadow: inset 0 -4px 0 rgba(0,0,0,0.3), inset 4px 4px 0 rgba(255,255,255,0.4);
+}
+.gem.violet { background: var(--violet); }
+.gem.gold   { background: var(--gold); }
+.gem.green  { background: var(--green); }
+.gem.pink   { background: var(--pink); }
+
+/* ============================================================
+   PIXEL SHIELD / SWORD / SCROLL ICONS (CSS only)
+   ============================================================ */
+.icon-shield {
+  width: 44px; height: 50px;
+  background: var(--violet);
+  clip-path: polygon(50% 0, 100% 18%, 100% 60%, 50% 100%, 0 60%, 0 18%);
+  position: relative;
+  box-shadow: inset 0 -6px 0 rgba(0,0,0,0.3);
+}
+.icon-shield::before {
+  content: ""; position: absolute; inset: 6px;
+  clip-path: polygon(50% 0, 100% 18%, 100% 60%, 50% 100%, 0 60%, 0 18%);
+  background: var(--violet-deep);
+}
+.icon-shield::after {
+  content: "★"; position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: var(--gold); font-size: 22px;
+  text-shadow: 0 2px 0 #000;
+}
+
+/* HP bar pixel-style */
+.hp-bar {
+  height: 14px; width: 100%;
+  border: 2px solid #000;
+  background: #1a0808;
+  position: relative;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 0 #000;
+}
+.hp-bar > i {
+  display: block; height: 100%;
+  background: linear-gradient(180deg, var(--green) 0 50%, var(--green-deep) 50% 100%);
+  position: relative;
+}
+.hp-bar.low > i { background: linear-gradient(180deg, var(--orange) 0 50%, var(--orange-deep) 50% 100%); }
+.hp-bar.crit > i { background: linear-gradient(180deg, var(--hot) 0 50%, var(--hot-deep) 50% 100%); }

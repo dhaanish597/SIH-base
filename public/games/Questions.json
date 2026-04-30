@@ -17,6 +17,8 @@
             ],
             "answerIndex": 2,
             "difficulty": "easy",
+            "difficultyLevel": 0.2,
+            "conceptTags": ["number_theory", "patterns", "mathematics_branches"],
             "ncert": true,
 "explanation": "Number theory is the branch of Mathematics that specifically studies patterns in whole numbers. [cite: 27]"
           },
@@ -34,6 +36,8 @@
             ],
             "answerIndex": 1,
             "difficulty": "easy",
+            "difficultyLevel": 0.3,
+            "conceptTags": ["triangular_numbers", "sequences", "patterns"],
             "ncert": true,
             "explanation": "Triangular numbers are formed by adding consecutive counting numbers. The pattern is: 1, 1+2=3, 3+3=6, 6+4=10, 10+5=15. The next number is 15+6 = 21. [cite: 33, 133, 298]"
           },
@@ -68,6 +72,8 @@
             ],
             "answerIndex": 1,
             "difficulty": "medium",
+            "difficultyLevel": 0.5,
+            "conceptTags": ["fibonacci_sequence", "sequences", "patterns", "recursion"],
             "ncert": true,
             "explanation": "In the Virahānka numbers sequence (also known as the Fibonacci sequence), each number after the first two is the sum of the two preceding ones. For example, 3 = 1+2, 5 = 2+3, 8 = 3+5, and so on. [cite: 33, 247]"
           },
@@ -85,6 +91,8 @@
             ],
             "answerIndex": 1,
             "difficulty": "medium",
+            "difficultyLevel": 0.6,
+            "conceptTags": ["odd_numbers", "summation", "patterns", "arithmetic"],
             "ncert": true,
             "explanation": "The sum of the first 'n' odd numbers is equal to n². In this case, we are adding the first 10 odd numbers, so the sum is 10² = 100. [cite: 85, 109, 277]"
           },

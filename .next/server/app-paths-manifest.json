@@ -1,0 +1,10 @@
+{
+  "/login/page": "app/login/page.js",
+  "/(authed)/student/games/page": "app/(authed)/student/games/page.js",
+  "/(authed)/student/page": "app/(authed)/student/page.js",
+  "/(authed)/student/subjects/page": "app/(authed)/student/subjects/page.js",
+  "/(authed)/student/quests/page": "app/(authed)/student/quests/page.js",
+  "/(authed)/student/leaderboard/page": "app/(authed)/student/leaderboard/page.js",
+  "/(authed)/student/shop/page": "app/(authed)/student/shop/page.js",
+  "/(authed)/student/profile/page": "app/(authed)/student/profile/page.js"
+}
