@@ -19,6 +19,7 @@ export default function SchoolClassesPage() {
   const [form, setForm] = useState({ name: '', gradeLevel: '9', section: '', teacherId: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [pageError, setPageError] = useState('');
 
   const load = async () => {
     if (!user?.schoolId) return;
@@ -29,8 +30,9 @@ export default function SchoolClassesPage() {
       ]);
       if (clsRes.ok) setClasses(await clsRes.json());
       if (tchRes.ok) setTeachers(await tchRes.json());
+      if (!clsRes.ok) setPageError('Failed to load classes. Please refresh.');
     } catch {
-      // network error — lists stay empty
+      setPageError('Network error — please refresh.');
     } finally {
       setLoading(false);
     }
@@ -40,9 +42,10 @@ export default function SchoolClassesPage() {
 
   const createClass = async () => {
     if (!form.name.trim() || !form.gradeLevel) { setError('Name and grade level are required.'); return; }
+    if (!user?.schoolId) { setError('Session expired. Please refresh.'); return; }
     setSubmitting(true); setError('');
     try {
-      const r = await fetch(`/api/schools/${user!.schoolId}/classes`, {
+      const r = await fetch(`/api/schools/${user.schoolId}/classes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -79,6 +82,9 @@ export default function SchoolClassesPage() {
         </button>
       </header>
 
+      {pageError && (
+        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">{pageError}</p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
           [...Array(6)].map((_, i) => (
