@@ -167,6 +167,39 @@ router.get('/:id/teachers', async (req, res) => {
   }
 });
 
+// POST /api/schools/:id/teachers  — create a teacher account
+router.post('/:id/teachers', async (req, res) => {
+  try {
+    const schoolId = req.params.id;
+    if (req.user.role === 'SCHOOL' && schoolId !== req.user.schoolId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const { name, email, department, subjectsTaught } = req.body || {};
+    if (!name || !email) return res.status(400).json({ error: 'name and email required' });
+
+    const { randomBytes } = require('crypto');
+    const tempPassword = randomBytes(6).toString('base64url').toUpperCase();
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+    const teacher = await prisma.user.create({
+      data: {
+        name, email, passwordHash,
+        role: 'TEACHER', schoolId, status: 'ACTIVE',
+        department: department || null,
+        subjectsTaught: Array.isArray(subjectsTaught) ? subjectsTaught : [],
+      },
+    });
+    await prisma.auditLog.create({
+      data: { schoolId, actorId: req.user.id, action: 'CREATE', entityType: 'user', entityId: teacher.id },
+    });
+    res.json({ id: teacher.id, name: teacher.name, email: teacher.email, tempPassword });
+  } catch (e) {
+    if (String(e?.code) === 'P2002') return res.status(409).json({ error: 'Email already in use' });
+    console.error('schools/:id/teachers POST', e);
+    res.status(500).json({ error: 'Failed to create teacher' });
+  }
+});
+
 // GET /api/schools/:id/classes
 router.get('/:id/classes', async (req, res) => {
   try {
@@ -185,6 +218,33 @@ router.get('/:id/classes', async (req, res) => {
     res.json(classes);
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch classes' });
+  }
+});
+
+// POST /api/schools/:id/classes  — create a class
+router.post('/:id/classes', async (req, res) => {
+  try {
+    const schoolId = req.params.id;
+    if (req.user.role === 'SCHOOL' && schoolId !== req.user.schoolId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const { name, gradeLevel, section, teacherId } = req.body || {};
+    if (!name || !gradeLevel) return res.status(400).json({ error: 'name and gradeLevel required' });
+
+    const cls = await prisma.class.create({
+      data: {
+        name,
+        gradeLevel: Number(gradeLevel),
+        section: section || null,
+        teacherId: teacherId || null,
+        schoolId,
+      },
+      include: { teacher: { select: { id: true, name: true } } },
+    });
+    res.json({ id: cls.id, name: cls.name, gradeLevel: cls.gradeLevel, section: cls.section, teacher: cls.teacher });
+  } catch (e) {
+    console.error('schools/:id/classes POST', e);
+    res.status(500).json({ error: 'Failed to create class' });
   }
 });
 
