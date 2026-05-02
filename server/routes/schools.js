@@ -229,12 +229,22 @@ router.post('/:id/classes', async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
     const { name, gradeLevel, section, teacherId } = req.body || {};
-    if (!name || !gradeLevel) return res.status(400).json({ error: 'name and gradeLevel required' });
+    const parsedGrade = Number(gradeLevel);
+    if (!name || !gradeLevel || !Number.isFinite(parsedGrade)) {
+      return res.status(400).json({ error: 'name and gradeLevel required; gradeLevel must be a number' });
+    }
+
+    if (teacherId) {
+      const teacher = await prisma.user.findUnique({ where: { id: teacherId }, select: { schoolId: true } });
+      if (!teacher || teacher.schoolId !== schoolId) {
+        return res.status(403).json({ error: 'Teacher does not belong to this school' });
+      }
+    }
 
     const cls = await prisma.class.create({
       data: {
         name,
-        gradeLevel: Number(gradeLevel),
+        gradeLevel: parsedGrade,
         section: section || null,
         teacherId: teacherId || null,
         schoolId,
