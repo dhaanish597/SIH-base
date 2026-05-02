@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const prisma = require('../lib/prisma');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roles');
+const { randomBytes } = require('crypto');
 
 const router = express.Router();
 
@@ -177,7 +178,6 @@ router.post('/:id/teachers', async (req, res) => {
     const { name, email, department, subjectsTaught } = req.body || {};
     if (!name || !email) return res.status(400).json({ error: 'name and email required' });
 
-    const { randomBytes } = require('crypto');
     const tempPassword = randomBytes(6).toString('base64url').toUpperCase();
     const passwordHash = await bcrypt.hash(tempPassword, 10);
 
@@ -243,6 +243,7 @@ router.post('/:id/classes', async (req, res) => {
     });
     res.json({ id: cls.id, name: cls.name, gradeLevel: cls.gradeLevel, section: cls.section, teacher: cls.teacher });
   } catch (e) {
+    if (String(e?.code) === 'P2002') return res.status(409).json({ error: 'Class name already exists in this school' });
     console.error('schools/:id/classes POST', e);
     res.status(500).json({ error: 'Failed to create class' });
   }
