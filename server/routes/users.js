@@ -95,10 +95,11 @@ router.post('/create-student', authenticate, requireRole('TEACHER', 'SCHOOL', 'A
       where: { id: req.user.schoolId },
       select: { schoolCode: true, name: true },
     });
-    const prefix = (school?.schoolCode || school?.name || 'STU')
+    const raw = (school?.schoolCode || school?.name || '')
       .replace(/[^A-Za-z0-9]/g, '')
       .toUpperCase()
       .slice(0, 3);
+    const prefix = raw || 'STU';
     const count = await prisma.user.count({
       where: { schoolId: req.user.schoolId, role: 'STUDENT' },
     });
@@ -121,9 +122,12 @@ router.post('/create-student', authenticate, requireRole('TEACHER', 'SCHOOL', 'A
     });
 
     if (classId) {
-      await prisma.classEnrollment.create({
-        data: { classId, studentId: student.id },
-      }).catch(() => {});
+      const cls = await prisma.class.findUnique({ where: { id: classId }, select: { schoolId: true } });
+      if (cls && cls.schoolId === req.user.schoolId) {
+        await prisma.classEnrollment.create({
+          data: { classId, studentId: student.id },
+        }).catch(() => {});
+      }
     }
 
     res.json({ id: student.id, name: student.name, studentId: student.studentId, pin });
