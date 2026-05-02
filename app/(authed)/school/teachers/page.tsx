@@ -24,12 +24,17 @@ export default function SchoolTeachersPage() {
 
   const load = async () => {
     if (!user?.schoolId) return;
-    const r = await fetch(`/api/schools/${user.schoolId}/teachers`, { credentials: 'include' });
-    if (r.ok) setTeachers(await r.json());
-    setLoading(false);
+    try {
+      const r = await fetch(`/api/schools/${user.schoolId}/teachers`, { credentials: 'include' });
+      if (r.ok) setTeachers(await r.json());
+    } catch {
+      // network error — list stays empty
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { load(); }, [user]);
+  useEffect(() => { load(); }, [user?.schoolId]);
 
   const filtered = teachers.filter(
     (t) => t.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -39,20 +44,25 @@ export default function SchoolTeachersPage() {
   const addTeacher = async () => {
     if (!form.name.trim() || !form.email.trim()) { setError('Name and email are required.'); return; }
     setSubmitting(true); setError('');
-    const subjects = form.subjectsTaught.split(',').map((s) => s.trim()).filter(Boolean);
-    const r = await fetch(`/api/schools/${user!.schoolId}/teachers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ name: form.name, email: form.email, department: form.department || undefined, subjectsTaught: subjects }),
-    });
-    const data = await r.json();
-    setSubmitting(false);
-    if (!r.ok) { setError(data.error || 'Failed to add teacher.'); return; }
-    setCredential({ name: data.name, email: data.email, tempPassword: data.tempPassword });
-    setShowModal(false);
-    setForm({ name: '', email: '', department: '', subjectsTaught: '' });
-    await load();
+    try {
+      const subjects = form.subjectsTaught.split(',').map((s) => s.trim()).filter(Boolean);
+      const r = await fetch(`/api/schools/${user!.schoolId}/teachers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: form.name, email: form.email, department: form.department || undefined, subjectsTaught: subjects }),
+      });
+      const data = await r.json();
+      if (!r.ok) { setError(data.error || 'Failed to add teacher.'); return; }
+      setCredential({ name: data.name, email: data.email, tempPassword: data.tempPassword });
+      setShowModal(false);
+      setForm({ name: '', email: '', department: '', subjectsTaught: '' });
+      await load();
+    } catch {
+      setError('Network error — please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
