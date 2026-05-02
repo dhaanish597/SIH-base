@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const prisma = require('../lib/prisma');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roles');
+const { randomBytes } = require('crypto');
 
 const router = express.Router();
 
@@ -81,21 +82,40 @@ router.put('/me', authenticate, async (req, res) => {
   }
 });
 
-// POST /api/users/create-student  — teacher/school creates a student account
+// POST /api/users/create-student  — teacher/school creates a student
+// Auto-generates studentId and 4-digit PIN; returns plain PIN shown once.
 router.post('/create-student', authenticate, requireRole('TEACHER', 'SCHOOL', 'ADMIN', 'SUPERADMIN'), async (req, res) => {
   try {
-    const { name, email, studentId, classId, password } = req.body || {};
-    if (!name || !password) return res.status(400).json({ error: 'name and password required' });
+    const { name, classId, rollNumber } = req.body || {};
+    if (!name || !name.trim()) return res.status(400).json({ error: 'name required' });
+    if (!req.user.schoolId) return res.status(400).json({ error: 'No school scope' });
 
-    const pinHash = await bcrypt.hash(String(password), 10);
+    // Auto-generate studentId: school prefix + zero-padded count
+    const school = await prisma.school.findUnique({
+      where: { id: req.user.schoolId },
+      select: { schoolCode: true, name: true },
+    });
+    const prefix = (school?.schoolCode || school?.name || 'STU')
+      .replace(/[^A-Za-z0-9]/g, '')
+      .toUpperCase()
+      .slice(0, 3);
+    const count = await prisma.user.count({
+      where: { schoolId: req.user.schoolId, role: 'STUDENT' },
+    });
+    const studentId = `${prefix}${String(count + 1).padStart(3, '0')}`;
+
+    // Auto-generate 4-digit PIN using crypto
+    const pin = String(1000 + (randomBytes(4).readUInt32BE(0) % 9000));
+    const pinHash = await bcrypt.hash(pin, 10);
+
     const student = await prisma.user.create({
       data: {
-        name,
-        email: email || null,
-        studentId: studentId || null,
+        name: name.trim(),
+        studentId,
         pinHash,
         role: 'STUDENT',
-        schoolId: req.user.schoolId || null,
+        schoolId: req.user.schoolId,
+        rollNumber: rollNumber || null,
         status: 'ACTIVE',
       },
     });
@@ -106,9 +126,9 @@ router.post('/create-student', authenticate, requireRole('TEACHER', 'SCHOOL', 'A
       }).catch(() => {});
     }
 
-    res.json({ id: student.id, name: student.name });
+    res.json({ id: student.id, name: student.name, studentId: student.studentId, pin });
   } catch (e) {
-    if (String(e?.code) === 'P2002') return res.status(409).json({ message: 'Student ID or email already exists' });
+    if (String(e?.code) === 'P2002') return res.status(409).json({ message: 'StudentId conflict — try again.' });
     console.error('create-student', e);
     res.status(500).json({ message: 'Failed to create student' });
   }
