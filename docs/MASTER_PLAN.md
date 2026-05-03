@@ -479,11 +479,78 @@ LOGIN
 
 ---
 
+---
+
+### Phase 11 — Topic Roadmap & Learning Modules (ADDED 2026-05-03)
+*Per-topic 5-module learning system with EWMA mastery tracking and spaced-repetition review.*
+
+#### 11.1 Data Layer
+- [x] `TopicProgress` model — per-student per-topic mastery with per-module scores
+- [x] `Content` model — LEARN/PLAY/PRACTICE payloads stored as JSON per topic
+- [x] `TopicPrerequisite` model — prerequisite graph for locking topics
+- [x] Tables created directly in Supabase + Prisma client regenerated
+
+#### 11.2 Review Engine & Prerequisites
+- [x] `lib/reviewEngine.ts` — EWMA mastery: `computeMastery`, `getNextReviewDate`, `isWeak`
+- [x] `lib/prerequisites.ts` — topological lock propagation: `getLockedTopics`
+
+#### 11.3 Express API Routes (`server/routes/learn.js`)
+- [x] `POST /api/learn/progress` — upsert TopicProgress, EWMA mastery, XP award, streak update
+- [x] `GET /api/learn/subjects` — subjects with per-student avg mastery
+- [x] `GET /api/learn/topics/:subjectId` — chapters+topics with progress and lock state
+- [x] `GET /api/learn/review-due` — overdue topics for spaced-repetition
+- [x] `GET /api/learn/content/:topicId/:type` — serve LEARN/PLAY/PRACTICE payload
+
+#### 11.4 Subject Roadmap (`/student/learn`)
+- [x] `app/components/ui/MasteryRing.tsx` — circular SVG mastery indicator
+- [x] `app/components/roadmap/SubjectNode.tsx` — subject card with mastery ring
+- [x] `app/(authed)/student/learn/page.tsx` — subject grid + due-for-review chips
+- [x] `/student/subjects` redirected permanently to `/student/learn`
+- [x] Nav link updated
+
+#### 11.5 Topic Roadmap (`/student/learn/[subjectId]`)
+- [x] `app/components/roadmap/TopicNode.tsx` — topic card with 4-module pips, lock overlay, badges
+- [x] `app/components/roadmap/RoadmapPath.tsx` — SVG connector between nodes
+- [x] `app/(authed)/student/learn/[subjectId]/page.tsx` — chapter sections + topic nodes
+
+#### 11.6 Learn Module
+- [x] `app/components/slides/TextSlide.tsx` — Framer Motion slide-in text slide
+- [x] `app/components/slides/DiagramSlide.tsx` — named SVG diagrams (RightTriangleDiagram)
+- [x] `app/components/slides/InteractiveSlide.tsx` — interactive component dispatcher
+- [x] `app/components/interactive/DraggableTriangle.tsx` — drag vertices, live sin/cos/tan readout
+- [x] `app/components/modules/SlideRenderer.tsx` — dispatches to slide type components
+- [x] `app/components/modules/LearnStepper.tsx` — full-screen stepper with progress bar
+- [x] `app/(authed)/student/learn/[subjectId]/[topicId]/learn/page.tsx`
+
+#### 11.7 Quiz Module
+- [x] `app/components/modules/QuizRunner.tsx` — MCQ, answer feedback, result breakdown
+- [x] `app/(authed)/student/learn/[subjectId]/[topicId]/quiz/page.tsx` — fetches from existing Question model
+
+#### 11.8 Practice Module
+- [x] `app/components/modules/PracticeExamples.tsx` — step-reveal worked examples
+- [x] `app/(authed)/student/learn/[subjectId]/[topicId]/practice/page.tsx`
+
+#### 11.9 Play Module
+- [x] `app/components/games/FormulaMatchGame.tsx` — click-to-match formula pairs
+- [x] `app/components/games/EquationBalanceGame.tsx` — balance-scale equation solver
+- [x] `app/components/games/TriangleRatioGame.tsx` — sin/cos/tan MCQ with triangle visual
+- [x] `app/(authed)/student/learn/[subjectId]/[topicId]/play/page.tsx`
+
+#### 11.10 Review Module
+- [x] `app/components/modules/ReviewDashboard.tsx` — mastery ring, score bars, weak areas, action buttons
+- [x] `app/(authed)/student/learn/[subjectId]/[topicId]/review/page.tsx`
+
+#### 11.11 Seed Data
+- [x] `prisma/seed-class10-math.ts` — Class 10 NCERT Math: 14 chapters, ~47 topics, prerequisites, content payloads, 5 MCQ questions per topic
+
+---
+
 ## Session Log
 
 | Date | What was done |
 |------|--------------|
 | 2026-05-02 | Master plan created. Full codebase audited. Approach B "Startup MVP" selected. |
+| 2026-05-03 | Phase 11 implemented: full topic roadmap + 5-module learning system + EWMA mastery + Class 10 NCERT Math seed data. |
 
 ---
 

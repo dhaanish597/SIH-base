@@ -122,9 +122,49 @@ Source: `Gamified-learning-platform-1-handoff.zip` (Clash Royale × Duolingo des
   - Duolingo hard-drop shadows: `--hd-violet`, `--hd-cyan`, `--hd-gold` etc.
   - CSS classes: `.arena-bg`, `.card`, `.btn-primary`, `.pill`, `.xp-bar`, `.pframe`, `.lb-row`
 
-### ⏳ Pass 2 — Game Vault + Subjects (planned)
+### ✅ Pass 2 — Topic Roadmap & Learning Modules (2026-05-03)
+Complete per-topic 5-module learning system built on top of the existing platform.
+
+**New DB models** (tables created directly in Supabase):
+- `topic_progress` — per-student per-topic mastery scores (learnScore, playScore, practiceScore, quizScore, masteryScore, nextReviewAt)
+- `content` — LEARN/PLAY/PRACTICE payloads stored as JSON per topic
+- `topic_prerequisites` — prerequisite graph
+
+**New Express routes** (`server/routes/learn.js`):
+- `POST /api/learn/progress` — upserts TopicProgress, EWMA mastery, XP + streak
+- `GET /api/learn/subjects` — subjects + per-student avg mastery
+- `GET /api/learn/topics/:subjectId` — chapters + topics + progress + lock state
+- `GET /api/learn/review-due` — spaced-repetition overdue topics
+- `GET /api/learn/content/:topicId/:type` — serves content payload
+
+**New lib files**:
+- `lib/reviewEngine.ts` — `computeMastery` (EWMA, α=0.3), `getNextReviewDate`, `isWeak`
+- `lib/prerequisites.ts` — `getLockedTopics` (iterative lock propagation)
+
+**New pages** (all under `app/(authed)/student/learn/`):
+- `/student/learn` — subject roadmap grid with mastery rings + due-for-review chips
+- `/student/learn/[subjectId]` — topic roadmap with chapter sections, prerequisite locks, progress rings
+- `/student/learn/[subjectId]/[topicId]/learn` — slide stepper (text/diagram/interactive)
+- `/student/learn/[subjectId]/[topicId]/quiz` — MCQ quiz from existing Question model
+- `/student/learn/[subjectId]/[topicId]/practice` — step-reveal worked examples
+- `/student/learn/[subjectId]/[topicId]/play` — 3 in-roadmap games
+- `/student/learn/[subjectId]/[topicId]/review` — mastery ring + score bars + weak areas
+
+**Routing change**: `/student/subjects` permanently redirected to `/student/learn` (old page deleted).
+
+**New components**:
+- `app/components/ui/MasteryRing.tsx` — SVG circular progress ring
+- `app/components/roadmap/SubjectNode.tsx`, `TopicNode.tsx`, `RoadmapPath.tsx`
+- `app/components/slides/TextSlide.tsx`, `DiagramSlide.tsx`, `InteractiveSlide.tsx`
+- `app/components/interactive/DraggableTriangle.tsx` — drag vertices, live trig readout
+- `app/components/modules/LearnStepper.tsx`, `SlideRenderer.tsx`, `QuizRunner.tsx`, `PracticeExamples.tsx`, `ReviewDashboard.tsx`
+- `app/components/games/FormulaMatchGame.tsx`, `EquationBalanceGame.tsx`, `TriangleRatioGame.tsx`
+
+**Seed script**: `prisma/seed-class10-math.ts` — Class 10 NCERT Math (14 chapters, ~47 topics, prerequisites, content payloads, ~235 MCQ questions).
+Run with: `npx ts-node prisma/seed-class10-math.ts`
+
+### ⏳ Pass 3 — Game Vault Redesign (planned)
 - Screen 3: Games Hub (PS5-library feel with featured game + 2-col grid + locked cards).
-- Screen 9: Subjects Page with chapter-tree node map.
 
 ### ⏳ Pass 3 — Game UIs (planned)
 - Screens 4–8: Math Dungeon, Quiz Battle (lobby + match + results), Science Lab Escape, History Conquest, Word Forge.
