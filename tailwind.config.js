@@ -13,7 +13,7 @@ module.exports = {
       },
       fontFamily: {
         sans:    ['Nunito', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['"Bowlby One"', '"Fredoka One"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['Oxanium', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         body:    ['Nunito', 'sans-serif'],
         hud:     ['Oswald', '"Bebas Neue"', 'sans-serif'],
         mono:    ['JetBrains Mono', 'ui-monospace', 'monospace'],

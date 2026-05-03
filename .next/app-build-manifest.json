@@ -26,15 +26,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(authed)/layout.js"
     ],
+    "/(authed)/student/quests/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(authed)/student/quests/page.js"
+    ],
     "/(authed)/student/games/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(authed)/student/games/page.js"
     ],
-    "/(authed)/student/quests/page": [
+    "/(authed)/student/shop/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(authed)/student/quests/page.js"
+      "static/chunks/app/(authed)/student/shop/page.js"
     ],
     "/(authed)/student/subjects/page": [
       "static/chunks/webpack.js",
@@ -45,16 +50,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(authed)/student/leaderboard/page.js"
-    ],
-    "/(authed)/student/shop/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(authed)/student/shop/page.js"
-    ],
-    "/(authed)/student/profile/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(authed)/student/profile/page.js"
     ]
   }
 }

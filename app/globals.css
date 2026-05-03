@@ -114,7 +114,7 @@
   --text-game: 64px;
 
   /* Type families */
-  --f-display: 'Bowlby One', 'Fredoka One', system-ui, sans-serif;
+  --f-display: 'Oxanium', system-ui, sans-serif;
   --f-body:    'Nunito', system-ui, sans-serif;
   --f-hud:     'Oswald', 'Bebas Neue', system-ui, sans-serif;
   --f-mono:    'JetBrains Mono', ui-monospace, monospace;
@@ -132,7 +132,9 @@ html, body, #root {
 body {
   margin: 0;
   font-family: var(--f-body);
-  font-weight: 600;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  font-smooth: antialiased;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -761,3 +763,39 @@ body {
 .qa-main-content { padding-bottom: 72px; }
 @media (min-width: 768px) { .qa-main-content { padding-bottom: 0; } }
 .shadow-glow-sm { box-shadow: var(--shadow-glow-primary); }
+
+/* ==========================================================================
+   ACHIEVEMENT TOASTS
+   ========================================================================== */
+@keyframes achToastIn {
+  from { opacity: 0; transform: translateX(120%) scale(0.9); }
+  to   { opacity: 1; transform: translateX(0)   scale(1); }
+}
+@keyframes achToastOut {
+  from { opacity: 1; transform: translateX(0)   scale(1); }
+  to   { opacity: 0; transform: translateX(120%) scale(0.85); }
+}
+.ach-toast-enter { animation: achToastIn  0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.ach-toast-exit  { animation: achToastOut 0.3s  ease-in                         forwards; }
+
+/* ==========================================================================
+   LEVEL-UP MODAL
+   ========================================================================== */
+@keyframes lvlupBadgePop {
+  0%   { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(1.25) rotate(5deg);  opacity: 1; }
+  80%  { transform: scale(0.95) rotate(-3deg); }
+  100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
+}
+@keyframes lvlupRays {
+  from { transform: rotate(0deg);   opacity: 0.6; }
+  to   { transform: rotate(360deg); opacity: 0; }
+}
+@keyframes lvlupSlideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lvlup-badge  { animation: lvlupBadgePop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.2s both; }
+.lvlup-rays   { animation: lvlupRays 2s linear infinite; }
+.lvlup-text   { animation: lvlupSlideUp 0.5s ease-out 0.6s both; }
+.lvlup-footer { animation: lvlupSlideUp 0.5s ease-out 0.9s both; }

@@ -9,6 +9,8 @@ import {
   Users, BarChart3, Building2, Bell, Menu, X, Home, User,
   Settings2, Calendar, Send, UserPlus
 } from 'lucide-react';
+import AchievementToasts from '../components/ui/AchievementToasts';
+import LevelUpModal from '../components/ui/LevelUpModal';
 
 const SESSION_TIMEOUT_MS: Record<string, number> = {
   STUDENT: 30 * 60 * 1000,     // 30 min
@@ -69,7 +71,7 @@ export default function AuthedLayout({ children }: { children: React.ReactNode }
       { href: '/student', label: 'Home', icon: '🏠' },
       { href: '/student/games', label: 'Games', icon: '🎮' },
       { href: '/student/quests', label: 'Quests', icon: '⚔️' },
-      { href: '/student/subjects', label: 'Subjects', icon: '📚' },
+      { href: '/student/learn', label: 'Subjects', icon: '📚' },
       { href: '/student/leaderboard', label: 'Ranks', icon: '🏆' },
       { href: '/student/shop', label: 'Shop', icon: '🛒' },
       { href: '/student/profile', label: 'Profile', icon: '👤' },
@@ -176,6 +178,10 @@ export default function AuthedLayout({ children }: { children: React.ReactNode }
         <main className="qa-main-content" style={{ flex: 1, overflowX: 'hidden' }}>
           {children}
         </main>
+
+        {/* ── ACHIEVEMENT OVERLAYS (student only) ── */}
+        <AchievementToasts />
+        <LevelUpModal />
 
         {/* ── MOBILE BOTTOM NAV ── */}
         <nav className="qa-mobile-bottom-nav" style={{

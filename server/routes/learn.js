@@ -352,4 +352,22 @@ router.get('/review-due', authenticate, async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// GET /api/learn/content/:topicId/:type  — serve content payload for a topic+type
+// ---------------------------------------------------------------------------
+router.get('/content/:topicId/:type', authenticate, async (req, res) => {
+  try {
+    const { topicId, type } = req.params;
+    const validTypes = ['LEARN', 'PLAY', 'PRACTICE'];
+    if (!validTypes.includes(type)) return res.status(400).json({ error: 'Invalid type' });
+    const content = await prisma.content.findUnique({
+      where: { topicId_type: { topicId, type } },
+    });
+    if (!content) return res.status(404).json({ error: 'Content not found' });
+    res.json({ payload: content.payload });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch content' });
+  }
+});
+
 module.exports = router;

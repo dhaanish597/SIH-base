@@ -866,7 +866,7 @@
 }
 
 /*
-! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com
+! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com
 */
 
 /*
@@ -3026,7 +3026,7 @@ video {
   text-align: right;
 }
 .font-display{
-  font-family: "Bowlby One", "Fredoka One", ui-sans-serif, system-ui, sans-serif;
+  font-family: Oxanium, ui-sans-serif, system-ui, sans-serif;
 }
 .font-mono{
   font-family: JetBrains Mono, ui-monospace, monospace;
@@ -3724,7 +3724,7 @@ video {
   --text-game: 64px;
 
   /* Type families */
-  --f-display: 'Bowlby One', 'Fredoka One', system-ui, sans-serif;
+  --f-display: 'Oxanium', system-ui, sans-serif;
   --f-body:    'Nunito', system-ui, sans-serif;
   --f-hud:     'Oswald', 'Bebas Neue', system-ui, sans-serif;
   --f-mono:    'JetBrains Mono', ui-monospace, monospace;
@@ -3742,7 +3742,9 @@ html, body, #root {
 body {
   margin: 0;
   font-family: var(--f-body);
-  font-weight: 600;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  font-smooth: antialiased;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;

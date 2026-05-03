@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { AchievementProvider } from './providers/achievements';
 
 // ---------------------------------------------------------------------------
 // Auth context — talks to the Express backend's cookie-auth endpoints
@@ -97,5 +98,11 @@ function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function Providers({ children }: { children: ReactNode }) {
-  return <AuthProvider>{children}</AuthProvider>;
+  return (
+    <AuthProvider>
+      <AchievementProvider>
+        {children}
+      </AchievementProvider>
+    </AuthProvider>
+  );
 }

@@ -65,7 +65,7 @@
   --r-legend:       #FFC93C;
 
   /* ---------- TYPE ---------- */
-  --f-display:      'Bowlby One', 'Fredoka One', system-ui, sans-serif;
+  --f-display:      'Oxanium', system-ui, sans-serif;
   --f-body:         'Nunito', system-ui, sans-serif;
   --f-hud:          'Oswald', 'Bebas Neue', system-ui, sans-serif;
   --f-mono:         'JetBrains Mono', ui-monospace, monospace;
@@ -97,7 +97,9 @@ html, body {
   background: var(--bg-deep);
   color: var(--ink-1);
   font-family: var(--f-body);
-  font-weight: 600;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  font-smooth: antialiased;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
