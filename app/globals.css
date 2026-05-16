@@ -11,7 +11,7 @@
    ========================================================================== */
 :root {
   /* ---------- BASE / SURFACE ---------- */
-  --bg-deep:        #07070F;
+  --bg-deep:        #060614;
   --bg-arena:       #0E1023;
   --bg-elev-1:      #161930;
   --bg-elev-2:      #1F2342;
@@ -131,6 +131,8 @@ html, body, #root {
 }
 body {
   margin: 0;
+  position: relative;
+  min-height: 100vh;
   font-family: var(--f-body);
   font-weight: 400;
   letter-spacing: 0.03em;
@@ -138,6 +140,97 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  background:
+    radial-gradient(ellipse at 70% 80%, rgba(24,214,255,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 25% 20%, rgba(107,75,255,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, #0a0a1a 0%, #060614 100%);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: transparent;
+  box-shadow:
+    /* Row 1 */
+    120px 45px 0 0 rgba(255,255,255,0.55),
+    340px 12px 0 0 rgba(255,255,255,0.35),
+    580px 78px 0 0 rgba(255,255,255,0.45),
+    820px 33px 0 0 rgba(255,255,255,0.30),
+    1050px 67px 0 0 rgba(255,255,255,0.50),
+    1280px 22px 0 0 rgba(255,255,255,0.40),
+    /* Row 2 */
+    60px 140px 0 0 rgba(255,255,255,0.30),
+    230px 165px 0 0 rgba(255,255,255,0.50),
+    490px 130px 0 0 rgba(255,255,255,0.35),
+    710px 155px 0 0 rgba(255,255,255,0.45),
+    940px 120px 0 0 rgba(255,255,255,0.30),
+    1180px 148px 0 0 rgba(255,255,255,0.55),
+    1380px 133px 0 0 rgba(255,255,255,0.40),
+    /* Row 3 */
+    80px 255px 0 0 rgba(255,255,255,0.45),
+    300px 230px 0 0 rgba(255,255,255,0.30),
+    530px 265px 0 0 rgba(255,255,255,0.55),
+    760px 240px 0 0 rgba(255,255,255,0.35),
+    1000px 258px 0 0 rgba(255,255,255,0.45),
+    1220px 235px 0 0 rgba(255,255,255,0.30),
+    /* Row 4 */
+    170px 360px 0 0 rgba(255,255,255,0.50),
+    410px 340px 0 0 rgba(255,255,255,0.35),
+    650px 375px 0 0 rgba(255,255,255,0.45),
+    880px 355px 0 0 rgba(255,255,255,0.55),
+    1110px 368px 0 0 rgba(255,255,255,0.30),
+    1340px 342px 0 0 rgba(255,255,255,0.40),
+    /* Row 5 */
+    40px 465px 0 0 rgba(255,255,255,0.35),
+    270px 440px 0 0 rgba(255,255,255,0.50),
+    500px 478px 0 0 rgba(255,255,255,0.30),
+    740px 455px 0 0 rgba(255,255,255,0.45),
+    970px 470px 0 0 rgba(255,255,255,0.55),
+    1200px 443px 0 0 rgba(255,255,255,0.35),
+    /* Row 6 */
+    150px 560px 0 0 rgba(255,255,255,0.45),
+    380px 545px 0 0 rgba(255,255,255,0.30),
+    620px 572px 0 0 rgba(255,255,255,0.55),
+    850px 553px 0 0 rgba(255,255,255,0.35),
+    1080px 565px 0 0 rgba(255,255,255,0.40),
+    /* Row 7 */
+    90px 655px 0 0 rgba(255,255,255,0.50),
+    320px 640px 0 0 rgba(255,255,255,0.35),
+    560px 668px 0 0 rgba(255,255,255,0.45),
+    790px 648px 0 0 rgba(255,255,255,0.30),
+    1020px 662px 0 0 rgba(255,255,255,0.55),
+    1260px 637px 0 0 rgba(255,255,255,0.40),
+    /* Row 8 */
+    200px 755px 0 0 rgba(255,255,255,0.35),
+    440px 735px 0 0 rgba(255,255,255,0.50),
+    680px 762px 0 0 rgba(255,255,255,0.30),
+    910px 748px 0 0 rgba(255,255,255,0.45),
+    1140px 758px 0 0 rgba(255,255,255,0.55),
+    /* Row 9 */
+    110px 850px 0 0 rgba(255,255,255,0.45),
+    350px 832px 0 0 rgba(255,255,255,0.30),
+    590px 865px 0 0 rgba(255,255,255,0.50),
+    830px 845px 0 0 rgba(255,255,255,0.35),
+    1060px 858px 0 0 rgba(255,255,255,0.40),
+    /* Row 10 */
+    60px 950px 0 0 rgba(255,255,255,0.30),
+    290px 935px 0 0 rgba(255,255,255,0.55),
+    520px 962px 0 0 rgba(255,255,255,0.35),
+    760px 942px 0 0 rgba(255,255,255,0.45),
+    990px 955px 0 0 rgba(255,255,255,0.30),
+    1230px 938px 0 0 rgba(255,255,255,0.50);
+  width: 1px;
+  height: 1px;
+  border-radius: 50%;
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 ::selection { background: rgba(107,75,255,0.4); color: #F5F7FF; }
@@ -799,3 +892,19 @@ body {
 .lvlup-rays   { animation: lvlupRays 2s linear infinite; }
 .lvlup-text   { animation: lvlupSlideUp 0.5s ease-out 0.6s both; }
 .lvlup-footer { animation: lvlupSlideUp 0.5s ease-out 0.9s both; }
+
+/* ── ROADMAP BIOME THEMES ─────────────────────────────────── */
+.biome-math      { --biome-color: #6B4BFF; --biome-bg: #0d0a1f; --biome-glow: rgba(107,75,255,0.18); }
+.biome-science   { --biome-color: #18D6FF; --biome-bg: #07151f; --biome-glow: rgba(24,214,255,0.15); }
+.biome-english   { --biome-color: #2DD46E; --biome-bg: #071510; --biome-glow: rgba(45,212,110,0.15); }
+.biome-history   { --biome-color: #FFC93C; --biome-bg: #120f00; --biome-glow: rgba(255,201,60,0.15);  }
+.biome-geography { --biome-color: #FF4D8A; --biome-bg: #150010; --biome-glow: rgba(255,77,138,0.15); }
+.biome-cs        { --biome-color: #FF8A2B; --biome-bg: #140800; --biome-glow: rgba(255,138,43,0.15); }
+
+[class*="biome-"] {
+  background:
+    radial-gradient(ellipse at 70% 80%, rgba(24,214,255,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 25% 20%, var(--biome-glow) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, var(--biome-bg) 0%, #060614 100%);
+  background-attachment: fixed;
+}

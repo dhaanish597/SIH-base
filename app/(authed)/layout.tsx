@@ -71,7 +71,7 @@ export default function AuthedLayout({ children }: { children: React.ReactNode }
       { href: '/student', label: 'Home', icon: '🏠' },
       { href: '/student/games', label: 'Games', icon: '🎮' },
       { href: '/student/quests', label: 'Quests', icon: '⚔️' },
-      { href: '/student/learn', label: 'Subjects', icon: '📚' },
+      { href: '/student/roadmap', label: 'Roadmap', icon: '🗺️' },
       { href: '/student/leaderboard', label: 'Ranks', icon: '🏆' },
       { href: '/student/shop', label: 'Shop', icon: '🛒' },
       { href: '/student/profile', label: 'Profile', icon: '👤' },
