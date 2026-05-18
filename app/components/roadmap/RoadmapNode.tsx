@@ -16,31 +16,27 @@ interface RoadmapNodeProps {
   onClick?: () => void;
 }
 
-// State-dependent visual config
-const STATE_CONFIG: Record<
-  RoadmapNodeProps['state'],
-  { border: string; fill: string; opacity: number }
-> = {
-  completed:   { border: '#2DD46E', fill: '#071510', opacity: 1 },
-  'in-progress': { border: '', fill: '#0d1535', opacity: 1 },   // border = biomeColor
-  available:   { border: '#18D6FF', fill: '#071520', opacity: 1 },
-  locked:      { border: '#2D3260', fill: '#0a0a0a', opacity: 0.5 },
-};
-
-function getMasteryArc(radius: number, mastery: number): { dasharray: string; dashoffset: number } {
-  const circumference = 2 * Math.PI * radius;
-  const filled = circumference * mastery;
-  const gap    = circumference - filled;
-  return {
-    dasharray:  `${filled} ${gap}`,
-    dashoffset: circumference * 0.25, // rotate so arc starts at top (−90°)
-  };
+// Ring + fill colours per state
+function getStateColors(state: RoadmapNodeProps['state'], biomeColor: string) {
+  switch (state) {
+    case 'completed':   return { ring: '#2DD46E', fill: '#0a2518', glow: 'rgba(45,212,110,0.5)',  ringWidth: 3.5 };
+    case 'in-progress': return { ring: biomeColor, fill: '#0d0f2a', glow: `${biomeColor}88`,       ringWidth: 3.5 };
+    case 'available':   return { ring: '#FFC93C', fill: '#1a1200', glow: 'rgba(255,201,60,0.55)', ringWidth: 3.5 };
+    case 'locked':      return { ring: '#2D3260', fill: '#0a0a14', glow: 'rgba(45,50,96,0.3)',    ringWidth: 2   };
+  }
 }
 
-function getLabelSize(radius: number): { iconSize: number; labelSize: number; labelOffset: number } {
-  if (radius >= 36) return { iconSize: 18, labelSize: 9,  labelOffset: radius + 14 };
-  if (radius >= 26) return { iconSize: 14, labelSize: 8,  labelOffset: radius + 12 };
-  return               { iconSize: 12, labelSize: 7,  labelOffset: radius + 11 };
+function getMasteryArc(radius: number, mastery: number) {
+  const circumference = 2 * Math.PI * (radius - 4);
+  const filled = circumference * mastery;
+  const gap    = circumference - filled;
+  return { dasharray: `${filled} ${gap}`, dashoffset: circumference * 0.25 };
+}
+
+function getLabelSize(radius: number) {
+  if (radius >= 36) return { iconSize: 20, labelSize: 10, labelOffset: radius + 16 };
+  if (radius >= 26) return { iconSize: 15, labelSize: 9,  labelOffset: radius + 13 };
+  return                   { iconSize: 12, labelSize: 8,  labelOffset: radius + 12 };
 }
 
 export default function RoadmapNode({
@@ -55,156 +51,182 @@ export default function RoadmapNode({
   biomeColor,
   onClick,
 }: RoadmapNodeProps) {
-  const cfg = STATE_CONFIG[state];
-  const borderColor = state === 'in-progress' ? biomeColor : cfg.border;
+  const { ring, fill, glow, ringWidth } = getStateColors(state, biomeColor);
   const { dasharray, dashoffset } = getMasteryArc(radius, mastery);
   const { iconSize, labelSize, labelOffset } = getLabelSize(radius);
   const pct = Math.round(mastery * 100);
-  const filterId = `glow-${id}`;
-  const tooltipWidth = Math.min(Math.max(label.length * 6, 60), 160);
-  const tooltipX = cx - tooltipWidth / 2;
-  const tooltipY = cy - radius - 32;
+  const filterId  = `glow-${id}`;
+  const gradId    = `fill-${id}`;
+  const tooltipW  = Math.min(Math.max(label.length * 6.5, 70), 170);
+  const tooltipX  = cx - tooltipW / 2;
+  const tooltipY  = cy - radius - 34;
+  const isLocked  = state === 'locked';
 
-  // Sub-label below the icon (mastery % or state text)
   const subLabel =
-    state === 'locked'
-      ? ''
-      : state === 'completed'
-      ? '✓'
-      : state === 'available'
-      ? 'New'
-      : `${pct}%`;
+    isLocked           ? ''
+    : state === 'completed'   ? '✓'
+    : state === 'available'   ? 'Start'
+    : `${pct}%`;
 
   return (
     <g
       className="node-group"
-      style={{ cursor: state === 'locked' ? 'not-allowed' : 'pointer', opacity: cfg.opacity }}
-      onClick={state !== 'locked' ? onClick : undefined}
+      style={{ cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.45 : 1 }}
+      onClick={!isLocked ? onClick : undefined}
       aria-label={label}
       role="button"
-      tabIndex={state !== 'locked' ? 0 : undefined}
+      tabIndex={!isLocked ? 0 : undefined}
       onKeyDown={(e) => {
-        if ((e.key === 'Enter' || e.key === ' ') && state !== 'locked' && onClick) {
+        if ((e.key === 'Enter' || e.key === ' ') && !isLocked && onClick) {
           e.preventDefault();
           onClick();
         }
       }}
     >
-      {/* ── Glow filter ──────────────────────────────────────────────────── */}
       <defs>
-        <filter id={filterId} x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
+        <filter id={filterId} x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="5" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+        {/* Radial fill gradient — darker centre, lighter edge */}
+        <radialGradient id={gradId} cx="35%" cy="30%" r="70%">
+          <stop offset="0%"   stopColor={fill} stopOpacity="1" />
+          <stop offset="100%" stopColor="#000010" stopOpacity="1" />
+        </radialGradient>
       </defs>
 
-      {/* ── Glow backdrop ─────────────────────────────────────────────────── */}
-      {state !== 'locked' && (
+      {/* ── Outer glow halo ────────────────────────────────────────────── */}
+      {!isLocked && (
         <circle
           cx={cx}
           cy={cy}
-          r={radius + 6}
-          fill={borderColor}
-          opacity={0.15}
+          r={radius + 10}
+          fill={glow}
+          opacity={0.40}
           filter={`url(#${filterId})`}
         />
       )}
 
-      {/* ── Main circle ───────────────────────────────────────────────────── */}
+      {/* ── Outer ring ─────────────────────────────────────────────────── */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={radius + 3}
+        fill="none"
+        stroke={ring}
+        strokeWidth={ringWidth}
+        opacity={isLocked ? 0.4 : 0.85}
+      />
+
+      {/* ── Main circle with gradient fill ─────────────────────────────── */}
       <circle
         cx={cx}
         cy={cy}
         r={radius}
-        fill={cfg.fill}
-        stroke={borderColor}
-        strokeWidth={2.5}
+        fill={`url(#${gradId})`}
+        stroke={ring}
+        strokeWidth={1.5}
+        opacity={0.95}
       />
 
-      {/* ── Mastery arc ───────────────────────────────────────────────────── */}
-      {mastery > 0 && state !== 'locked' && (
+      {/* ── Inner shine highlight ───────────────────────────────────────── */}
+      {!isLocked && (
+        <ellipse
+          cx={cx - radius * 0.22}
+          cy={cy - radius * 0.30}
+          rx={radius * 0.35}
+          ry={radius * 0.20}
+          fill="white"
+          opacity={0.12}
+        />
+      )}
+
+      {/* ── Mastery arc overlay ─────────────────────────────────────────── */}
+      {mastery > 0 && !isLocked && (
         <circle
           cx={cx}
           cy={cy}
-          r={radius - 3}
+          r={radius - 4}
           fill="none"
-          stroke={borderColor}
-          strokeWidth={2.5}
+          stroke={ring}
+          strokeWidth={3}
           strokeDasharray={dasharray}
           strokeDashoffset={dashoffset}
           strokeLinecap="round"
           transform={`rotate(-90 ${cx} ${cy})`}
-          opacity={0.7}
+          opacity={0.6}
         />
       )}
 
-      {/* ── Icon / lock ───────────────────────────────────────────────────── */}
+      {/* ── Icon ───────────────────────────────────────────────────────── */}
       <text
         x={cx}
-        y={cy - (subLabel ? 4 : 0)}
+        y={cy - (subLabel ? radius * 0.18 : 0)}
         dominantBaseline="central"
         textAnchor="middle"
         fontSize={iconSize}
         style={{ userSelect: 'none', pointerEvents: 'none' }}
       >
-        {state === 'locked' ? '🔒' : (icon ?? '')}
+        {isLocked ? '🔒' : (icon ?? '')}
       </text>
 
-      {/* ── Sub-label (mastery % or state hint) ──────────────────────────── */}
+      {/* ── Sub-label ──────────────────────────────────────────────────── */}
       {subLabel && (
         <text
           x={cx}
-          y={cy + iconSize * 0.9}
+          y={cy + radius * 0.42}
           dominantBaseline="central"
           textAnchor="middle"
-          fontSize={labelSize - 1}
-          fill={state === 'completed' ? '#2DD46E' : state === 'available' ? '#18D6FF' : '#B7BEE0'}
+          fontSize={labelSize}
+          fill={state === 'completed' ? '#2DD46E' : state === 'available' ? '#FFC93C' : '#B7BEE0'}
           fontFamily="'JetBrains Mono', monospace"
-          fontWeight="700"
+          fontWeight="800"
           style={{ userSelect: 'none', pointerEvents: 'none' }}
         >
           {subLabel}
         </text>
       )}
 
-      {/* ── Node label below ──────────────────────────────────────────────── */}
+      {/* ── Node name below the circle ─────────────────────────────────── */}
       <text
         x={cx}
         y={cy + labelOffset}
         dominantBaseline="central"
         textAnchor="middle"
         fontSize={labelSize}
-        fill="#B7BEE0"
-        fontFamily="'Oswald', 'Nunito', sans-serif"
-        fontWeight="600"
+        fill={isLocked ? '#6F77A6' : '#E2E8FF'}
+        fontFamily="'Nunito', 'Oswald', sans-serif"
+        fontWeight="700"
         style={{ userSelect: 'none', pointerEvents: 'none' }}
       >
-        {label.length > 18 ? label.slice(0, 16) + '…' : label}
+        {label.length > 20 ? label.slice(0, 18) + '…' : label}
       </text>
 
-      {/* ── Hover tooltip ─────────────────────────────────────────────────── */}
+      {/* ── Hover tooltip ──────────────────────────────────────────────── */}
       <g className="node-tooltip" style={{ opacity: 0, pointerEvents: 'none', transition: 'opacity 0.15s' }}>
         <rect
           x={tooltipX}
           y={tooltipY}
-          width={tooltipWidth}
-          height={22}
-          rx={5}
-          fill="#1F2342"
-          stroke="#2D3260"
+          width={tooltipW}
+          height={24}
+          rx={6}
+          fill="#1a1f4e"
+          stroke={ring}
           strokeWidth={1}
+          opacity={0.95}
         />
         <text
           x={cx}
-          y={tooltipY + 11}
+          y={tooltipY + 12}
           dominantBaseline="central"
           textAnchor="middle"
-          fontSize={8}
+          fontSize={9}
           fill="#F5F7FF"
           fontFamily="'Nunito', sans-serif"
-          fontWeight="600"
+          fontWeight="700"
           style={{ userSelect: 'none' }}
         >
           {label}

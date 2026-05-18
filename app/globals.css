@@ -908,3 +908,58 @@ body > * {
     radial-gradient(ellipse at 50% 50%, var(--biome-bg) 0%, #060614 100%);
   background-attachment: fixed;
 }
+
+/* ==========================================================================
+   ROADMAP PAGE — MOBILE UTILITIES
+   ========================================================================== */
+
+/* Ensure the roadmap SVG canvas is horizontally scrollable on mobile */
+.roadmap-scroll-canvas {
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: none;
+}
+
+/* Node pulse for "current" / "available" chapter nodes */
+@keyframes node-pulse {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(107,75,255,0.70)); }
+  50%       { filter: drop-shadow(0 0 20px rgba(107,75,255,0.95)); }
+}
+.node-pulse { animation: node-pulse 2.2s ease-in-out infinite; }
+
+/* Frosted glass card — used across roadmap sidebar and student pages */
+.frosted-card {
+  background: rgba(10, 10, 28, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+}
+
+/* Transparent page wrapper — ensures celestial bg shows through */
+.page-transparent {
+  background: transparent !important;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* Mobile-first padding helpers for student pages */
+.student-page-pad {
+  padding: 16px 16px 96px; /* bottom pad for mobile bottom nav */
+}
+@media (min-width: 768px) {
+  .student-page-pad {
+    padding: 24px 32px 32px;
+  }
+}
+
+/* Responsive text clamping for roadmap chapter names */
+@media (max-width: 480px) {
+  .roadmap-chapter-label {
+    font-size: 8px;
+  }
+}
+
+/* Mobile bottom safe area for content behind bottom nav */
+.mobile-safe-bottom { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 768px) { .mobile-safe-bottom { padding-bottom: 0; } }

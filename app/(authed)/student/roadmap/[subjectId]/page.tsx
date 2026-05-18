@@ -165,7 +165,7 @@ export default function ChapterRoadmapPage() {
       className={biomeClass}
       style={{
         minHeight: '100vh',
-        background: 'var(--bg-deep, #060614)',
+        background: 'transparent',
         display: 'flex',
         flexDirection: 'column',
       }}

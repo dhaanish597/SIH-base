@@ -58,8 +58,18 @@ const NODE_RADIUS = 38;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+function deriveIconKey(s: Subject): string {
+  if (s.iconKey) return s.iconKey.toLowerCase();
+  // Derive from name when iconKey is null
+  const name = s.name.toLowerCase();
+  for (const token of Object.keys(BIOME_COLORS)) {
+    if (name.includes(token)) return token;
+  }
+  return 'default';
+}
+
 function subjectToRawNode(s: Subject): RawNode {
-  const biomeKey = s.iconKey.toLowerCase();
+  const biomeKey = deriveIconKey(s);
   const biomeColor = BIOME_COLORS[biomeKey] ?? BIOME_COLORS.default;
   const icon       = SUBJECT_ICONS[biomeKey] ?? SUBJECT_ICONS.default;
 
@@ -118,59 +128,55 @@ export default function RoadmapPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'var(--bg-deep, #060614)',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* Page header */}
-      <div style={{ padding: '24px 24px 16px', flexShrink: 0 }}>
-        <h1 style={{
-          fontFamily: 'var(--f-display, Oxanium, sans-serif)',
-          fontSize: 'clamp(20px, 4vw, 28px)',
-          fontWeight: 800,
-          color: 'var(--ink-1, #F5F7FF)',
-          marginBottom: 4,
-          letterSpacing: '0.04em',
-        }}>
-          🗺️ Learning Roadmap
-        </h1>
-        <p style={{
-          fontSize: 13,
-          color: 'var(--ink-3, #6F77A6)',
-          fontFamily: 'var(--f-body, Nunito, sans-serif)',
-        }}>
-          Choose a subject to explore its chapters and topics.
-        </p>
-      </div>
+    <div style={{ position: 'relative', minHeight: 'calc(100vh - 64px)' }}>
+      {/* Canvas — full bleed, provides its own celestial background */}
+      {!loading && (
+        <RoadmapCanvas
+          layout={layout}
+          nodeRadius={NODE_RADIUS}
+          biomeColor="#6B4BFF"
+          onNodeClick={handleNodeClick}
+        />
+      )}
 
-      {/* Canvas area */}
-      <div style={{ flex: 1, position: 'relative' }}>
-        {loading ? (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: 300,
-            color: 'var(--ink-3, #6F77A6)',
-            fontFamily: 'var(--f-hud, Oswald, sans-serif)',
-            fontSize: 14,
-            letterSpacing: '0.1em',
+      {/* Loading state on top of (still dark) background */}
+      {loading && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#6F77A6', fontFamily: 'Oswald, sans-serif',
+          fontSize: 14, letterSpacing: '0.15em',
+        }}>
+          LOADING SUBJECTS…
+        </div>
+      )}
+
+      {/* Title overlay — sits on top of SVG canvas */}
+      {!loading && (
+        <div style={{
+          position: 'absolute', top: 20, left: 24, pointerEvents: 'none',
+        }}>
+          <h1 style={{
+            fontFamily: 'var(--f-display, Oxanium, sans-serif)',
+            fontSize: 'clamp(18px, 3.5vw, 26px)',
+            fontWeight: 800,
+            color: '#F5F7FF',
+            marginBottom: 2,
+            letterSpacing: '0.06em',
+            textShadow: '0 0 20px rgba(107,75,255,0.8), 0 2px 8px rgba(0,0,0,0.9)',
           }}>
-            Loading subjects…
-          </div>
-        ) : (
-          <RoadmapCanvas
-            layout={layout}
-            nodeRadius={NODE_RADIUS}
-            biomeColor="#6B4BFF"
-            onNodeClick={handleNodeClick}
-          />
-        )}
-      </div>
+            🗺️ Learning Roadmap
+          </h1>
+          <p style={{
+            fontSize: 12, color: '#9BA4C8',
+            fontFamily: 'var(--f-body, Nunito, sans-serif)',
+            textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+          }}>
+            Choose a subject to explore its chapters and topics.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -46,14 +46,17 @@ router.get('/chapters', async (req, res) => {
   })));
 });
 
-// GET /api/questions?subject=...&grade=...&chapter=...&limit=10
+// GET /api/questions?subject=...&grade=...&chapter=...&topicId=...&limit=10&take=10
 // Adaptive Integration: Uses learnerModel to pick questions matching optimal difficulty
 router.get('/', authenticate, async (req, res) => {
   try {
     const subject = String(req.query.subject || '');
     const grade = Number(req.query.grade);
     const chapter = req.query.chapter ? String(req.query.chapter) : null;
-    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 10));
+    const topicId = req.query.topicId ? String(req.query.topicId) : null;
+    const status = req.query.status ? String(req.query.status).toUpperCase() : 'APPROVED';
+    const limitRaw = Number(req.query.limit || req.query.take);
+    const limit = Math.min(100, Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 10));
     const difficulty = req.query.difficulty ? String(req.query.difficulty).toUpperCase() : null;
 
     const subj = subject ? await prisma.subject.findUnique({ where: { name: subject } }) : null;
@@ -69,8 +72,9 @@ router.get('/', authenticate, async (req, res) => {
       ...(subj ? { subjectId: subj.id } : {}),
       ...(grade ? { gradeLevel: grade } : {}),
       ...(chapterId ? { chapterId } : {}),
+      ...(topicId ? { topicId } : {}),
       ...(difficulty ? { difficulty } : {}),
-      status: 'APPROVED',
+      status,
       // School-scoped or global. Students see their school's custom + global questions.
       OR: [
         { schoolId: null },

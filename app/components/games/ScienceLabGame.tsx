@@ -1,336 +1,259 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Beaker, Lock, CheckCircle, XCircle, Clock } from 'lucide-react';
 
-type Props = { grade?: number; onExit: () => void };
-
-type Puzzle =
-  | { kind: 'balance'; question: string; choices: string[]; answer: number; explanation: string }
-  | { kind: 'label'; image: string; options: string[]; slots: { label: string; correct: string }[] }
-  | { kind: 'match'; pairs: { left: string; right: string }[] };
-
-type GameResult = {
-  stars: number; score: number; xp: number; coins: number;
-  questionsAttempted: number; questionsCorrect: number; durationSec: number;
-};
-
-// ── Puzzle bank ───────────────────────────────────────────────────────────────
-
-const PUZZLES: Puzzle[] = [
-  {
-    kind: 'balance',
-    question: 'Balance: H₂ + O₂ → H₂O',
-    choices: ['2H₂ + O₂ → 2H₂O', 'H₂ + O₂ → H₂O₂', 'H₂ + 2O₂ → 2H₂O', '2H₂ + 2O₂ → H₂O'],
-    answer: 0,
-    explanation: '2H₂ + O₂ → 2H₂O conserves both H (4) and O (2) atoms.',
-  },
-  {
-    kind: 'balance',
-    question: 'Balance: Fe + O₂ → Fe₂O₃',
-    choices: ['Fe + O₂ → Fe₂O₃', '4Fe + 3O₂ → 2Fe₂O₃', '2Fe + O₂ → Fe₂O₃', 'Fe + 3O₂ → 2Fe₂O₃'],
-    answer: 1,
-    explanation: '4Fe + 3O₂ → 2Fe₂O₃. Check: Fe: 4=4, O: 6=6.',
-  },
-  {
-    kind: 'balance',
-    question: 'Balance: CH₄ + O₂ → CO₂ + H₂O',
-    choices: ['CH₄ + O₂ → CO₂ + H₂O', 'CH₄ + 2O₂ → CO₂ + 2H₂O', '2CH₄ + O₂ → 2CO₂ + H₂O', 'CH₄ + 4O₂ → CO₂ + 4H₂O'],
-    answer: 1,
-    explanation: 'CH₄ + 2O₂ → CO₂ + 2H₂O. C:1=1, H:4=4, O:4=4 ✓',
-  },
-  {
-    kind: 'balance',
-    question: 'Balance: N₂ + H₂ → NH₃',
-    choices: ['N₂ + H₂ → 2NH₃', 'N₂ + 3H₂ → 2NH₃', '2N₂ + H₂ → NH₃', 'N₂ + 3H₂ → NH₃'],
-    answer: 1,
-    explanation: 'N₂ + 3H₂ → 2NH₃. N:2=2, H:6=6 ✓',
-  },
-  {
-    kind: 'match',
-    pairs: [
-      { left: 'Mitochondria', right: 'Powerhouse of the cell' },
-      { left: 'Nucleus', right: 'Contains DNA' },
-      { left: 'Ribosome', right: 'Protein synthesis' },
-      { left: 'Cell wall', right: 'Structural support in plants' },
-    ],
-  },
-  {
-    kind: 'match',
-    pairs: [
-      { left: 'Newton\'s 1st Law', right: 'Inertia' },
-      { left: 'Newton\'s 2nd Law', right: 'F = ma' },
-      { left: 'Newton\'s 3rd Law', right: 'Action and reaction' },
-      { left: 'Ohm\'s Law', right: 'V = IR' },
-    ],
-  },
-  {
-    kind: 'balance',
-    question: 'What is the chemical formula for table salt?',
-    choices: ['NaOH', 'NaCl', 'Na₂O', 'NaHCO₃'],
-    answer: 1,
-    explanation: 'Table salt is sodium chloride (NaCl).',
-  },
-  {
-    kind: 'balance',
-    question: 'Which state of matter has a definite shape and volume?',
-    choices: ['Gas', 'Liquid', 'Solid', 'Plasma'],
-    answer: 2,
-    explanation: 'Solids have both definite shape and definite volume.',
-  },
+// ─── Reagents ─────────────────────────────────────────────────────────────────
+const REAGENTS = [
+  { id: 'H2',  sym: 'H₂',  name: 'Hydrogen',  color: '#18D6FF', emoji: '💧' },
+  { id: 'O2',  sym: 'O₂',  name: 'Oxygen',    color: '#2DD46E', emoji: '🌿' },
+  { id: 'Na',  sym: 'Na',  name: 'Sodium',    color: '#FFC93C', emoji: '⚡' },
+  { id: 'Cl',  sym: 'Cl₂', name: 'Chlorine',  color: '#A8FF3E', emoji: '☁️' },
+  { id: 'Fe',  sym: 'Fe',  name: 'Iron',      color: '#D08850', emoji: '🔩' },
+  { id: 'C',   sym: 'C',   name: 'Carbon',    color: '#888',    emoji: '⬛' },
+  { id: 'Ca',  sym: 'Ca',  name: 'Calcium',   color: '#F5F5DC', emoji: '🪨' },
+  { id: 'N2',  sym: 'N₂',  name: 'Nitrogen',  color: '#B0C4DE', emoji: '💨' },
+  { id: 'H2O', sym: 'H₂O', name: 'Water',     color: '#38BDF8', emoji: '🌊' },
 ];
 
-export default function ScienceLabGame({ grade = 9, onExit }: Props) {
-  const sessionIdRef = useRef<string | null>(null);
-  const startTimeRef = useRef(Date.now());
-  const [result, setResult] = useState<GameResult | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+// ─── Reaction database ────────────────────────────────────────────────────────
+type Reaction = {
+  product: string; name: string; equation: string;
+  fact: string; emoji: string; color: string; points: number;
+};
 
-  const [puzzles] = useState(() => [...PUZZLES].sort(() => Math.random() - 0.5).slice(0, 6));
-  const [pIdx, setPIdx] = useState(0);
-  const [score, setScore] = useState(0);
-  const [correct, setCorrect] = useState(0);
-  const [phase, setPhase] = useState<'question' | 'feedback' | 'done'>('question');
-  const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
-  const [selectedMCQ, setSelectedMCQ] = useState<number | null>(null);
-  const [matchState, setMatchState] = useState<{ selected: string | null; matched: Record<string, string> }>({ selected: null, matched: {} });
+const REACTIONS: Record<string, Reaction> = {
+  'H2+O2':  { product: 'H₂O',    name: 'Water',               equation: '2H₂ + O₂ → 2H₂O',          emoji: '💧', color: '#18D6FF', points: 50,  fact: 'This exothermic reaction releases enormous energy. Liquid hydrogen + oxygen fuel rockets — the exhaust is just water!' },
+  'Na+Cl':  { product: 'NaCl',   name: 'Table Salt',           equation: 'Na + Cl₂ → NaCl',           emoji: '🧂', color: '#FFC93C', points: 50,  fact: 'An ionic bond forms between sodium (metal) and chlorine (non-metal). The result is the salt you add to food every day!' },
+  'Fe+O2':  { product: 'Fe₂O₃', name: 'Iron Oxide (Rust)',    equation: '4Fe + 3O₂ → 2Fe₂O₃',        emoji: '🔴', color: '#D08850', points: 50,  fact: 'Rust! Iron slowly reacts with oxygen in the presence of moisture. This oxidation is why iron objects turn brown over time.' },
+  'C+O2':   { product: 'CO₂',   name: 'Carbon Dioxide',       equation: 'C + O₂ → CO₂',              emoji: '💨', color: '#888',    points: 50,  fact: 'Every time you exhale, you release CO₂! It is also produced when fossil fuels burn and is the primary greenhouse gas.' },
+  'H2+Cl':  { product: 'HCl',   name: 'Hydrochloric Acid',    equation: 'H₂ + Cl₂ → 2HCl',           emoji: '⚗️', color: '#A8FF3E', points: 60,  fact: 'Hydrochloric acid is found in your stomach (gastric acid)! It helps digest food by breaking down proteins and killing bacteria.' },
+  'Ca+O2':  { product: 'CaO',   name: 'Quicklime',            equation: '2Ca + O₂ → 2CaO',           emoji: '🪨', color: '#F5F5DC', points: 60,  fact: 'Quicklime (calcium oxide) is used in cement, steel, and glass production. Add water to get slaked lime (Ca(OH)₂) used in plaster.' },
+  'N2+H2':  { product: 'NH₃',   name: 'Ammonia',              equation: 'N₂ + 3H₂ → 2NH₃',           emoji: '🌱', color: '#2DD46E', points: 70,  fact: 'The Haber-Bosch process makes ammonia from nitrogen and hydrogen. It produces fertilizers that feed roughly half the world population!' },
+  'Na+H2O': { product: 'NaOH',  name: 'Sodium Hydroxide + H₂', equation: '2Na + 2H₂O → 2NaOH + H₂↑', emoji: '💥', color: '#FF5A4D', points: 80,  fact: 'Danger! Sodium reacts violently with water, producing flammable hydrogen gas and sodium hydroxide (lye). Used to make soap and paper.' },
+};
 
-  const total = puzzles.length;
-  const current = puzzles[pIdx];
+function getKey(a: string, b: string): string {
+  for (const k of [`${a}+${b}`, `${b}+${a}`]) if (REACTIONS[k]) return k;
+  return '';
+}
+
+const TOTAL = Object.keys(REACTIONS).length;
+
+export default function ScienceLabGame({ grade = 9, onExit }: { grade?: number; onExit: () => void }) {
+  const sessionRef = useRef<string | null>(null);
+  const startRef   = useRef(Date.now());
+
+  const [slotA,       setSlotA]       = useState<string | null>(null);
+  const [slotB,       setSlotB]       = useState<string | null>(null);
+  const [reaction,    setReaction]    = useState<Reaction | null>(null);
+  const [noRxn,       setNoRxn]       = useState(false);
+  const [isNew,       setIsNew]       = useState(false);
+  const [animating,   setAnimating]   = useState(false);
+  const [discoveries, setDiscoveries] = useState<string[]>([]);
+  const [score,       setScore]       = useState(0);
+  const [phase,       setPhase]       = useState<'playing' | 'done'>('playing');
+  const [saved,       setSaved]       = useState(false);
+  const [saving,      setSaving]      = useState(false);
 
   useEffect(() => {
     fetch('/api/games/start', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
       body: JSON.stringify({ gameType: 'SCIENCE_LAB', mode: 'SOLO', gradeLevel: grade }),
-    }).then((r) => r.ok ? r.json() : null).then((d) => { if (d?.sessionId) sessionIdRef.current = d.sessionId; }).catch(() => {});
+    }).then(r => r.ok ? r.json() : null).then(d => { if (d?.sessionId) sessionRef.current = d.sessionId; }).catch(() => {});
   }, [grade]);
 
-  useEffect(() => {
-    setSelectedMCQ(null);
-    setMatchState({ selected: null, matched: {} });
-    setFeedback(null);
-  }, [pIdx]);
+  function pick(id: string) {
+    if (animating) return;
+    if (slotA === id) { setSlotA(null); return; }
+    if (slotB === id) { setSlotB(null); return; }
+    if (!slotA) { setSlotA(id); return; }
+    if (!slotB) { setSlotB(id); return; }
+    // replace B
+    setSlotB(id);
+  }
 
-  const submitBalance = (idx: number) => {
-    if (phase !== 'question') return;
-    setSelectedMCQ(idx);
-    const q = current as Extract<Puzzle, { kind: 'balance' }>;
-    const ok = idx === q.answer;
-    if (ok) { setScore((s) => s + 20); setCorrect((c) => c + 1); }
-    setFeedback({ ok, msg: ok ? `✓ Correct! ${q.explanation}` : `✗ ${q.choices[q.answer]} — ${q.explanation}` });
-    setPhase('feedback');
-  };
-
-  const handleMatchClick = (side: 'left' | 'right', val: string) => {
-    if (phase !== 'question') return;
-    const q = current as Extract<Puzzle, { kind: 'match' }>;
-    const { selected, matched } = matchState;
-
-    if (matched[val]) return; // already matched
-
-    if (!selected) {
-      setMatchState({ selected: val, matched });
-      return;
-    }
-
-    // Try to match: find if selected (left) + val (right) form a valid pair
-    const pair = q.pairs.find(
-      (p) => (p.left === selected && p.right === val) || (p.right === selected && p.left === val),
-    );
-
-    if (pair) {
-      const newMatched = { ...matched, [pair.left]: pair.right, [pair.right]: pair.left };
-      setMatchState({ selected: null, matched: newMatched });
-      if (Object.keys(newMatched).length / 2 === q.pairs.length) {
-        // All matched!
-        setScore((s) => s + 30);
-        setCorrect((c) => c + 1);
-        setFeedback({ ok: true, msg: '✓ All pairs matched correctly!' });
-        setPhase('feedback');
+  function mix() {
+    if (!slotA || !slotB || animating) return;
+    setAnimating(true);
+    setReaction(null);
+    setNoRxn(false);
+    setIsNew(false);
+    setTimeout(() => {
+      const key = getKey(slotA, slotB);
+      if (key) {
+        const rxn = REACTIONS[key];
+        const fresh = !discoveries.includes(key);
+        setReaction(rxn);
+        setIsNew(fresh);
+        if (fresh) {
+          const newDisc = [...discoveries, key];
+          setDiscoveries(newDisc);
+          setScore(s => s + rxn.points);
+          if (newDisc.length >= TOTAL) setTimeout(() => setPhase('done'), 2000);
+        }
+      } else {
+        setNoRxn(true);
       }
-    } else {
-      // Wrong match — deselect
-      setMatchState({ selected: val === selected ? null : val, matched });
-    }
-  };
+      setAnimating(false);
+    }, 700);
+  }
 
-  const next = () => {
-    setPhase('question');
-    setFeedback(null);
-    if (pIdx + 1 >= total) {
-      finishGame();
-    } else {
-      setPIdx((i) => i + 1);
-    }
-  };
+  function clear() { setSlotA(null); setSlotB(null); setReaction(null); setNoRxn(false); setIsNew(false); }
 
-  const finishGame = () => {
-    const acc = total > 0 ? correct / total : 0;
-    const stars = acc >= 0.9 ? 3 : acc >= 0.6 ? 2 : 1;
-    const xp = 60 + score + (stars === 3 ? 50 : stars === 2 ? 25 : 0);
-    const coins = 15 + stars * 10;
-    const durationSec = Math.round((Date.now() - startTimeRef.current) / 1000);
-    setResult({ stars, score, xp, coins, questionsAttempted: total, questionsCorrect: correct, durationSec });
-    setPhase('done');
-  };
-
-  const claimReward = async () => {
-    if (!result || saving || saved) return;
+  async function finish() {
+    if (saving || saved) return;
     setSaving(true);
     try {
-      const sessionId = sessionIdRef.current;
-      if (sessionId) {
+      if (sessionRef.current) {
+        const dur = Math.round((Date.now() - startRef.current) / 1000);
+        const stars = discoveries.length >= 7 ? 3 : discoveries.length >= 4 ? 2 : 1;
         await fetch('/api/games/complete', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-          body: JSON.stringify({
-            sessionId, score: result.score,
-            questionsAttempted: result.questionsAttempted, questionsCorrect: result.questionsCorrect,
-            durationSec: result.durationSec, starsEarned: result.stars, outcome: 'won',
-          }),
+          body: JSON.stringify({ sessionId: sessionRef.current, score, questionsAttempted: discoveries.length, questionsCorrect: discoveries.length, durationSec: dur, starsEarned: stars, outcome: 'won' }),
         });
       }
       setSaved(true);
-    } catch { setSaved(true); } finally { setSaving(false); }
-  };
-
-  const progress = ((pIdx + (phase === 'feedback' ? 1 : 0)) / total) * 100;
-
-  if (phase === 'done' && result) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-950 to-teal-950 flex items-center justify-center p-6">
-        <div className="bg-white/10 border border-emerald-400/30 rounded-2xl p-6 w-80 text-center space-y-4 text-white">
-          <Beaker className="w-12 h-12 text-emerald-400 mx-auto" />
-          <h2 className="text-2xl font-bold">Lab Escaped!</h2>
-          <p className="text-emerald-200">{'⭐'.repeat(result.stars)} · {result.questionsCorrect}/{result.questionsAttempted} solved</p>
-          <div className="flex justify-center gap-5">
-            <div><p className="text-2xl font-bold text-amber-400">{result.score}</p><p className="text-xs text-emerald-300">Score</p></div>
-            <div><p className="text-2xl font-bold text-emerald-400">+{result.xp}</p><p className="text-xs text-emerald-300">XP</p></div>
-            <div><p className="text-2xl font-bold text-yellow-400">+{result.coins}</p><p className="text-xs text-emerald-300">Coins</p></div>
-          </div>
-          <button onClick={claimReward} disabled={saving || saved}
-            className="w-full bg-emerald-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50">
-            {saved ? '✓ Rewards claimed!' : saving ? 'Saving…' : 'Claim Rewards'}
-          </button>
-          <button onClick={onExit} className="w-full text-sm text-emerald-300 hover:text-white">Back to games</button>
-        </div>
-      </div>
-    );
+    } finally { setSaving(false); }
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-950 to-teal-950 flex flex-col">
-      {/* Progress header */}
-      <div className="px-4 pt-4 pb-2 space-y-2">
-        <div className="flex items-center justify-between text-white/70 text-sm">
-          <span className="flex items-center gap-1.5"><Beaker className="w-4 h-4 text-emerald-400" /> Puzzle {Math.min(pIdx + 1, total)} / {total}</span>
-          <span className="text-amber-400 font-bold">{score} pts</span>
+  const rA = REAGENTS.find(r => r.id === slotA);
+  const rB = REAGENTS.find(r => r.id === slotB);
+
+  // ── Done screen ───────────────────────────────────────────────────────────
+  if (phase === 'done') return (
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #032117, #0a1a14)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ background: 'var(--bg-elev-1)', border: '1px solid var(--line)', borderRadius: 16, padding: 24, maxWidth: 320, width: '100%', textAlign: 'center' }}>
+        <div style={{ fontSize: 56, marginBottom: 8 }}>🏆</div>
+        <h2 style={{ fontFamily: 'var(--f-display)', fontSize: 22, color: 'var(--gold)', margin: '0 0 4px' }}>Lab Complete!</h2>
+        <p style={{ color: 'var(--ink-3)', fontSize: 13, margin: '0 0 20px' }}>You discovered all {TOTAL} reactions!</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
+          <div style={{ background: 'var(--bg-elev-2)', borderRadius: 10, padding: 12 }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--gold)' }}>{score}</div>
+            <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>Score</div>
+          </div>
+          <div style={{ background: 'var(--bg-elev-2)', borderRadius: 10, padding: 12 }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--green)' }}>{discoveries.length}/{TOTAL}</div>
+            <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>Reactions</div>
+          </div>
         </div>
-        <div className="h-2 bg-white/10 rounded-full">
-          <div className="h-full bg-emerald-400 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+        <button onClick={finish} disabled={saving || saved}
+          style={{ width: '100%', background: saved ? 'var(--green-deep)' : 'var(--gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: 12, padding: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>
+          {saved ? '✅ Rewards Claimed!' : saving ? 'Saving…' : '🎁 Claim Rewards'}
+        </button>
+        <button onClick={onExit} style={{ background: 'none', border: 'none', color: 'var(--ink-3)', fontSize: 13, cursor: 'pointer' }}>Back to Game Vault</button>
+      </div>
+    </div>
+  );
+
+  // ── Lab screen ────────────────────────────────────────────────────────────
+  return (
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #032117 0%, #071a23 100%)', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid var(--line)', background: 'rgba(0,0,0,0.4)' }}>
+        <button onClick={onExit} style={{ background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 18 }}>←</button>
+        <span style={{ color: 'var(--ink-1)', fontWeight: 700, fontSize: 14 }}>⚗️ Science Lab</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 14, alignItems: 'center' }}>
+          <span style={{ fontSize: 12, color: 'var(--green)', fontWeight: 700 }}>{discoveries.length}/{TOTAL} found</span>
+          <span style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 700 }}>{score} pts</span>
         </div>
       </div>
 
-      {/* Puzzle */}
-      <div className="flex-1 px-4 py-3 space-y-4">
-        {current.kind === 'balance' && (
-          <BalancePuzzle q={current} selected={selectedMCQ} phase={phase} onAnswer={submitBalance} />
-        )}
-        {current.kind === 'match' && (
-          <MatchPuzzle q={current} state={matchState} phase={phase} onClick={handleMatchClick} />
-        )}
+      <div style={{ flex: 1, padding: '16px 16px 80px', display: 'flex', flexDirection: 'column', gap: 14, overflowY: 'auto' }}>
+        {/* Instructions */}
+        <p style={{ color: 'var(--ink-3)', fontSize: 12, margin: 0 }}>
+          Select <strong style={{ color: 'var(--cyan)' }}>Reagent A</strong> then <strong style={{ color: 'var(--gold)' }}>Reagent B</strong>, then press Mix to discover reactions!
+        </p>
 
-        {feedback && (
-          <div className={`rounded-xl p-4 text-sm font-medium ${feedback.ok ? 'bg-emerald-900/50 border border-emerald-400/30 text-emerald-200' : 'bg-rose-900/50 border border-rose-400/30 text-rose-200'}`}>
-            {feedback.msg}
+        {/* Reagent shelf */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          {REAGENTS.map(r => {
+            const inA = slotA === r.id, inB = slotB === r.id;
+            const sel = inA || inB;
+            return (
+              <button key={r.id} onClick={() => pick(r.id)}
+                style={{ background: sel ? `${r.color}22` : 'var(--bg-elev-2)', border: `2px solid ${sel ? r.color : 'var(--line)'}`, borderRadius: 10, padding: '10px 6px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, position: 'relative', transition: 'all 0.2s' }}>
+                {(inA || inB) && <span style={{ position: 'absolute', top: 3, right: 6, fontSize: 9, fontWeight: 700, color: r.color, background: 'var(--bg-deep)', borderRadius: 4, padding: '1px 4px' }}>{inA ? 'A' : 'B'}</span>}
+                <span style={{ fontSize: 22 }}>{r.emoji}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: r.color, fontFamily: 'monospace' }}>{r.sym}</span>
+                <span style={{ fontSize: 10, color: 'var(--ink-3)' }}>{r.name}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Mixing bench */}
+        <div style={{ background: 'var(--bg-elev-1)', border: '1px solid var(--line)', borderRadius: 14, padding: 16 }}>
+          <p style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 12px' }}>Mixing Bench</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 14 }}>
+            {[{ r: rA, slot: 'A', clr: 'var(--cyan)' }, { r: rB, slot: 'B', clr: 'var(--gold)' }].map(({ r, slot, clr }, i) => (
+              <div key={i} style={{ width: 64, height: 64, background: r ? `${r.color}20` : 'var(--bg-elev-2)', border: `2px dashed ${r ? r.color : clr}`, borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                {r ? <>
+                  <span style={{ fontSize: 22 }}>{r.emoji}</span>
+                  <span style={{ fontSize: 11, fontFamily: 'monospace', color: r.color, fontWeight: 700 }}>{r.sym}</span>
+                </> : <span style={{ fontSize: 18, color: clr, opacity: 0.5, fontWeight: 700 }}>{slot}</span>}
+              </div>
+            ))}
+            <span style={{ fontSize: 22, color: 'var(--ink-3)' }}>→</span>
+            <div style={{ width: 64, height: 64, background: reaction ? `${reaction.color}20` : 'var(--bg-elev-2)', border: `2px solid ${reaction ? reaction.color : 'var(--line)'}`, borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+              {reaction ? <>
+                <span style={{ fontSize: 22 }}>{reaction.emoji}</span>
+                <span style={{ fontSize: 10, fontFamily: 'monospace', color: reaction.color, fontWeight: 700 }}>{reaction.product}</span>
+              </> : animating ? <span style={{ fontSize: 22 }}>🔄</span> : <span style={{ fontSize: 18, color: 'var(--ink-dim)', fontWeight: 700 }}>?</span>}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={mix} disabled={!slotA || !slotB || animating}
+              style={{ flex: 1, background: slotA && slotB ? 'var(--green)' : 'var(--bg-elev-3)', color: slotA && slotB ? 'var(--bg-deep)' : 'var(--ink-dim)', border: 'none', borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 700, cursor: slotA && slotB ? 'pointer' : 'default', boxShadow: slotA && slotB ? 'var(--hd-green)' : 'none', transition: 'all 0.2s' }}>
+              {animating ? '🔄 Mixing…' : '⚗️ Mix!'}
+            </button>
+            <button onClick={clear} style={{ background: 'var(--bg-elev-3)', color: 'var(--ink-3)', border: 'none', borderRadius: 10, padding: '12px 14px', fontSize: 14, cursor: 'pointer' }}>🗑️</button>
+          </div>
+        </div>
+
+        {/* Reaction result */}
+        {reaction && (
+          <div style={{ background: `${reaction.color}12`, border: `1px solid ${reaction.color}40`, borderRadius: 14, padding: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 8 }}>
+              <span style={{ fontSize: 32 }}>{reaction.emoji}</span>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: reaction.color }}>
+                  {reaction.name} {isNew && <span style={{ fontSize: 11, background: 'var(--gold)', color: 'var(--bg-deep)', borderRadius: 6, padding: '2px 8px', marginLeft: 4 }}>✨ NEW +{reaction.points}pts</span>}
+                </div>
+                <div style={{ fontSize: 12, fontFamily: 'monospace', color: 'var(--ink-2)', marginTop: 2 }}>{reaction.equation}</div>
+              </div>
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6, margin: 0 }}>{reaction.fact}</p>
           </div>
         )}
 
-        {phase === 'feedback' && (
-          <button onClick={next} className="w-full bg-emerald-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-emerald-700">
-            {pIdx + 1 >= total ? 'See Results' : 'Next Puzzle →'}
+        {noRxn && (
+          <div style={{ background: 'rgba(255,90,77,0.06)', border: '1px solid rgba(255,90,77,0.2)', borderRadius: 14, padding: 14, textAlign: 'center' }}>
+            <div style={{ fontSize: 28, marginBottom: 4 }}>🚫</div>
+            <p style={{ color: 'var(--ink-3)', fontSize: 13, margin: 0 }}>No reaction. These chemicals don't react under normal conditions — try a different combination!</p>
+          </div>
+        )}
+
+        {/* Discovery journal */}
+        {discoveries.length > 0 && (
+          <div>
+            <p style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 8px' }}>📚 Discovery Journal ({discoveries.length}/{TOTAL})</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {discoveries.map(key => (
+                <span key={key} style={{ background: `${REACTIONS[key].color}18`, border: `1px solid ${REACTIONS[key].color}40`, borderRadius: 8, padding: '4px 10px', fontSize: 11, color: REACTIONS[key].color }}>
+                  {REACTIONS[key].emoji} {REACTIONS[key].name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Finish button */}
+        {discoveries.length >= 3 && (
+          <button onClick={() => setPhase('done')}
+            style={{ background: 'var(--green)', color: 'var(--bg-deep)', border: 'none', borderRadius: 12, padding: 13, fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: 'var(--hd-green)', marginTop: 4 }}>
+            🏆 Complete Lab ({discoveries.length} reactions discovered)
           </button>
         )}
-      </div>
-    </div>
-  );
-}
-
-function BalancePuzzle({ q, selected, phase, onAnswer }: {
-  q: Extract<Puzzle, { kind: 'balance' }>; selected: number | null;
-  phase: string; onAnswer: (i: number) => void;
-}) {
-  return (
-    <div className="space-y-4">
-      <div className="bg-white/10 border border-white/10 rounded-2xl p-4">
-        <p className="text-emerald-300 text-xs uppercase tracking-wide mb-2 flex items-center gap-1">
-          <Beaker className="w-3.5 h-3.5" /> Chemistry / Science
-        </p>
-        <p className="text-white font-semibold text-base font-mono">{q.question}</p>
-      </div>
-      <div className="space-y-2">
-        {q.choices.map((c, i) => {
-          let cls = 'bg-white/5 border-white/10 text-white/90';
-          if (phase === 'feedback') {
-            if (i === q.answer) cls = 'bg-emerald-900/60 border-emerald-400/50 text-emerald-200';
-            else if (i === selected) cls = 'bg-rose-900/60 border-rose-400/50 text-rose-200';
-          }
-          return (
-            <button key={i} disabled={phase !== 'question'} onClick={() => onAnswer(i)}
-              className={`w-full text-left border rounded-xl px-4 py-3 text-sm font-mono transition ${cls} ${phase === 'question' ? 'hover:bg-emerald-800/40 hover:border-emerald-400/50' : ''}`}>
-              {c}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function MatchPuzzle({ q, state, phase, onClick }: {
-  q: Extract<Puzzle, { kind: 'match' }>; state: { selected: string | null; matched: Record<string, string> };
-  phase: string; onClick: (side: 'left' | 'right', val: string) => void;
-}) {
-  const { selected, matched } = state;
-  return (
-    <div className="space-y-4">
-      <div className="bg-white/10 border border-white/10 rounded-2xl p-4">
-        <p className="text-emerald-300 text-xs uppercase tracking-wide mb-2">Match the pairs</p>
-        <p className="text-white/60 text-sm">Tap a left item then the matching right item</p>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-2">
-          {q.pairs.map((p, i) => {
-            const isMatched = matched[p.left];
-            const isSel = selected === p.left;
-            return (
-              <button key={i} onClick={() => !isMatched && onClick('left', p.left)} disabled={phase !== 'question' || !!isMatched}
-                className={`w-full text-left text-xs border rounded-xl px-3 py-2.5 transition font-medium ${
-                  isMatched ? 'bg-emerald-900/50 border-emerald-400/40 text-emerald-300' :
-                  isSel ? 'bg-emerald-600/50 border-emerald-400 text-white' :
-                  'bg-white/5 border-white/10 text-white/90 hover:bg-white/10'
-                }`}>
-                {isMatched && <CheckCircle className="inline w-3 h-3 mr-1" />}{p.left}
-              </button>
-            );
-          })}
-        </div>
-        <div className="space-y-2">
-          {q.pairs.map((p, i) => {
-            const isMatched = matched[p.right];
-            const isSel = selected === p.right;
-            return (
-              <button key={i} onClick={() => !isMatched && onClick('right', p.right)} disabled={phase !== 'question' || !!isMatched}
-                className={`w-full text-left text-xs border rounded-xl px-3 py-2.5 transition ${
-                  isMatched ? 'bg-emerald-900/50 border-emerald-400/40 text-emerald-300' :
-                  isSel ? 'bg-emerald-600/50 border-emerald-400 text-white' :
-                  'bg-white/5 border-white/10 text-white/80 hover:bg-white/10'
-                }`}>
-                {p.right}
-              </button>
-            );
-          })}
-        </div>
       </div>
     </div>
   );

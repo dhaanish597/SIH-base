@@ -76,34 +76,42 @@ LOGIN
 
 ---
 
-## Current State (as of 2026-05-02)
+## Current State (as of 2026-05-03)
 
 ### What works end-to-end
 - Auth system (JWT + httpOnly cookies, refresh tokens, role-based routing)
-- Student dashboard (hybrid: real API + smart fallbacks)
-- Student leaderboard (hybrid)
+- Student dashboard (real API only; no runtime demo rows)
+- Student leaderboard (real API only)
 - Student shop (real API)
 - Student quests (real API)
 - Student profile (hybrid)
-- Student game vault (hybrid)
+- Student game vault (API-backed catalog + real GameAssignment highlighting)
 - Teacher dashboard (real API, no fallback)
 - Teacher question bank (real API)
 - School dashboard (real API)
 - Supabase Postgres connected, Prisma migrations done
+- Topic roadmap learning flow: Learn/Play/Practice/Quiz/Review use real DB content/questions
+- Math Dungeon result API writes XP/coins/points and updates leaderboard
+- Word Forge, Science Lab, and History Conquest use `/api/questions` instead of embedded question banks
 
 ### What's mocked / broken
-- Subjects page — fully hardcoded, no API calls
-- Games catalog — hardcoded static array (not from DB)
-- Multi-tenant user creation chain — routes exist but UI completion and correctness unknown
-- Game result screen — may not be writing XP/coins back to DB correctly
-- Achievement toasts — not wired at all
-- XP float animations — not implemented
-- Level-up screen — not implemented
-- Quiz Battle multiplayer UI — backend (Socket.io) ready, battle screen UI unclear
+- Multi-tenant user creation chain: routes and pages exist; full browser creation-chain regression still needed
+- Achievement toasts: not wired at all
+- XP float animations: not implemented
+- Level-up screen: not implemented
+- Quiz Battle multiplayer UI: backend (Socket.io) ready, battle screen UI incomplete
+- Public iframe games (car/plants/fighting) are not integrated with the Next.js reward HUD yet
 
 ### DB State
 - Supabase connected, migrations ran
-- DB is mostly empty (no seed data for demo)
+- Reference seed: `npm run db:seed`
+- Demo users seed: `npm run db:seed-demo-users`
+- Curriculum seed: `npm run db:seed-class10-math`
+- Demo credentials:
+  - Admin: `admin@demo.school` / `QuestDemo123!`
+  - School: `GFA001`, `school@demo.school` / `QuestDemo123!`
+  - Teacher: `teacher@demo.school` / `QuestDemo123!`
+  - Student: `GFA001` / PIN `1234`
 
 ---
 
@@ -179,8 +187,8 @@ LOGIN
 - [ ] Daily streak counter on dashboard pulses if user hasn't played today
 
 #### 2.6 Game Result Screen — Real API Wiring
-- [ ] Result screen POSTs to `/api/games/complete` with session data
-- [ ] XP and coins actually update in DB and reflect immediately on dashboard
+- [x] Result screen POSTs to `/api/games/complete` with session data
+- [x] XP and coins actually update in DB and reflect immediately on dashboard
 - [ ] Level-up check fires after XP update
 - [ ] Quest progress updates after game completion
 
@@ -190,19 +198,19 @@ LOGIN
 *Games must be fully playable and wired to the progression system.*
 
 #### 3.1 Game Catalog
-- [ ] Game catalog fetched from DB (teacher assignments should surface first)
-- [ ] "Assigned by Teacher" games highlighted with a badge
-- [ ] Locked games show unlock level requirement
-- [ ] Continue Playing shows last played game + score
+- [x] Game catalog fetched from API (teacher assignments surface first)
+- [x] "Assigned by Teacher" games highlighted with a badge
+- [x] Locked games show unlock level requirement
+- [x] Continue Playing shows last played game + score
 
 #### 3.2 Phaser Game Integration
 - [ ] Car game (`/public/games/cargame.html`) loads in iframe/canvas, result passed to Next.js HUD
 - [ ] Plants game loads and returns result
 - [ ] Fighting game loads and returns result
-- [ ] Math Dungeon (React/Phaser wrapper) playable end-to-end
-- [ ] Word Forge playable end-to-end
-- [ ] Science Lab playable end-to-end
-- [ ] History Conquest playable end-to-end
+- [x] Math Dungeon (React/Phaser wrapper) playable end-to-end
+- [x] Word Forge playable end-to-end via DB-backed MCQ runner
+- [x] Science Lab playable end-to-end via DB-backed MCQ runner
+- [x] History Conquest playable end-to-end via DB-backed MCQ runner
 
 #### 3.3 Quiz Battle (Multiplayer)
 - [ ] Lobby creation: Teacher or student creates a room, gets a 6-char code
@@ -337,20 +345,20 @@ LOGIN
 *Students navigate curriculum through the subjects page.*
 
 #### 7.1 Subjects Page (wire to real API)
-- [ ] Fetch subjects list from `/api/subjects`
-- [ ] Show subject cards with mastery % from `conceptMastery` table
-- [ ] Click subject → chapter tree view
-- [ ] Chapter node shows: locked/unlocked status, mastery %, estimated time
+- [x] Fetch subjects list from `/api/learn/subjects`
+- [x] Show subject cards with topic mastery from `topic_progress`
+- [x] Click subject goes to topic roadmap
+- [x] Topic nodes show locked/unlocked status and mastery
 
 #### 7.2 Chapter Detail
-- [ ] List topics in chapter
-- [ ] Start quiz for chapter → goes to game vault filtered by subject/chapter
+- [x] List topics in chapter
+- [x] Topic quiz starts from the roadmap and uses approved DB questions
 - [ ] Show AI Tutor shortcut for this chapter
 
 #### 7.3 Seed Curriculum Data
-- [ ] 6 subjects (Math, Science, English, History, Geography, Computer Science)
-- [ ] 3–5 chapters per subject
-- [ ] 50+ approved questions per subject (via seed script)
+- [~] 5 subjects seeded for current demo (Mathematics, Mathematics Class 10, English, Science, History)
+- [x] Class 10 Math has 15 chapters and 49 topics
+- [x] Class 10 Math has 245 approved questions via `npm run db:seed-class10-math`
 - [ ] Mastery seeded for demo student accounts
 
 ---
@@ -396,15 +404,15 @@ LOGIN
 ### Phase 9 — Demo Seed Data
 *The app must look ALIVE for judges. Empty databases kill demos.*
 
-- [ ] Seed script creates: 1 school ("Greenfield Academy"), 1 school admin
-- [ ] 3 teachers (Math, Science, English) with realistic names
-- [ ] 30 students across 2 classes (Grade 9A, Grade 9B) with realistic names
-- [ ] Students have varied XP, levels (1–15), streaks, coins
-- [ ] 500+ approved questions across 6 subjects (can use AI to generate)
+- [x] Seed script creates: 1 school ("Greenfield Academy"), 1 school admin
+- [x] 3 teachers (Math, Science, English) with realistic names
+- [~] 6 students across 2 classes (Grade 9A, Grade 9B) with realistic names
+- [x] Students have varied XP, levels, streaks, coins
+- [~] 254 approved questions across Math, English, Science, and History
 - [ ] 200+ game sessions seeded (realistic score distribution)
 - [ ] 10+ badge types awarded to various students
-- [ ] Quests in various states (active, completed, nearly complete)
-- [ ] Leaderboard has a realistic top-10
+- [~] Active demo quest seeded for each demo student
+- [~] Leaderboard has realistic rows from seeded students, but not a full top-10 yet
 
 ---
 
@@ -541,7 +549,7 @@ LOGIN
 - [x] `app/(authed)/student/learn/[subjectId]/[topicId]/review/page.tsx`
 
 #### 11.11 Seed Data
-- [x] `prisma/seed-class10-math.ts` — Class 10 NCERT Math: 14 chapters, ~47 topics, prerequisites, content payloads, 5 MCQ questions per topic
+- [x] `prisma/seed-class10-math.js` - Class 10 NCERT Math: 15 chapters, 49 topics, prerequisites, 147 content rows, 245 MCQ questions
 
 ---
 
@@ -551,7 +559,10 @@ LOGIN
 |------|--------------|
 | 2026-05-02 | Master plan created. Full codebase audited. Approach B "Startup MVP" selected. |
 | 2026-05-03 | Phase 11 implemented: full topic roadmap + 5-module learning system + EWMA mastery + Class 10 NCERT Math seed data. |
+| 2026-05-03 | Removed runtime fake data fallbacks, added real demo users, API-backed Game Vault, DB-backed game questions, and smoke-tested role logins + learning/game rewards. |
 
 ---
 
 *Quest Academy — Built for Smart India Hackathon. Built to become a startup.*
+
+

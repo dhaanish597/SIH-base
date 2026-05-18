@@ -16,32 +16,6 @@ interface Slide {
 }
 
 /* ------------------------------------------------------------------ */
-/* Demo fallback                                                        */
-/* Used until GET /api/learn/content/:topicId/LEARN is implemented.    */
-/* TODO: replace with real API fetch once the Express route exists.    */
-/* ------------------------------------------------------------------ */
-
-const DEMO_SLIDES: Slide[] = [
-  {
-    type: 'text',
-    title: 'Introduction',
-    body: 'Welcome to this topic. Let us explore the core concepts together.',
-  },
-  {
-    type: 'diagram',
-    title: 'Visual Overview',
-    body: 'Study this diagram carefully. Notice how the sides of a right triangle relate to each other.',
-    animationData: { type: 'RightTriangleDiagram' },
-  },
-  {
-    type: 'interactive',
-    title: 'Try It Yourself',
-    body: 'Drag the vertex to explore how angles relate to sin, cos, and tan.',
-    animationData: { type: 'DraggableTriangle' },
-  },
-];
-
-/* ------------------------------------------------------------------ */
 /* Page                                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -59,24 +33,31 @@ export default function LearnPage() {
   useEffect(() => {
     if (!topicId) return;
 
-    // TODO: replace with real API call once route is implemented:
-    // GET /api/learn/content/:topicId/LEARN
-    // The route should fetch the Content row (type = 'LEARN') for the topic
-    // and return its `payload` field (an array of Slide objects).
-    //
-    // Example:
-    // const res = await fetch(`/api/learn/content/${topicId}/LEARN`);
-    // if (!res.ok) throw new Error('Content not found');
-    // const data = await res.json();
-    // setSlides(data.slides ?? DEMO_SLIDES);
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
 
-    // Demo fallback for now:
-    const timer = setTimeout(() => {
-      setSlides(DEMO_SLIDES);
-      setLoading(false);
-    }, 300); // small delay to simulate fetch
+    fetch(`/api/learn/content/${topicId}/LEARN`, { credentials: 'include' })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(res.status === 404 ? 'No learn content is available for this topic.' : `Server error ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        const nextSlides = data?.payload?.slides;
+        if (!Array.isArray(nextSlides) || nextSlides.length === 0) {
+          throw new Error('No learn slides are available for this topic.');
+        }
+        setSlides(nextSlides);
+      })
+      .catch((err: Error) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-    return () => clearTimeout(timer);
+    return () => { cancelled = true; };
   }, [topicId]);
 
   const handleComplete = async () => {
@@ -85,10 +66,9 @@ export default function LearnPage() {
       fetch('/api/learn/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ topicId, module: 'learn', score: 100 }),
-      }).catch(() => {
-        // TODO: queue for retry if offline
-      });
+      }).catch(() => {});
     } finally {
       router.push(`/student/learn/${subjectId}`);
     }
@@ -102,7 +82,6 @@ export default function LearnPage() {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: 'var(--bg-deep)' }}
       >
         <div className="flex flex-col items-center gap-4">
           <div
@@ -121,7 +100,6 @@ export default function LearnPage() {
     return (
       <div
         className="min-h-screen flex items-center justify-center px-6"
-        style={{ background: 'var(--bg-deep)' }}
       >
         <div
           className="rounded-2xl p-8 text-center max-w-sm"
@@ -146,7 +124,6 @@ export default function LearnPage() {
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ background: 'var(--bg-deep)' }}
     >
       {/* Header */}
       <header

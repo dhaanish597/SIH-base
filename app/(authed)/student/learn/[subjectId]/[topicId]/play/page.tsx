@@ -17,15 +17,6 @@ interface PlayPayload {
 }
 
 /* ------------------------------------------------------------------ */
-/* Default fallback                                                     */
-/* ------------------------------------------------------------------ */
-
-const DEFAULT_PLAY: PlayPayload = {
-  gameType: 'FormulaMatchGame',
-  config: { pairs: [] },
-};
-
-/* ------------------------------------------------------------------ */
 /* Page                                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -52,17 +43,14 @@ export default function PlayPage() {
       signal: controller.signal,
     })
       .then(async res => {
-        if (res.status === 404) {
-          setPayload(DEFAULT_PLAY);
-          return;
-        }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw new Error(res.status === 404 ? 'No play module is available for this topic.' : `HTTP ${res.status}`);
         const data = await res.json();
-        setPayload(data.payload ?? DEFAULT_PLAY);
+        if (!data.payload?.gameType) throw new Error('No play module is available for this topic.');
+        setPayload(data.payload);
       })
       .catch(err => {
         if (err.name === 'AbortError') return;
-        setPayload(DEFAULT_PLAY);
+        setError(err instanceof Error ? err.message : 'Failed to load play module.');
       })
       .finally(() => setLoading(false));
 
@@ -92,7 +80,7 @@ export default function PlayPage() {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: 'var(--bg-deep)' }}
+        style={{ background: 'transparent' }}
       >
         <div className="flex flex-col items-center gap-4">
           <div
@@ -117,7 +105,7 @@ export default function PlayPage() {
     return (
       <div
         className="min-h-screen flex items-center justify-center px-6"
-        style={{ background: 'var(--bg-deep)' }}
+        style={{ background: 'transparent' }}
       >
         <div
           className="rounded-2xl p-8 text-center max-w-sm"
@@ -202,7 +190,6 @@ export default function PlayPage() {
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ background: 'var(--bg-deep)' }}
     >
       {/* Header */}
       <header

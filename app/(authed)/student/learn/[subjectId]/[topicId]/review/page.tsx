@@ -25,6 +25,10 @@ interface TopicItem {
   progress?: TopicProgressData | null;
 }
 
+interface ChapterItem {
+  topics?: TopicItem[];
+}
+
 /* ------------------------------------------------------------------ */
 /* Page                                                                 */
 /* ------------------------------------------------------------------ */
@@ -50,10 +54,10 @@ export default function ReviewPage() {
       try {
         const res = await fetch(`/api/learn/topics/${subjectId}`);
         if (!res.ok) throw new Error(`Failed to load topics (${res.status})`);
-        const data: TopicItem[] = await res.json();
+        const data: ChapterItem[] = await res.json();
         if (cancelled) return;
 
-        const topic = data.find((t) => t.id === topicId);
+        const topic = data.flatMap((chapter) => chapter.topics ?? []).find((t) => t.id === topicId);
         if (!topic) throw new Error('Topic not found');
 
         setTopicName(topic.name);
@@ -62,8 +66,6 @@ export default function ReviewPage() {
         if (!cancelled) {
           const msg = err instanceof Error ? err.message : 'Unknown error';
           setError(msg);
-          // Demo fallback so the page is still useful during development
-          setTopicName('Trigonometry Basics');
           setProgress(null);
         }
       } finally {
@@ -80,7 +82,7 @@ export default function ReviewPage() {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: 'var(--bg-deep)' }}
+        style={{ background: 'transparent' }}
       >
         <div className="flex flex-col items-center gap-4">
           <div
@@ -106,7 +108,7 @@ export default function ReviewPage() {
     return (
       <div
         className="min-h-screen flex items-center justify-center px-6"
-        style={{ background: 'var(--bg-deep)' }}
+        style={{ background: 'transparent' }}
       >
         <div
           className="rounded-2xl p-8 text-center max-w-sm w-full"
@@ -132,7 +134,6 @@ export default function ReviewPage() {
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ background: 'var(--bg-deep)' }}
     >
       {/* Header */}
       <header

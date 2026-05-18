@@ -162,7 +162,7 @@ export default function QuizPage() {
   if (!questions) return null;
 
   return (
-    <div className="min-h-screen py-6" style={{ background: 'var(--bg-deep, #07070F)' }}>
+    <div className="min-h-screen py-6" style={{ background: 'transparent' }}>
       {/* Header */}
       <div className="w-full max-w-2xl mx-auto px-4 mb-6 flex items-center gap-3">
         <button

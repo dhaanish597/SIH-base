@@ -8,12 +8,15 @@ import { useAuth } from '../../../../providers';
 import dynamic from 'next/dynamic';
 import FeedbackDisplay, { type FeedbackData } from '../../../../components/quiz/FeedbackDisplay';
 
-const MathDungeonGame = dynamic(() => import('../../../../components/games/MathDungeonGame'), { ssr: false });
-const WordForgeGame = dynamic(() => import('../../../../components/games/WordForgeGame'), { ssr: false });
-const ScienceLabGame = dynamic(() => import('../../../../components/games/ScienceLabGame'), { ssr: false });
+const MathDungeonGame    = dynamic(() => import('../../../../components/games/MathDungeonGame'),    { ssr: false });
+const WordForgeGame      = dynamic(() => import('../../../../components/games/WordForgeGame'),      { ssr: false });
+const ScienceLabGame     = dynamic(() => import('../../../../components/games/ScienceLabGame'),     { ssr: false });
 const HistoryConquestGame = dynamic(() => import('../../../../components/games/HistoryConquestGame'), { ssr: false });
+const BattleZoneGame     = dynamic(() => import('../../../../components/games/BattleZoneGame'),     { ssr: false });
+const PuzzleArenaGame    = dynamic(() => import('../../../../components/games/PuzzleArenaGame'),    { ssr: false });
+const CardForgeGame      = dynamic(() => import('../../../../components/games/CardForgeGame'),      { ssr: false });
 
-const GAME_META: Record<string, { title: string; blurb: string; icon: any; tint: string; type: 'phaser' | 'socket' | 'iframe' }> = {
+const GAME_META: Record<string, { title: string; blurb: string; icon: any; tint: string; type: 'phaser' | 'socket' | 'iframe' | 'react' }> = {
   'quiz-battle': {
     title: 'Quiz Battle',
     blurb: 'Real-time PvP quiz across 30 students. 10 questions, 15 sec each.',
@@ -47,7 +50,28 @@ const GAME_META: Record<string, { title: string; blurb: string; icon: any; tint:
     blurb: 'Capture territories on the map by answering history questions.',
     icon: Crown,
     tint: 'from-indigo-400 to-indigo-600',
-    type: 'phaser',
+    type: 'react',
+  },
+  'battle-zone': {
+    title: 'Battle Zone',
+    blurb: 'Defeat 3 monster bosses by solving math problems under a 10s timer.',
+    icon: Swords,
+    tint: 'from-rose-500 to-red-600',
+    type: 'react',
+  },
+  'puzzle-arena': {
+    title: 'Puzzle Arena',
+    blurb: 'Memory-match formulas with their names before the timer runs out.',
+    icon: Sparkles,
+    tint: 'from-cyan-400 to-blue-600',
+    type: 'react',
+  },
+  'card-forge': {
+    title: 'Card Forge',
+    blurb: 'Build a hand of formula cards and defeat the Fog of Forgetting.',
+    icon: BookOpen,
+    tint: 'from-violet-500 to-purple-700',
+    type: 'react',
   },
 };
 
@@ -127,20 +151,19 @@ export default function GamePage() {
   }
 
   if (slug === 'history-conquest') {
-    return (
-      <div className="flex flex-col h-screen">
-        <div className="flex items-center gap-3 px-4 py-3 border-b bg-indigo-950 text-white z-10 relative">
-          <Link href="/student/games" className="text-gray-400 hover:text-gray-200">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <Crown className="w-5 h-5 text-amber-400" />
-          <span className="font-bold text-sm">History Conquest</span>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          <HistoryConquestGame grade={grade} onExit={() => router.push('/student/games')} />
-        </div>
-      </div>
-    );
+    return <HistoryConquestGame grade={grade} onExit={() => router.push('/student/games')} />;
+  }
+
+  if (slug === 'battle-zone') {
+    return <BattleZoneGame grade={grade} onExit={() => router.push('/student/games')} />;
+  }
+
+  if (slug === 'puzzle-arena') {
+    return <PuzzleArenaGame grade={grade} onExit={() => router.push('/student/games')} />;
+  }
+
+  if (slug === 'card-forge') {
+    return <CardForgeGame grade={grade} onExit={() => router.push('/student/games')} />;
   }
 
   return (

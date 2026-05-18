@@ -17,7 +17,7 @@ type ShopItem = {
 };
 
 export default function ShopPage() {
-  const { user, refresh } = useAuth();
+  const { user } = useAuth();
   const [items, setItems] = useState<ShopItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -49,7 +49,7 @@ export default function ShopPage() {
     if (r.ok) {
       showToast(`Purchased "${item.name}"!`, true);
       await load();
-      await refresh();
+      // refresh() removed — user stats update on next full reload
     } else {
       const err = await r.json().catch(() => ({}));
       showToast(err.error || 'Purchase failed', false);

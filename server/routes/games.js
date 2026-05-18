@@ -12,8 +12,116 @@ const router = express.Router();
 const VALID_GAME_TYPES = new Set([
   'CAR', 'PLANTS', 'FIGHTING',
   'QUIZ_BATTLE', 'MATH_DUNGEON', 'WORD_FORGE', 'SCIENCE_LAB', 'HISTORY_CONQUEST',
+  'BATTLE_ZONE', 'PUZZLE_ARENA', 'CARD_FORGE',
 ]);
 const VALID_MODES = new Set(['SOLO', 'MULTIPLAYER', 'COOP']);
+
+const GAME_CATALOG = [
+  {
+    slug: 'quiz-battle',
+    gameType: 'QUIZ_BATTLE',
+    title: 'Quiz Battle',
+    blurb: 'Real-time PvP quiz across a class lobby.',
+    players: '2-30 players',
+    duration: '5 min',
+    subjects: ['All Subjects'],
+    grade: 'Grade 6-12',
+    modes: ['MULTIPLAYER'],
+    unlockLevel: 1,
+    accent: 'rose',
+  },
+  {
+    slug: 'math-dungeon',
+    gameType: 'MATH_DUNGEON',
+    title: 'Math Dungeon',
+    blurb: 'Defeat enemies by solving math problems.',
+    players: 'Solo',
+    duration: '10 min',
+    subjects: ['Mathematics'],
+    grade: 'Grade 6-12',
+    modes: ['SOLO'],
+    unlockLevel: 1,
+    accent: 'amber',
+  },
+  {
+    slug: 'word-forge',
+    gameType: 'WORD_FORGE',
+    title: 'Word Forge',
+    blurb: 'Build vocabulary, grammar, and sentence skills.',
+    players: 'Solo',
+    duration: '8 min',
+    subjects: ['English'],
+    grade: 'Grade 6-12',
+    modes: ['SOLO'],
+    unlockLevel: 1,
+    accent: 'violet',
+  },
+  {
+    slug: 'science-lab',
+    gameType: 'SCIENCE_LAB',
+    title: 'Science Lab Escape',
+    blurb: 'Solve science puzzles and escape the lab.',
+    players: 'Solo',
+    duration: '12 min',
+    subjects: ['Science'],
+    grade: 'Grade 8-12',
+    modes: ['SOLO'],
+    unlockLevel: 1,
+    accent: 'emerald',
+  },
+  {
+    slug: 'history-conquest',
+    gameType: 'HISTORY_CONQUEST',
+    title: 'History Conquest',
+    blurb: 'Capture territories by answering history questions.',
+    players: 'Solo',
+    duration: '15 min',
+    subjects: ['History'],
+    grade: 'Grade 6-12',
+    modes: ['SOLO'],
+    unlockLevel: 1,
+    accent: 'indigo',
+  },
+  {
+    slug: 'battle-zone',
+    gameType: 'BATTLE_ZONE',
+    title: 'Battle Zone',
+    blurb: 'Defeat 3 monster bosses by solving math problems under a 10s timer.',
+    players: 'Solo',
+    duration: '8 min',
+    subjects: ['Mathematics'],
+    grade: 'Grade 6-12',
+    modes: ['SOLO'],
+    unlockLevel: 1,
+    accent: 'rose',
+  },
+  {
+    slug: 'puzzle-arena',
+    gameType: 'PUZZLE_ARENA',
+    title: 'Puzzle Arena',
+    blurb: 'Memory-match 8 formula cards with their names before the 3-minute timer runs out.',
+    players: 'Solo',
+    duration: '3 min',
+    subjects: ['Mathematics', 'Science'],
+    grade: 'Grade 7-12',
+    modes: ['SOLO'],
+    unlockLevel: 1,
+    accent: 'cyan',
+  },
+  {
+    slug: 'card-forge',
+    gameType: 'CARD_FORGE',
+    title: 'Card Forge',
+    blurb: 'Build a hand of formula cards and defeat the Fog of Forgetting using concept mastery.',
+    players: 'Solo',
+    duration: '10 min',
+    subjects: ['Mathematics', 'Science'],
+    grade: 'Grade 8-12',
+    modes: ['SOLO'],
+    unlockLevel: 1,
+    accent: 'violet',
+  },
+];
 
 // Reward formula tuned for hackathon-balanced play.
 function computeRewards({ score, questionsCorrect, questionsAttempted, durationSec, starsEarned, outcome }) {
@@ -29,6 +137,66 @@ function computeRewards({ score, questionsCorrect, questionsAttempted, durationS
   const points = xp;
   return { xp, coins, points };
 }
+
+// GET /api/games/catalog
+router.get('/catalog', authenticate, async (req, res) => {
+  try {
+    let assignmentRows = [];
+    if (req.user.role === 'STUDENT') {
+      const enrollments = await prisma.classEnrollment.findMany({
+        where: { studentId: req.user.id },
+        select: { classId: true },
+      });
+      const classIds = enrollments.map((e) => e.classId);
+      if (classIds.length > 0) {
+        assignmentRows = await prisma.gameAssignment.findMany({
+          where: { classId: { in: classIds }, OR: [{ dueDate: null }, { dueDate: { gte: new Date() } }] },
+          orderBy: { createdAt: 'desc' },
+          include: { class: { select: { id: true, name: true } } },
+        });
+      }
+    }
+
+    const history = req.user.role === 'STUDENT'
+      ? await prisma.gameSession.groupBy({
+          by: ['gameType'],
+          where: { studentId: req.user.id, endedAt: { not: null } },
+          _count: { _all: true },
+          _max: { score: true, startedAt: true },
+        })
+      : [];
+    const historyByType = new Map(history.map((h) => [h.gameType, h]));
+    const assignmentsByType = new Map();
+    for (const assignment of assignmentRows) {
+      if (!assignmentsByType.has(assignment.gameType)) assignmentsByType.set(assignment.gameType, []);
+      assignmentsByType.get(assignment.gameType).push({
+        id: assignment.id,
+        classId: assignment.classId,
+        className: assignment.class?.name ?? null,
+        dueDate: assignment.dueDate,
+        instructions: assignment.instructions,
+      });
+    }
+
+    const level = Number(req.user.level || 1);
+    const games = GAME_CATALOG.map((game) => {
+      const h = historyByType.get(game.gameType);
+      const assignments = assignmentsByType.get(game.gameType) || [];
+      return {
+        ...game,
+        locked: level < game.unlockLevel,
+        assigned: assignments.length > 0,
+        assignments,
+        stats: h ? { plays: h._count._all, bestScore: h._max.score || 0, lastPlayedAt: h._max.startedAt } : { plays: 0, bestScore: 0, lastPlayedAt: null },
+      };
+    }).sort((a, b) => Number(b.assigned) - Number(a.assigned) || Number(Boolean(b.stats.lastPlayedAt)) - Number(Boolean(a.stats.lastPlayedAt)));
+
+    res.json({ games });
+  } catch (e) {
+    console.error('games/catalog error', e);
+    res.status(500).json({ error: 'Failed to fetch game catalog' });
+  }
+});
 
 // POST /api/games/start
 router.post('/start', authenticate, async (req, res) => {
@@ -159,6 +327,21 @@ router.get('/sessions', authenticate, async (req, res) => {
     res.json(sessions);
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch sessions' });
+  }
+});
+
+// GET /api/games/history?limit=20
+router.get('/history', authenticate, async (req, res) => {
+  try {
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+    const sessions = await prisma.gameSession.findMany({
+      where: { studentId: req.user.id, endedAt: { not: null } },
+      orderBy: { startedAt: 'desc' },
+      take: limit,
+    });
+    res.json({ sessions });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch game history' });
   }
 });
 

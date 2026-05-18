@@ -123,7 +123,7 @@ export default function LearnPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#07070F] px-4 pb-12 pt-6 md:px-8">
+    <main className="min-h-screen px-4 pb-12 pt-6 md:px-8" style={{ background: 'transparent' }}>
       {/* Page header */}
       <div className="mb-6">
         <h1
