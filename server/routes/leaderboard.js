@@ -14,6 +14,7 @@ router.get('/', authenticate, async (req, res) => {
   try {
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10));
     const scope = (req.query.scope || 'school').toString();
+    const sort = (req.query.sort || 'points').toString();
 
     // Admins can pass an arbitrary schoolId; others are pinned to their own
     const isAdmin = req.user.role === 'ADMIN' || req.user.role === 'SUPERADMIN';
@@ -39,15 +40,29 @@ router.get('/', authenticate, async (req, res) => {
       whereUser = { ...whereUser, id: { in: ids.length ? ids : ['__none__'] } };
     }
 
+    if (scope === 'grade') {
+      const grade = req.query.grade ? String(req.query.grade) : null;
+      if (grade) whereUser = { ...whereUser, class: { startsWith: grade } };
+    }
+
+    const orderBy =
+      sort === 'streak'
+        ? [{ streakDays: 'desc' }, { totalPoints: 'desc' }, { name: 'asc' }]
+        : sort === 'xp'
+          ? [{ xp: 'desc' }, { totalPoints: 'desc' }, { name: 'asc' }]
+          : [{ totalPoints: 'desc' }, { xp: 'desc' }, { name: 'asc' }];
+
     const rows = await prisma.user.findMany({
       where: whereUser,
-      orderBy: [{ totalPoints: 'desc' }, { xp: 'desc' }, { name: 'asc' }],
+      orderBy,
       take: limit,
       select: {
         id: true,
         name: true,
         class: true,
         totalPoints: true,
+        xp: true,
+        streakDays: true,
         level: true,
         profilePhoto: true,
       },
@@ -58,6 +73,8 @@ router.get('/', authenticate, async (req, res) => {
       name: r.name,
       class: r.class || '',
       points: r.totalPoints,
+      xp: r.xp,
+      streakDays: r.streakDays,
       level: r.level,
       profilePhoto: r.profilePhoto,
       rank: i + 1,

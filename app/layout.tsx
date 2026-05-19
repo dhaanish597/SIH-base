@@ -14,11 +14,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Google Fonts: Bowlby One + Fredoka One (display), Nunito (body), Oswald + Bebas Neue (HUD), JetBrains Mono (scores/numbers) */}
+        {/* Google Fonts: Oxanium (display), Nunito (body), Oswald + Bebas Neue (HUD), JetBrains Mono (scores/numbers) */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Fredoka+One&family=Nunito:wght@400;600;700;800&family=Oswald:wght@400;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@500;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700&family=Nunito:wght@400;600;700;800&family=Oswald:wght@400;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@500;700&display=swap"
           rel="stylesheet"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

@@ -69,6 +69,7 @@ app.use('/api/schools', require('./routes/schools'));
 app.use('/api/homework', require('./routes/homework'));
 app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/classes', require('./routes/classes'));
+app.use('/api/learn', require('./routes/learn'));
 
 // Legacy compat: mount /api/quizzes/:lessonId on lessons router as before
 app.get('/api/user-progress', (req, res, next) => {

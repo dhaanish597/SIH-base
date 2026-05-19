@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '../providers';
 import {
   LogOut, BookOpen, Trophy, Gamepad2, ScrollText,
   Users, BarChart3, Building2, Bell, Menu, X, Home, User,
   Settings2, Calendar, Send, UserPlus
 } from 'lucide-react';
+import AchievementToasts from '../components/ui/AchievementToasts';
+import LevelUpModal from '../components/ui/LevelUpModal';
 
 const SESSION_TIMEOUT_MS: Record<string, number> = {
   STUDENT: 30 * 60 * 1000,     // 30 min
@@ -18,25 +20,19 @@ const SESSION_TIMEOUT_MS: Record<string, number> = {
 };
 
 export default function AuthedLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, logout } = useAuth();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // ── Auth guard & Session ──────────────────────────────────
-  useEffect(() => {
-    if (!loading && !user) router.replace('/login');
-  }, [user, loading, router]);
-
+  // ── Session timeout (demo mode has no timeout) ───────────
   useEffect(() => {
     if (!user) return;
     const timeoutMs = SESSION_TIMEOUT_MS[user.role] || SESSION_TIMEOUT_MS.STUDENT;
     let activityTimer: NodeJS.Timeout;
     const handleActivity = () => {
       clearTimeout(activityTimer);
-      activityTimer = setTimeout(async () => {
-        await logout();
-        router.replace('/login');
+      activityTimer = setTimeout(() => {
+        logout();
       }, timeoutMs);
     };
     handleActivity();
@@ -47,19 +43,11 @@ export default function AuthedLayout({ children }: { children: React.ReactNode }
       window.removeEventListener('click', handleActivity);
       window.removeEventListener('keydown', handleActivity);
     };
-  }, [user, logout, router]);
+  }, [user, logout]);
 
   useEffect(() => setSidebarOpen(false), [pathname]);
 
-  if (loading || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-bg-base">
-        <div className="animate-pulse-slow">
-          <Gamepad2 className="w-12 h-12 text-brand-primary" />
-        </div>
-      </div>
-    );
-  }
+  if (!user) return null;
 
   // ──────────────────────────────────────────────────────────
   // STUDENT LAYOUT: Top Nav (Desktop) + Bottom Nav (Mobile)
@@ -69,7 +57,7 @@ export default function AuthedLayout({ children }: { children: React.ReactNode }
       { href: '/student', label: 'Home', icon: '🏠' },
       { href: '/student/games', label: 'Games', icon: '🎮' },
       { href: '/student/quests', label: 'Quests', icon: '⚔️' },
-      { href: '/student/subjects', label: 'Subjects', icon: '📚' },
+      { href: '/student/roadmap', label: 'Roadmap', icon: '🗺️' },
       { href: '/student/leaderboard', label: 'Ranks', icon: '🏆' },
       { href: '/student/shop', label: 'Shop', icon: '🛒' },
       { href: '/student/profile', label: 'Profile', icon: '👤' },
@@ -82,7 +70,7 @@ export default function AuthedLayout({ children }: { children: React.ReactNode }
     const coins = user.totalCoins || 0;
 
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg-deep)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--bg-deep)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         {/* ── DESKTOP TOP NAV ── */}
         <header className="qa-desktop-nav" style={{
           position: 'sticky', top: 0, zIndex: 50,
@@ -129,6 +117,22 @@ export default function AuthedLayout({ children }: { children: React.ReactNode }
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span className="pill pill-orange" style={{ fontSize: 12 }}>🔥 {streak}</span>
               <span className="pill pill-gold" style={{ fontSize: 12 }}>🪙 {coins.toLocaleString()}</span>
+              {/* Switch Persona (demo mode) */}
+              <Link href="/login" style={{
+                fontFamily: 'var(--f-hud)', fontSize: 10, fontWeight: 700,
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+                color: 'var(--ink-3)',
+                padding: '6px 10px', borderRadius: 8,
+                border: '1.5px solid var(--line)',
+                textDecoration: 'none',
+                transition: 'color .15s, border-color .15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--ink-1)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--violet)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--ink-3)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--line)'; }}
+              >
+                🎭 Switch
+              </Link>
+
               {/* Level + XP capsule */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
@@ -173,9 +177,13 @@ export default function AuthedLayout({ children }: { children: React.ReactNode }
         </header>
 
         {/* ── MAIN CONTENT ── */}
-        <main className="qa-main-content" style={{ flex: 1, overflowX: 'hidden' }}>
+        <main className="qa-main-content" style={{ flex: 1, overflow: 'visible', position: 'relative', zIndex: 1 }}>
           {children}
         </main>
+
+        {/* ── ACHIEVEMENT OVERLAYS (student only) ── */}
+        <AchievementToasts />
+        <LevelUpModal />
 
         {/* ── MOBILE BOTTOM NAV ── */}
         <nav className="qa-mobile-bottom-nav" style={{
@@ -246,7 +254,7 @@ export default function AuthedLayout({ children }: { children: React.ReactNode }
         </nav>
 
         <div className="p-4 border-t border-white/5">
-          <button onClick={async () => { await logout(); router.replace('/login'); }} className="flex items-center gap-3 px-3 py-2.5 w-full text-text-muted hover:text-accent-red transition-colors text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-accent-red/10">
+          <button onClick={() => logout()} className="flex items-center gap-3 px-3 py-2.5 w-full text-text-muted hover:text-accent-red transition-colors text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-accent-red/10">
             <LogOut className="w-4 h-4" />
             <span>Sign out</span>
           </button>

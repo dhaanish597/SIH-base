@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Trophy, Heart, Coins } from 'lucide-react';
+import { useAchievements } from '../../providers/achievements';
+import { useAuth } from '../../providers';
 
 type Props = {
   grade?: number;
@@ -57,6 +59,8 @@ export default function MathDungeonGame({ grade = 9, onExit }: Props) {
   const [result, setResult] = useState<GameResult | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const { fire, triggerLevelUp } = useAchievements();
+  const { user } = useAuth();
 
   // Start a game session on the backend
   useEffect(() => {
@@ -311,8 +315,9 @@ export default function MathDungeonGame({ grade = 9, onExit }: Props) {
     setSaving(true);
     try {
       const sessionId = sessionIdRef.current;
+      const prevLevel = user?.level ?? 1;
       if (sessionId) {
-        await fetch('/api/games/complete', {
+        const r = await fetch('/api/games/complete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -326,10 +331,23 @@ export default function MathDungeonGame({ grade = 9, onExit }: Props) {
             outcome: result.won ? 'won' : 'lost',
           }),
         });
+        if (r.ok) {
+          const data = await r.json();
+          const earned = data?.rewards ?? {};
+          if (earned.xp)    fire('xp',    'Dungeon XP earned', earned.xp);
+          if (earned.coins) fire('coins', 'Coins earned',      earned.coins);
+          const newLevel = data?.newTotals?.level ?? data?.level ?? prevLevel;
+          if (newLevel > prevLevel) triggerLevelUp(newLevel);
+          if (data?.questsCompleted?.length) {
+            data.questsCompleted.forEach((q: any) => {
+              fire('quest', q.title ?? 'Quest complete!');
+            });
+          }
+        }
       }
       setSaved(true);
     } catch {
-      setSaved(true); // show locally even if network fails
+      setSaved(true);
     } finally {
       setSaving(false);
     }

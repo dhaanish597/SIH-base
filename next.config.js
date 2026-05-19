@@ -3,6 +3,20 @@ const nextConfig = {
   reactStrictMode: true,
   // Express backend lives on :3001. Proxy /api/* during dev so the frontend
   // can keep calling /api/... without CORS dance.
+  async redirects() {
+    return [
+      {
+        source: '/student/subjects',
+        destination: '/student/learn',
+        permanent: true,
+      },
+      {
+        source: '/student/subjects/:path*',
+        destination: '/student/learn',
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
     return [

@@ -1,90 +1,78 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { AchievementProvider } from './providers/achievements';
+import { readActiveDemoUser, writeActiveDemoId, type DemoUser } from '../lib/demo-users';
 
-// ---------------------------------------------------------------------------
-// Auth context — talks to the Express backend's cookie-auth endpoints
-// (/api/auth/login, /api/auth/refresh, /api/auth/logout, /api/users/me).
-// Cookies are httpOnly so we never read tokens from JS — we just check
-// /api/users/me to know who we are.
-// ---------------------------------------------------------------------------
-
-export type AuthUser = {
-  id: string;
-  name: string;
-  email?: string | null;
-  role: 'STUDENT' | 'TEACHER' | 'SCHOOL' | 'ADMIN' | 'SUPERADMIN';
-  schoolId?: string | null;
-  class?: string | null;
-  language?: string;
-  profilePhoto?: string | null;
-  totalPoints?: number;
-  totalCoins?: number;
-  level?: number;
-  xp?: number;
-  streakDays?: number;
-};
+// Re-export AuthUser so existing imports from this file keep working
+export type { AuthUser } from '../lib/auth-types';
+import type { AuthUser } from '../lib/auth-types';
 
 type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
-  refresh: () => Promise<void>;
-  logout: () => Promise<void>;
+  isDemoMode: boolean;
+  logout: () => void;
+  switchDemoUser: (demoId: string) => void;
 };
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
-  loading: true,
-  refresh: async () => {},
-  logout: async () => {},
+  loading: false,
+  isDemoMode: true,
+  logout: () => {},
+  switchDemoUser: () => {},
 });
 
 export function useAuth() {
   return useContext(AuthContext);
 }
 
+function demoToAuthUser(demo: DemoUser): AuthUser {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { demoId: _a, description: _b, ...rest } = demo;
+  return rest as AuthUser;
+}
+
 function AuthProvider({ children }: { children: ReactNode }) {
+  // null on server (SSR); set from localStorage after mount to avoid hydration mismatch
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(true);
 
-  const refresh = useCallback(async () => {
-    try {
-      const res = await fetch('/api/users/me', { credentials: 'include' });
-      if (res.ok) {
-        const u = (await res.json()) as AuthUser;
-        setUser(u);
-      } else if (res.status === 401) {
-        // Try to refresh the access token
-        const r = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
-        if (r.ok) {
-          const me = await fetch('/api/users/me', { credentials: 'include' });
-          if (me.ok) setUser((await me.json()) as AuthUser);
-          else setUser(null);
-        } else {
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
+  const switchDemoUser = useCallback((demoId: string) => {
+    writeActiveDemoId(demoId);
+    // Full reload so every component picks up the new persona cleanly
+    window.location.replace(window.location.href);
   }, []);
 
-  const logout = useCallback(async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    } catch {}
-    setUser(null);
+  const logout = useCallback(() => {
+    writeActiveDemoId('student-10a');
+    window.location.replace('/student');
   }, []);
 
+  // After mount: apply the stored demo persona (synchronous localStorage read)
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    setUser(demoToAuthUser(readActiveDemoUser()));
+  }, []);
 
-  // PWA service worker registration (preserved from Vite app)
+  // Try real backend auth in the background (non-blocking, 3s timeout)
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3000);
+
+    fetch('/api/users/me', { credentials: 'include', signal: controller.signal })
+      .then(res => (res.ok ? res.json() : Promise.reject()))
+      .then((realUser: AuthUser) => {
+        setUser(realUser);
+        setIsDemoMode(false);
+      })
+      .catch(() => { /* backend unavailable or auth failed — stay with demo user */ })
+      .finally(() => clearTimeout(timer));
+
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, []);
+
+  // PWA service worker
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -92,10 +80,18 @@ function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, refresh, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading: false, isDemoMode, logout, switchDemoUser }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 
 export function Providers({ children }: { children: ReactNode }) {
-  return <AuthProvider>{children}</AuthProvider>;
+  return (
+    <AuthProvider>
+      <AchievementProvider>
+        {children}
+      </AchievementProvider>
+    </AuthProvider>
+  );
 }

@@ -5,24 +5,21 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from './providers';
 
 export default function Home() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) return;
-    if (!user) {
-      router.replace('/login');
-      return;
-    }
-    if (user.role === 'STUDENT') router.replace('/student');
-    else if (user.role === 'TEACHER') router.replace('/teacher');
-    else if (user.role === 'SCHOOL') router.replace('/school');
-    else router.replace('/admin');
-  }, [user, loading, router]);
+    if (!user) return; // wait for localStorage to load after mount
+    const role = user.role;
+    if (role === 'TEACHER') router.replace('/teacher');
+    else if (role === 'SCHOOL') router.replace('/school');
+    else if (role === 'ADMIN') router.replace('/admin');
+    else router.replace('/student');
+  }, [user, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-deep)' }}>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-500" />
     </div>
   );
 }

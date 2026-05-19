@@ -24,3 +24,18 @@ dist-ssr
 *.sw?
 .env
 .bolt/*
+
+# Next.js
+.next/
+out/
+
+# Screenshots / debug images
+*.png
+*.jpg
+*.jpeg
+
+# Tooling caches
+.playwright-mcp/
+.superpowers/
+tsconfig.tsbuildinfo
+free-claude-code

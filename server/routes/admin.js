@@ -5,6 +5,8 @@ const prisma = require('../lib/prisma');
 const { authenticate } = require('../middleware/auth');
 const { requireRole } = require('../middleware/roles');
 const adminAnalytics = require('../services/adminAnalyticsService');
+const bcrypt = require('bcryptjs');
+const { randomBytes } = require('crypto');
 
 const router = express.Router();
 
@@ -98,6 +100,50 @@ router.patch('/schools/:id/features', async (req, res) => {
     res.json(updated);
   } catch (e) {
     res.status(500).json({ error: 'Failed to update feature flags' });
+  }
+});
+
+// POST /api/admin/schools  — create school + school admin account
+router.post('/schools', async (req, res) => {
+  try {
+    const { name, email, address, subscriptionTier = 'FREE' } = req.body || {};
+    if (!name || !email) return res.status(400).json({ error: 'name and email required' });
+
+    // Generate schoolCode: first 3 letters of name + 3 random digits
+    const prefix = name.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 3).padEnd(3, 'X');
+    const suffix = String(Math.floor(100 + Math.random() * 900));
+    const schoolCode = `${prefix}${suffix}`;
+
+    // One-time temp password for the school admin login
+    const tempPassword = randomBytes(6).toString('base64url').toUpperCase();
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const school = await tx.school.create({
+        data: { name, email, address: address || null, schoolCode, subscriptionTier, isActive: true },
+      });
+      const admin = await tx.user.create({
+        data: { name: `${name} Admin`, email, passwordHash, role: 'SCHOOL', schoolId: school.id, status: 'ACTIVE' },
+      });
+      await tx.auditLog.create({
+        data: { actorId: req.user.id, action: 'CREATE', entityType: 'school', entityId: school.id },
+      });
+      return { school, admin };
+    });
+
+    res.json({
+      school: { id: result.school.id, name: result.school.name, schoolCode: result.school.schoolCode },
+      admin: { id: result.admin.id, email: result.admin.email, tempPassword },
+    });
+  } catch (e) {
+    if (String(e?.code) === 'P2002') {
+      const target = e?.meta?.target ?? [];
+      const field = Array.isArray(target) ? target.join(', ') : String(target);
+      if (field.includes('schoolCode')) return res.status(409).json({ error: 'School code collision — please retry' });
+      return res.status(409).json({ error: 'Email already in use' });
+    }
+    console.error('admin/schools POST', e);
+    res.status(500).json({ error: 'Failed to create school' });
   }
 });
 
