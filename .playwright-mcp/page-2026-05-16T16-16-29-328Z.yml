@@ -1,0 +1,82 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e7]:
+      - generic [ref=e8]:
+        - link "QUEST ACADEMY" [ref=e9] [cursor=pointer]:
+          - /url: /student
+          - generic [ref=e11]:
+            - generic [ref=e12]: QUEST
+            - generic [ref=e13]: ACADEMY
+        - navigation [ref=e14]:
+          - link "🏠 Home" [ref=e15] [cursor=pointer]:
+            - /url: /student
+            - generic [ref=e16]: 🏠
+            - text: Home
+          - link "🎮 Games" [ref=e17] [cursor=pointer]:
+            - /url: /student/games
+            - generic [ref=e18]: 🎮
+            - text: Games
+          - link "⚔️ Quests" [ref=e19] [cursor=pointer]:
+            - /url: /student/quests
+            - generic [ref=e20]: ⚔️
+            - text: Quests
+          - link "🗺️ Roadmap" [active] [ref=e21] [cursor=pointer]:
+            - /url: /student/roadmap
+            - generic [ref=e22]: 🗺️
+            - text: Roadmap
+          - link "🏆 Ranks" [ref=e23] [cursor=pointer]:
+            - /url: /student/leaderboard
+            - generic [ref=e24]: 🏆
+            - text: Ranks
+          - link "🛒 Shop" [ref=e25] [cursor=pointer]:
+            - /url: /student/shop
+            - generic [ref=e26]: 🛒
+            - text: Shop
+          - link "👤 Profile" [ref=e27] [cursor=pointer]:
+            - /url: /student/profile
+            - generic [ref=e28]: 👤
+            - text: Profile
+        - generic [ref=e29]:
+          - generic [ref=e30]: 🔥 1
+          - generic [ref=e31]: 🪙 87
+          - generic [ref=e32]:
+            - generic [ref=e33]: "5"
+            - generic [ref=e35]: LVL 5 · 48%
+    - main [ref=e38]:
+      - generic [ref=e41]:
+        - img [ref=e43]:
+          - generic [ref=e187]:
+            - button "Mathematics" [ref=e188] [cursor=pointer]:
+              - generic: 📐
+              - generic: Start
+              - generic: Mathematics
+              - generic:
+                - generic: Mathematics
+            - button "Mathematics (Class 10)" [ref=e193] [cursor=pointer]:
+              - generic: 📐
+              - generic: 36%
+              - generic: Mathematics (Class…
+              - generic:
+                - generic: Mathematics (Class 10)
+            - button "English" [ref=e199] [cursor=pointer]:
+              - generic: 📖
+              - generic: Start
+              - generic: English
+              - generic:
+                - generic: English
+            - button "Science" [ref=e204] [cursor=pointer]:
+              - generic: 🔬
+              - generic: Start
+              - generic: Science
+              - generic:
+                - generic: Science
+            - button "History" [ref=e209] [cursor=pointer]:
+              - generic: 🏛️
+              - generic: Start
+              - generic: History
+              - generic:
+                - generic: History
+        - generic:
+          - heading "🗺️ Learning Roadmap" [level=1]
+          - paragraph: Choose a subject to explore its chapters and topics.
+  - alert [ref=e6]

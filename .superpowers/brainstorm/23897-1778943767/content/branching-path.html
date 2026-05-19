@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Branching Roadmap Path</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #07070f;
+  color: #F5F7FF;
+  font-family: 'Segoe UI', sans-serif;
+  padding: 24px;
+}
+h2 { font-size: 20px; margin-bottom: 6px; }
+.subtitle { color: #6F77A6; font-size: 13px; margin-bottom: 24px; }
+.section-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.15em;
+  text-transform: uppercase; color: #6B4BFF;
+  margin-bottom: 14px; margin-top: 28px;
+}
+.map-panel {
+  border-radius: 16px; overflow: hidden;
+  background: radial-gradient(ellipse at 40% 30%, #0d1535 0%, #07070f 80%);
+  border: 1.5px solid #2D3260;
+  position: relative;
+}
+.map-panel svg { display: block; width: 100%; }
+
+/* tooltip */
+.node-g { cursor: pointer; }
+.node-g .tip {
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.node-g:hover .tip { opacity: 1; }
+.node-g:hover .ring { filter: brightness(1.4); }
+
+.legend {
+  display: flex; gap: 20px; flex-wrap: wrap;
+  margin-top: 20px; padding: 14px 18px;
+  background: #0f1128; border-radius: 12px;
+  border: 1.5px solid #2D3260;
+}
+.leg-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #B7BEE0; }
+.leg-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<h2>Branching Roadmap — Horizontal + Vertical Snake</h2>
+<p class="subtitle">Nodes branch left, right, and down. Paths merge back together. Hover any node to see its name.</p>
+
+<div class="section-label">Chapter-Level Map — Mathematics (Class 10)</div>
+<div class="map-panel">
+<svg viewBox="0 0 720 580" preserveAspectRatio="xMidYMid meet">
+<defs>
+  <radialGradient id="bg" cx="40%" cy="30%" r="80%">
+    <stop offset="0%" stop-color="#0d1535"/>
+    <stop offset="100%" stop-color="#07070f"/>
+  </radialGradient>
+  <filter id="glow">
+    <feGaussianBlur stdDeviation="5" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="glowLock">
+    <feGaussianBlur stdDeviation="2" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<rect width="720" height="580" fill="url(#bg)"/>
+
+<!-- stars -->
+<circle cx="40" cy="25" r="1" fill="white" opacity="0.4"/>
+<circle cx="180" cy="15" r="0.8" fill="white" opacity="0.3"/>
+<circle cx="350" cy="30" r="1.2" fill="white" opacity="0.5"/>
+<circle cx="500" cy="10" r="0.8" fill="white" opacity="0.3"/>
+<circle cx="660" cy="40" r="1" fill="white" opacity="0.4"/>
+<circle cx="90" cy="120" r="0.8" fill="white" opacity="0.3"/>
+<circle cx="420" cy="90" r="1" fill="white" opacity="0.4"/>
+<circle cx="620" cy="150" r="0.8" fill="white" opacity="0.5"/>
+<circle cx="200" cy="300" r="1" fill="white" opacity="0.3"/>
+<circle cx="550" cy="350" r="0.8" fill="white" opacity="0.4"/>
+<circle cx="80" cy="450" r="1" fill="white" opacity="0.3"/>
+<circle cx="670" cy="480" r="0.8" fill="white" opacity="0.4"/>
+<circle cx="300" cy="520" r="1" fill="white" opacity="0.3"/>
+
+<!-- nebula blobs -->
+<ellipse cx="200" cy="200" rx="80" ry="40" fill="#6B4BFF" opacity="0.03"/>
+<ellipse cx="500" cy="350" rx="70" ry="35" fill="#18D6FF" opacity="0.03"/>
+
+<!--
+  LAYOUT (cx, cy):
+  Start:  360, 530
+  Ch1:    360, 450   (Real Numbers)         — straight up
+  Ch2:    200, 360   (Polynomials)           — branch left
+  Ch3:    360, 360   (Linear Equations)     — straight up
+  Ch4:    520, 360   (Quadratic Equations)  — branch right
+  Ch5:    120, 240   (Progressions)         — far left, up
+  Ch6:    280, 240   (Triangles)            — merge from Ch2+Ch3
+  Ch7:    440, 240   (Coord Geometry)       — merge from Ch3+Ch4
+  Ch8:    600, 240   (Trigonometry)         — from Ch4, right
+  Ch9:    200, 120   (Trig Identities)      — from Ch6, locked
+  Ch10:   400, 120   (Circles)              — from Ch6+Ch7, locked
+  Ch11:   560, 120   (Surface Areas)        — from Ch7+Ch8, locked
+  Ch12:   680, 120   (Statistics)           — far right, locked
+-->
+
+<!-- ═══ PATHS ═══ -->
+<!-- Start → Ch1 -->
+<path d="M360,520 L360,480" stroke="#6B4BFF" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.5" fill="none"/>
+<!-- Ch1 → Ch2 -->
+<path d="M360,420 C360,395 200,390 200,340" stroke="#6B4BFF" stroke-width="2" stroke-dasharray="6,4" opacity="0.45" fill="none"/>
+<!-- Ch1 → Ch3 -->
+<path d="M360,420 L360,340" stroke="#6B4BFF" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.5" fill="none"/>
+<!-- Ch1 → Ch4 -->
+<path d="M360,420 C360,395 520,390 520,340" stroke="#6B4BFF" stroke-width="2" stroke-dasharray="6,4" opacity="0.45" fill="none"/>
+<!-- Ch2 → Ch5 -->
+<path d="M200,320 C200,290 120,280 120,210" stroke="#18D6FF" stroke-width="2" stroke-dasharray="5,5" opacity="0.35" fill="none"/>
+<!-- Ch2 → Ch6 -->
+<path d="M200,320 C200,290 280,280 280,210" stroke="#18D6FF" stroke-width="2" stroke-dasharray="6,4" opacity="0.4" fill="none"/>
+<!-- Ch3 → Ch6 -->
+<path d="M360,320 C360,290 280,280 280,210" stroke="#18D6FF" stroke-width="2" stroke-dasharray="6,4" opacity="0.4" fill="none"/>
+<!-- Ch3 → Ch7 -->
+<path d="M360,320 C360,290 440,280 440,210" stroke="#18D6FF" stroke-width="2" stroke-dasharray="6,4" opacity="0.4" fill="none"/>
+<!-- Ch4 → Ch7 -->
+<path d="M520,320 C520,290 440,280 440,210" stroke="#18D6FF" stroke-width="2" stroke-dasharray="6,4" opacity="0.4" fill="none"/>
+<!-- Ch4 → Ch8 -->
+<path d="M520,320 C520,290 600,280 600,210" stroke="#18D6FF" stroke-width="2" stroke-dasharray="5,5" opacity="0.35" fill="none"/>
+<!-- Ch6 → Ch9 -->
+<path d="M280,200 C280,165 200,155 200,90" stroke="#2D3260" stroke-width="1.5" stroke-dasharray="5,5" opacity="0.3" fill="none"/>
+<!-- Ch6 → Ch10 -->
+<path d="M280,200 C280,165 400,155 400,90" stroke="#2D3260" stroke-width="1.5" stroke-dasharray="5,5" opacity="0.3" fill="none"/>
+<!-- Ch7 → Ch10 -->
+<path d="M440,200 C440,165 400,155 400,90" stroke="#2D3260" stroke-width="1.5" stroke-dasharray="5,5" opacity="0.3" fill="none"/>
+<!-- Ch7 → Ch11 -->
+<path d="M440,200 C440,165 560,155 560,90" stroke="#2D3260" stroke-width="1.5" stroke-dasharray="5,5" opacity="0.3" fill="none"/>
+<!-- Ch8 → Ch11 -->
+<path d="M600,200 C600,165 560,155 560,90" stroke="#2D3260" stroke-width="1.5" stroke-dasharray="5,5" opacity="0.3" fill="none"/>
+<!-- Ch8 → Ch12 -->
+<path d="M600,200 C600,165 680,155 680,90" stroke="#2D3260" stroke-width="1.5" stroke-dasharray="5,5" opacity="0.3" fill="none"/>
+
+<!-- ═══ START node ═══ -->
+<g class="node-g">
+  <circle cx="360" cy="535" r="18" fill="#1a1040" stroke="#FFC93C" stroke-width="2.5" class="ring" filter="url(#glow)"/>
+  <text x="360" y="540" text-anchor="middle" fill="#FFC93C" font-size="14">★</text>
+  <g class="tip">
+    <rect x="290" y="550" width="140" height="24" rx="6" fill="#1F2342" stroke="#FFC93C" stroke-width="1.2"/>
+    <text x="360" y="566" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Start Here</text>
+  </g>
+</g>
+
+<!-- ═══ CHAPTER NODES ═══ -->
+<!-- Ch1 — Real Numbers (completed) -->
+<g class="node-g">
+  <circle cx="360" cy="450" r="28" fill="#071510" stroke="#2DD46E" stroke-width="2.5" class="ring" filter="url(#glow)"/>
+  <circle cx="360" cy="450" r="28" fill="none" stroke="#2DD46E" stroke-width="3" stroke-dasharray="176 0" stroke-linecap="round" transform="rotate(-90 360 450)" opacity="0.85"/>
+  <text x="360" y="447" text-anchor="middle" fill="white" font-size="12" font-weight="bold">1</text>
+  <text x="360" y="461" text-anchor="middle" fill="#2DD46E" font-size="9">✓</text>
+  <g class="tip">
+    <rect x="276" y="414" width="168" height="26" rx="7" fill="#1F2342" stroke="#2DD46E" stroke-width="1.2"/>
+    <text x="360" y="431" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Ch 1 — Real Numbers</text>
+  </g>
+</g>
+
+<!-- Ch2 — Polynomials (in progress) -->
+<g class="node-g">
+  <circle cx="200" cy="360" r="28" fill="#0d1535" stroke="#6B4BFF" stroke-width="2.5" class="ring" filter="url(#glow)"/>
+  <circle cx="200" cy="360" r="28" fill="none" stroke="#6B4BFF" stroke-width="3" stroke-dasharray="110 66" stroke-linecap="round" transform="rotate(-90 200 360)" opacity="0.9"/>
+  <text x="200" y="357" text-anchor="middle" fill="white" font-size="12" font-weight="bold">2</text>
+  <text x="200" y="371" text-anchor="middle" fill="#6B4BFF" font-size="9">62%</text>
+  <g class="tip">
+    <rect x="118" y="323" width="164" height="26" rx="7" fill="#1F2342" stroke="#6B4BFF" stroke-width="1.2"/>
+    <text x="200" y="340" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Ch 2 — Polynomials</text>
+  </g>
+</g>
+
+<!-- Ch3 — Linear Equations (available) -->
+<g class="node-g">
+  <circle cx="360" cy="360" r="28" fill="#071520" stroke="#18D6FF" stroke-width="2.5" class="ring" filter="url(#glow)"/>
+  <circle cx="360" cy="360" r="28" fill="none" stroke="#18D6FF" stroke-width="3" stroke-dasharray="18 158" stroke-linecap="round" transform="rotate(-90 360 360)" opacity="0.8"/>
+  <text x="360" y="357" text-anchor="middle" fill="white" font-size="12" font-weight="bold">3</text>
+  <text x="360" y="371" text-anchor="middle" fill="#18D6FF" font-size="9">New</text>
+  <g class="tip">
+    <rect x="263" y="323" width="194" height="26" rx="7" fill="#1F2342" stroke="#18D6FF" stroke-width="1.2"/>
+    <text x="360" y="340" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Ch 3 — Linear Equations</text>
+  </g>
+</g>
+
+<!-- Ch4 — Quadratic Equations (available) -->
+<g class="node-g">
+  <circle cx="520" cy="360" r="28" fill="#071520" stroke="#18D6FF" stroke-width="2.5" class="ring" filter="url(#glow)"/>
+  <text x="520" y="357" text-anchor="middle" fill="white" font-size="12" font-weight="bold">4</text>
+  <text x="520" y="371" text-anchor="middle" fill="#18D6FF" font-size="9">New</text>
+  <g class="tip">
+    <rect x="420" y="323" width="200" height="26" rx="7" fill="#1F2342" stroke="#18D6FF" stroke-width="1.2"/>
+    <text x="520" y="340" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Ch 4 — Quadratic Equations</text>
+  </g>
+</g>
+
+<!-- Ch5 — Progressions (locked) -->
+<g class="node-g">
+  <circle cx="120" cy="240" r="26" fill="#0a0a0a" stroke="#2D3260" stroke-width="1.5" class="ring" opacity="0.5"/>
+  <text x="120" y="236" text-anchor="middle" fill="#424878" font-size="16">🔒</text>
+  <text x="120" y="252" text-anchor="middle" fill="#424878" font-size="8">Locked</text>
+  <g class="tip">
+    <rect x="38" y="205" width="164" height="26" rx="7" fill="#1F2342" stroke="#FF5A4D" stroke-width="1.2"/>
+    <text x="120" y="222" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Ch 5 — Progressions 🔒</text>
+  </g>
+</g>
+
+<!-- Ch6 — Triangles (locked) -->
+<g class="node-g">
+  <circle cx="280" cy="240" r="26" fill="#0a0a0a" stroke="#2D3260" stroke-width="1.5" class="ring" opacity="0.5"/>
+  <text x="280" y="236" text-anchor="middle" fill="#424878" font-size="16">🔒</text>
+  <text x="280" y="252" text-anchor="middle" fill="#424878" font-size="8">Locked</text>
+  <g class="tip">
+    <rect x="202" y="205" width="156" height="26" rx="7" fill="#1F2342" stroke="#FF5A4D" stroke-width="1.2"/>
+    <text x="280" y="222" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Ch 6 — Triangles 🔒</text>
+  </g>
+</g>
+
+<!-- Ch7 — Coord Geometry (locked) -->
+<g class="node-g">
+  <circle cx="440" cy="240" r="26" fill="#0a0a0a" stroke="#2D3260" stroke-width="1.5" class="ring" opacity="0.5"/>
+  <text x="440" y="236" text-anchor="middle" fill="#424878" font-size="16">🔒</text>
+  <text x="440" y="252" text-anchor="middle" fill="#424878" font-size="8">Locked</text>
+  <g class="tip">
+    <rect x="348" y="205" width="184" height="26" rx="7" fill="#1F2342" stroke="#FF5A4D" stroke-width="1.2"/>
+    <text x="440" y="222" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Ch 7 — Coord Geometry 🔒</text>
+  </g>
+</g>
+
+<!-- Ch8 — Trigonometry (locked) -->
+<g class="node-g">
+  <circle cx="600" cy="240" r="26" fill="#0a0a0a" stroke="#2D3260" stroke-width="1.5" class="ring" opacity="0.5"/>
+  <text x="600" y="236" text-anchor="middle" fill="#424878" font-size="16">🔒</text>
+  <text x="600" y="252" text-anchor="middle" fill="#424878" font-size="8">Locked</text>
+  <g class="tip">
+    <rect x="514" y="205" width="172" height="26" rx="7" fill="#1F2342" stroke="#FF5A4D" stroke-width="1.2"/>
+    <text x="600" y="222" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Ch 8 — Trigonometry 🔒</text>
+  </g>
+</g>
+
+<!-- Tier 3 — deeply locked -->
+<g class="node-g">
+  <circle cx="200" cy="120" r="22" fill="#0a0a0a" stroke="#1a1a2e" stroke-width="1.5" class="ring" opacity="0.3"/>
+  <text x="200" y="116" text-anchor="middle" fill="#2D3260" font-size="14">🔒</text>
+  <text x="200" y="130" text-anchor="middle" fill="#2D3260" font-size="7">9</text>
+  <g class="tip">
+    <rect x="118" y="84" width="164" height="26" rx="7" fill="#1F2342" stroke="#FF5A4D" stroke-width="1.2"/>
+    <text x="200" y="101" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Ch 9 — Trig Identities 🔒</text>
+  </g>
+</g>
+<g class="node-g">
+  <circle cx="400" cy="120" r="22" fill="#0a0a0a" stroke="#1a1a2e" stroke-width="1.5" class="ring" opacity="0.3"/>
+  <text x="400" y="116" text-anchor="middle" fill="#2D3260" font-size="14">🔒</text>
+  <text x="400" y="130" text-anchor="middle" fill="#2D3260" font-size="7">10</text>
+  <g class="tip">
+    <rect x="318" y="84" width="164" height="26" rx="7" fill="#1F2342" stroke="#FF5A4D" stroke-width="1.2"/>
+    <text x="400" y="101" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Ch 10 — Circles 🔒</text>
+  </g>
+</g>
+<g class="node-g">
+  <circle cx="560" cy="120" r="22" fill="#0a0a0a" stroke="#1a1a2e" stroke-width="1.5" class="ring" opacity="0.3"/>
+  <text x="560" y="116" text-anchor="middle" fill="#2D3260" font-size="14">🔒</text>
+  <text x="560" y="130" text-anchor="middle" fill="#2D3260" font-size="7">11</text>
+  <g class="tip">
+    <rect x="472" y="84" width="176" height="26" rx="7" fill="#1F2342" stroke="#FF5A4D" stroke-width="1.2"/>
+    <text x="560" y="101" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Ch 11 — Surface Areas 🔒</text>
+  </g>
+</g>
+<g class="node-g">
+  <circle cx="680" cy="120" r="22" fill="#0a0a0a" stroke="#1a1a2e" stroke-width="1.5" class="ring" opacity="0.3"/>
+  <text x="680" y="116" text-anchor="middle" fill="#2D3260" font-size="14">🔒</text>
+  <text x="680" y="130" text-anchor="middle" fill="#2D3260" font-size="7">12</text>
+  <g class="tip">
+    <rect x="596" y="84" width="168" height="26" rx="7" fill="#1F2342" stroke="#FF5A4D" stroke-width="1.2"/>
+    <text x="680" y="101" text-anchor="middle" fill="#F5F7FF" font-size="10" font-weight="600">Ch 12 — Statistics 🔒</text>
+  </g>
+</g>
+
+</svg>
+</div>
+
+<div class="legend">
+  <div class="leg-item"><div class="leg-dot" style="background:#2DD46E;border-color:#2DD46E;"></div>Completed</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#0d1535;border-color:#6B4BFF;"></div>In Progress</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#071520;border-color:#18D6FF;"></div>Available</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#0a0a0a;border-color:#2D3260;opacity:0.5"></div>Locked</div>
+</div>
+
+</body>
+</html>

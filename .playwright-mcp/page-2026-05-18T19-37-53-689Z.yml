@@ -1,0 +1,85 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: QUEST
+      - generic [ref=e8]: ACADEMY
+    - generic [ref=e9]: DEMO MODE · PICK YOUR PERSONA
+  - generic [ref=e10]:
+    - generic [ref=e11]:
+      - button "⚔️ Students" [ref=e12] [cursor=pointer]:
+        - generic [ref=e13]: ⚔️
+        - text: Students
+      - button "🧙 Teachers" [ref=e14] [cursor=pointer]:
+        - generic [ref=e15]: 🧙
+        - text: Teachers
+      - button "🏰 School" [ref=e16] [cursor=pointer]:
+        - generic [ref=e17]: 🏰
+        - text: School
+      - button "🛡️ Admin" [ref=e18] [cursor=pointer]:
+        - generic [ref=e19]: 🛡️
+        - text: Admin
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]: AS
+        - generic [ref=e23]:
+          - generic [ref=e24]: Arjun Sharma
+          - generic [ref=e25]: Class 6A · Loves Math
+        - generic [ref=e26]:
+          - generic [ref=e27]: Lv.3
+          - generic [ref=e28]: 🔥 4d
+        - button "▶ ENTER" [ref=e29] [cursor=pointer]
+      - generic [ref=e30]:
+        - generic [ref=e31]: PP
+        - generic [ref=e32]:
+          - generic [ref=e33]: Priya Patel
+          - generic [ref=e34]: Class 7B · Science enthusiast
+        - generic [ref=e35]:
+          - generic [ref=e36]: Lv.5
+          - generic [ref=e37]: 🔥 12d
+        - button "▶ ENTER" [ref=e38] [cursor=pointer]
+      - generic [ref=e39]:
+        - generic [ref=e40]: RK
+        - generic [ref=e41]:
+          - generic [ref=e42]: Rahul Kumar
+          - generic [ref=e43]: Class 8A · History buff
+        - generic [ref=e44]:
+          - generic [ref=e45]: Lv.7
+          - generic [ref=e46]: 🔥 6d
+        - button "▶ ENTER" [ref=e47] [cursor=pointer]
+      - generic [ref=e48]:
+        - generic [ref=e49]: AS
+        - generic [ref=e50]:
+          - generic [ref=e51]: Ananya Singh
+          - generic [ref=e52]: Class 9C · Top ranker
+        - generic [ref=e53]:
+          - generic [ref=e54]: Lv.9
+          - generic [ref=e55]: 🔥 21d
+        - button "▶ ENTER" [ref=e56] [cursor=pointer]
+      - generic [ref=e57]:
+        - generic [ref=e58]: RV
+        - generic [ref=e59]:
+          - generic [ref=e60]: Rohan Verma
+          - generic [ref=e61]: Class 10A · Board exam warrior
+        - generic [ref=e62]:
+          - generic [ref=e63]: Lv.12
+          - generic [ref=e64]: 🔥 30d
+        - button "▶ ENTER" [ref=e65] [cursor=pointer]
+      - generic [ref=e66]:
+        - generic [ref=e67]: KN
+        - generic [ref=e68]:
+          - generic [ref=e69]: Kavya Nair
+          - generic [ref=e70]: Class 11B (Science) · JEE aspirant
+        - generic [ref=e71]:
+          - generic [ref=e72]: Lv.15
+          - generic [ref=e73]: 🔥 45d
+        - button "▶ ENTER" [ref=e74] [cursor=pointer]
+      - generic [ref=e75]:
+        - generic [ref=e76]: AR
+        - generic [ref=e77]:
+          - generic [ref=e78]: Aditya Rajan
+          - generic [ref=e79]: Class 12A (Commerce) · Future CA
+        - generic [ref=e80]:
+          - generic [ref=e81]: Lv.18
+          - generic [ref=e82]: 🔥 60d
+        - button "▶ ENTER" [ref=e83] [cursor=pointer]
+    - generic [ref=e84]: TESTING MODE · NO REAL DATA · LEARN · BATTLE · CONQUER

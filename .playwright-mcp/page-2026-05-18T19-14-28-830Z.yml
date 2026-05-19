@@ -1,0 +1,102 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "QUEST ACADEMY" [ref=e5] [cursor=pointer]:
+        - /url: /student
+        - generic [ref=e7]:
+          - generic [ref=e8]: QUEST
+          - generic [ref=e9]: ACADEMY
+      - navigation [ref=e10]:
+        - link "🏠 Home" [ref=e11] [cursor=pointer]:
+          - /url: /student
+          - generic [ref=e12]: 🏠
+          - text: Home
+        - link "🎮 Games" [ref=e13] [cursor=pointer]:
+          - /url: /student/games
+          - generic [ref=e14]: 🎮
+          - text: Games
+        - link "⚔️ Quests" [ref=e15] [cursor=pointer]:
+          - /url: /student/quests
+          - generic [ref=e16]: ⚔️
+          - text: Quests
+        - link "🗺️ Roadmap" [ref=e17] [cursor=pointer]:
+          - /url: /student/roadmap
+          - generic [ref=e18]: 🗺️
+          - text: Roadmap
+        - link "🏆 Ranks" [ref=e19] [cursor=pointer]:
+          - /url: /student/leaderboard
+          - generic [ref=e20]: 🏆
+          - text: Ranks
+        - link "🛒 Shop" [ref=e21] [cursor=pointer]:
+          - /url: /student/shop
+          - generic [ref=e22]: 🛒
+          - text: Shop
+        - link "👤 Profile" [ref=e23] [cursor=pointer]:
+          - /url: /student/profile
+          - generic [ref=e24]: 👤
+          - text: Profile
+      - generic [ref=e25]:
+        - generic [ref=e26]: 🔥 30
+        - generic [ref=e27]: 🪙 960
+        - link "🎭 Switch" [ref=e28] [cursor=pointer]:
+          - /url: /login
+        - generic [ref=e29]:
+          - generic [ref=e30]: "12"
+          - generic [ref=e32]: LVL 12 · 10%
+  - main [ref=e35]:
+    - generic [ref=e37]:
+      - generic [ref=e38]:
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - generic [ref=e43]: QA
+            - generic [ref=e44]: LVL 12
+          - generic [ref=e45]:
+            - generic [ref=e46]: WELCOME BACK,
+            - generic [ref=e47]: Rohan Verma
+            - generic [ref=e48]: Lvl 12 - Apprentice Tactician
+            - generic [ref=e52]: 600/6000
+            - generic [ref=e53]:
+              - generic [ref=e54]: 30 Day Streak
+              - generic [ref=e55]: 960 Coins
+              - generic [ref=e56]: 4800 Points
+          - generic [ref=e57]:
+            - link "Resume Learning" [ref=e58] [cursor=pointer]:
+              - /url: /student/learn
+            - link "Game Vault" [ref=e59] [cursor=pointer]:
+              - /url: /student/games
+        - heading "Today's Quests" [level=3] [ref=e61]
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - heading "From Your Mentor" [level=3] [ref=e65]
+            - generic [ref=e66]: No teacher assignments are active right now.
+          - generic [ref=e67]:
+            - heading "Continue Playing" [level=3] [ref=e68]
+            - paragraph [ref=e70]: No game sessions yet.
+        - generic [ref=e71]:
+          - heading "Your Skill Map" [level=3] [ref=e72]
+          - generic [ref=e73]:
+            - generic [ref=e75]:
+              - generic [ref=e76]: Mathematics
+              - generic [ref=e77]: 0%
+            - generic [ref=e80]:
+              - generic [ref=e81]: Science
+              - generic [ref=e82]: 0%
+            - generic [ref=e85]:
+              - generic [ref=e86]: English
+              - generic [ref=e87]: 0%
+            - generic [ref=e90]:
+              - generic [ref=e91]: History
+              - generic [ref=e92]: 0%
+            - generic [ref=e95]:
+              - generic [ref=e96]: Geography
+              - generic [ref=e97]: 0%
+            - generic [ref=e100]:
+              - generic [ref=e101]: Coding
+              - generic [ref=e102]: 0%
+      - complementary [ref=e104]:
+        - generic [ref=e105]:
+          - heading "School Ladder" [level=3] [ref=e106]
+          - paragraph [ref=e107]: No leaderboard rows yet.
+        - generic [ref=e108]:
+          - heading "Recent Achievements" [level=3] [ref=e109]
+          - paragraph [ref=e110]: No badges earned yet.

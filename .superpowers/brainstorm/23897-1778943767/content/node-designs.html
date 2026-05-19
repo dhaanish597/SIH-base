@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Node Design Options</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #07070f;
+    color: #F5F7FF;
+    font-family: 'Segoe UI', sans-serif;
+    padding: 24px;
+  }
+  h2 { font-size: 20px; margin-bottom: 6px; color: #F5F7FF; }
+  .subtitle { color: #6F77A6; font-size: 13px; margin-bottom: 28px; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #6B4BFF;
+    margin-bottom: 16px;
+    margin-top: 32px;
+  }
+
+  /* ── SUBJECT LEVEL ── */
+  .subject-map {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 30% 40%, #1a0d3a 0%, #0a0a1f 50%, #07070f 100%);
+    border: 1.5px solid #2D3260;
+  }
+  .subject-map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* ── CHAPTER / TOPIC SNAKE ── */
+  .snake-wrap {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .snake-panel {
+    flex: 1;
+    min-width: 260px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 20%, #0d1535 0%, #07070f 80%);
+    border: 1.5px solid #2D3260;
+    position: relative;
+    height: 480px;
+  }
+  .snake-panel svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .panel-label {
+    position: absolute;
+    top: 12px; left: 16px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #6F77A6;
+    z-index: 2;
+  }
+
+  /* tooltip demo */
+  .tooltip-demo {
+    margin-top: 24px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #0f1128;
+    border: 1.5px solid #2D3260;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .node-hover-demo {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .node-circle {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 22px;
+    border: 3px solid;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .node-circle:hover { transform: scale(1.12); }
+  .node-circle:hover .tip { opacity: 1; transform: translateY(-4px); }
+  .tip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    background: #1F2342;
+    border: 1.5px solid #6B4BFF;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #F5F7FF;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 10;
+    box-shadow: 0 4px 16px rgba(107,75,255,0.3);
+  }
+  .tip::after {
+    content: '';
+    position: absolute;
+    top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #6B4BFF;
+  }
+  .node-small {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 14px;
+    border: 2.5px solid;
+    cursor: pointer;
+    transition: transform 0.2s;
+    position: relative;
+  }
+  .node-small:hover { transform: scale(1.15); }
+  .node-small:hover .tip { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+  .node-label { font-size: 10px; color: #6F77A6; text-align: center; max-width: 70px; }
+</style>
+</head>
+<body>
+
+<h2>Node & Map Designs</h2>
+<p class="subtitle">Hover over any node to see the tooltip in action</p>
+
+<!-- ── SUBJECT LEVEL ── -->
+<div class="section-label">Subject Level — Large Glowing Nodes on Fantasy Path</div>
+<div class="subject-map">
+  <svg viewBox="0 0 700 320" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <radialGradient id="gBg" cx="30%" cy="40%" r="70%">
+        <stop offset="0%" stop-color="#1a0d3a"/>
+        <stop offset="100%" stop-color="#07070f"/>
+      </radialGradient>
+      <!-- glows -->
+      <filter id="glow1"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="glow2"><feGaussianBlur stdDeviation="10" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    <rect width="700" height="320" fill="url(#gBg)"/>
+    <!-- stars -->
+    <circle cx="50" cy="20" r="1.2" fill="white" opacity="0.5"/>
+    <circle cx="180" cy="40" r="0.8" fill="white" opacity="0.4"/>
+    <circle cx="320" cy="15" r="1.5" fill="white" opacity="0.3"/>
+    <circle cx="450" cy="35" r="1" fill="white" opacity="0.6"/>
+    <circle cx="600" cy="20" r="1.2" fill="white" opacity="0.4"/>
+    <circle cx="670" cy="60" r="0.8" fill="white" opacity="0.5"/>
+    <circle cx="100" cy="80" r="1" fill="white" opacity="0.3"/>
+    <circle cx="380" cy="70" r="0.8" fill="white" opacity="0.4"/>
+    <circle cx="520" cy="85" r="1.2" fill="white" opacity="0.3"/>
+    <circle cx="250" cy="100" r="1" fill="white" opacity="0.5"/>
+    <circle cx="80" cy="200" r="1" fill="white" opacity="0.3"/>
+    <circle cx="420" cy="210" r="0.8" fill="white" opacity="0.4"/>
+    <circle cx="650" cy="180" r="1.2" fill="white" opacity="0.3"/>
+    <!-- snake path -->
+    <path d="M90,260 C180,220 120,160 220,140 C320,120 280,80 380,80 C480,80 440,140 540,130 C620,122 600,80 650,60"
+      stroke="#6B4BFF" stroke-width="3" fill="none" stroke-dasharray="8,5" opacity="0.6"/>
+    <!-- nebula blobs -->
+    <ellipse cx="220" cy="140" rx="60" ry="30" fill="#18D6FF" opacity="0.04"/>
+    <ellipse cx="540" cy="130" rx="50" ry="25" fill="#6B4BFF" opacity="0.06"/>
+
+    <!-- Node 1: Math — completed -->
+    <circle cx="90" cy="260" r="38" fill="#0f0a1f" stroke="#6B4BFF" stroke-width="3" filter="url(#glow1)"/>
+    <circle cx="90" cy="260" r="34" fill="radial-gradient(circle,#1a1040,#0f0a1f)" stroke="none"/>
+    <!-- mastery arc ~80% -->
+    <circle cx="90" cy="260" r="38" fill="none" stroke="#6B4BFF" stroke-width="4" stroke-dasharray="190 50" stroke-linecap="round" transform="rotate(-90 90 260)" opacity="0.9"/>
+    <text x="90" y="253" text-anchor="middle" font-size="20">📐</text>
+    <text x="90" y="270" text-anchor="middle" fill="#B7BEE0" font-size="9" font-weight="700">Math</text>
+    <text x="90" y="281" text-anchor="middle" fill="#6B4BFF" font-size="8">80%</text>
+
+    <!-- Node 2: Science — in progress -->
+    <circle cx="220" cy="140" r="38" fill="#071520" stroke="#18D6FF" stroke-width="3" filter="url(#glow1)"/>
+    <circle cx="220" cy="140" r="38" fill="none" stroke="#18D6FF" stroke-width="4" stroke-dasharray="110 130" stroke-linecap="round" transform="rotate(-90 220 140)" opacity="0.9"/>
+    <text x="220" y="133" text-anchor="middle" font-size="20">🔬</text>
+    <text x="220" y="150" text-anchor="middle" fill="#B7BEE0" font-size="9" font-weight="700">Science</text>
+    <text x="220" y="161" text-anchor="middle" fill="#18D6FF" font-size="8">45%</text>
+
+    <!-- Node 3: English — in progress -->
+    <circle cx="380" cy="80" r="38" fill="#071510" stroke="#2DD46E" stroke-width="3" filter="url(#glow1)"/>
+    <circle cx="380" cy="80" r="38" fill="none" stroke="#2DD46E" stroke-width="4" stroke-dasharray="210 30" stroke-linecap="round" transform="rotate(-90 380 80)" opacity="0.9"/>
+    <text x="380" y="73" text-anchor="middle" font-size="20">📖</text>
+    <text x="380" y="90" text-anchor="middle" fill="#B7BEE0" font-size="9" font-weight="700">English</text>
+    <text x="380" y="101" text-anchor="middle" fill="#2DD46E" font-size="8">88%</text>
+
+    <!-- Node 4: History -->
+    <circle cx="540" cy="130" r="38" fill="#120f00" stroke="#FFC93C" stroke-width="3" filter="url(#glow1)"/>
+    <circle cx="540" cy="130" r="38" fill="none" stroke="#FFC93C" stroke-width="4" stroke-dasharray="75 165" stroke-linecap="round" transform="rotate(-90 540 130)" opacity="0.9"/>
+    <text x="540" y="123" text-anchor="middle" font-size="20">🏛️</text>
+    <text x="540" y="140" text-anchor="middle" fill="#B7BEE0" font-size="9" font-weight="700">History</text>
+    <text x="540" y="151" text-anchor="middle" fill="#FFC93C" font-size="8">30%</text>
+
+    <!-- Node 5: CS — locked -->
+    <circle cx="650" cy="60" r="38" fill="#0a0a0a" stroke="#2D3260" stroke-width="2.5" opacity="0.6"/>
+    <text x="650" y="53" text-anchor="middle" font-size="20" opacity="0.5">💻</text>
+    <text x="650" y="70" text-anchor="middle" fill="#6F77A6" font-size="9">CS</text>
+    <text x="650" y="81" text-anchor="middle" fill="#424878" font-size="14">🔒</text>
+  </svg>
+</div>
+
+<!-- ── CHAPTER / TOPIC SNAKE ── -->
+<div class="section-label">Chapter Snake & Topic Snake — Vertical Winding Path</div>
+<div class="snake-wrap">
+
+  <!-- Chapter snake (medium nodes) -->
+  <div class="snake-panel">
+    <div class="panel-label">Chapter Roadmap (inside Math)</div>
+    <svg viewBox="0 0 260 480" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <radialGradient id="snBg" cx="50%" cy="20%" r="80%">
+          <stop offset="0%" stop-color="#0d1535"/>
+          <stop offset="100%" stop-color="#07070f"/>
+        </radialGradient>
+        <filter id="gC"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <rect width="260" height="480" fill="url(#snBg)"/>
+      <!-- stars -->
+      <circle cx="30" cy="30" r="1" fill="white" opacity="0.4"/>
+      <circle cx="200" cy="50" r="0.8" fill="white" opacity="0.3"/>
+      <circle cx="130" cy="100" r="1.2" fill="white" opacity="0.4"/>
+      <circle cx="60" cy="200" r="0.8" fill="white" opacity="0.3"/>
+      <circle cx="210" cy="300" r="1" fill="white" opacity="0.4"/>
+      <circle cx="40" cy="380" r="0.8" fill="white" opacity="0.3"/>
+      <!-- snake path -->
+      <path d="M130,440 C60,410 190,360 130,310 C70,260 190,210 130,160 C70,110 190,70 130,40"
+        stroke="#6B4BFF" stroke-width="2.5" fill="none" stroke-dasharray="7,5" opacity="0.5"/>
+      <!-- Chapter nodes — 32px radius -->
+      <!-- 1 completed -->
+      <circle cx="130" cy="440" r="32" fill="#0f0a1f" stroke="#2DD46E" stroke-width="2.5" filter="url(#gC)"/>
+      <circle cx="130" cy="440" r="32" fill="none" stroke="#2DD46E" stroke-width="3" stroke-dasharray="201 0" stroke-linecap="round" transform="rotate(-90 130 440)" opacity="0.8"/>
+      <text x="130" y="437" text-anchor="middle" fill="white" font-size="13" font-weight="bold">1</text>
+      <text x="130" y="450" text-anchor="middle" fill="#2DD46E" font-size="8">✓</text>
+      <text x="172" y="444" fill="#B7BEE0" font-size="9">Real Numbers</text>
+      <!-- 2 in progress -->
+      <circle cx="130" cy="360" r="32" fill="#0d1535" stroke="#6B4BFF" stroke-width="2.5" filter="url(#gC)"/>
+      <circle cx="130" cy="360" r="32" fill="none" stroke="#6B4BFF" stroke-width="3" stroke-dasharray="130 71" stroke-linecap="round" transform="rotate(-90 130 360)" opacity="0.9"/>
+      <text x="130" y="357" text-anchor="middle" fill="white" font-size="13" font-weight="bold">2</text>
+      <text x="130" y="370" text-anchor="middle" fill="#6B4BFF" font-size="8">65%</text>
+      <text x="172" y="364" fill="#B7BEE0" font-size="9">Polynomials</text>
+      <!-- 3 available -->
+      <circle cx="130" cy="280" r="32" fill="#071520" stroke="#18D6FF" stroke-width="2.5" filter="url(#gC)"/>
+      <circle cx="130" cy="280" r="32" fill="none" stroke="#18D6FF" stroke-width="3" stroke-dasharray="20 181" stroke-linecap="round" transform="rotate(-90 130 280)" opacity="0.7"/>
+      <text x="130" y="277" text-anchor="middle" fill="white" font-size="13" font-weight="bold">3</text>
+      <text x="130" y="290" text-anchor="middle" fill="#18D6FF" font-size="8">New</text>
+      <text x="88" y="284" text-anchor="end" fill="#B7BEE0" font-size="9">Linear Eq.</text>
+      <!-- 4 locked -->
+      <circle cx="130" cy="200" r="32" fill="#0a0a0a" stroke="#2D3260" stroke-width="2" opacity="0.55"/>
+      <text x="130" y="197" text-anchor="middle" fill="#424878" font-size="18">🔒</text>
+      <text x="130" y="214" text-anchor="middle" fill="#424878" font-size="8">Locked</text>
+      <text x="88" y="204" text-anchor="end" fill="#424878" font-size="9">Quadratics</text>
+      <!-- 5 locked -->
+      <circle cx="130" cy="120" r="32" fill="#0a0a0a" stroke="#2D3260" stroke-width="2" opacity="0.4"/>
+      <text x="130" y="117" text-anchor="middle" fill="#424878" font-size="18">🔒</text>
+      <text x="130" y="134" text-anchor="middle" fill="#424878" font-size="8">Locked</text>
+      <text x="172" y="124" fill="#424878" font-size="9">Trigonometry</text>
+      <!-- 6 locked -->
+      <circle cx="130" cy="40" r="32" fill="#0a0a0a" stroke="#2D3260" stroke-width="2" opacity="0.3"/>
+      <text x="130" y="37" text-anchor="middle" fill="#424878" font-size="18">🔒</text>
+      <text x="130" y="54" text-anchor="middle" fill="#424878" font-size="8">Locked</text>
+      <text x="88" y="44" text-anchor="end" fill="#424878" font-size="9">Statistics</text>
+    </svg>
+  </div>
+
+  <!-- Topic snake (smaller nodes) -->
+  <div class="snake-panel">
+    <div class="panel-label">Topic Roadmap (inside Polynomials)</div>
+    <svg viewBox="0 0 260 480" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <radialGradient id="snBg2" cx="50%" cy="20%" r="80%">
+          <stop offset="0%" stop-color="#0d1535"/>
+          <stop offset="100%" stop-color="#07070f"/>
+        </radialGradient>
+        <filter id="gT"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <rect width="260" height="480" fill="url(#snBg2)"/>
+      <circle cx="50" cy="40" r="0.8" fill="white" opacity="0.4"/>
+      <circle cx="210" cy="80" r="1" fill="white" opacity="0.3"/>
+      <circle cx="80" cy="160" r="0.8" fill="white" opacity="0.5"/>
+      <circle cx="200" cy="250" r="1" fill="white" opacity="0.3"/>
+      <circle cx="40" cy="340" r="0.8" fill="white" opacity="0.4"/>
+      <!-- snake path -->
+      <path d="M130,450 C70,425 190,385 130,345 C70,305 190,265 130,225 C70,185 190,145 130,105 C70,65 190,35 130,15"
+        stroke="#6B4BFF" stroke-width="2" fill="none" stroke-dasharray="6,4" opacity="0.4"/>
+      <!-- topic nodes — 24px radius -->
+      <!-- 1 done -->
+      <circle cx="130" cy="450" r="24" fill="#071510" stroke="#2DD46E" stroke-width="2" filter="url(#gT)"/>
+      <text x="130" y="447" text-anchor="middle" fill="white" font-size="11" font-weight="bold">1</text>
+      <text x="130" y="459" text-anchor="middle" fill="#2DD46E" font-size="8">✓</text>
+      <text x="162" y="453" fill="#B7BEE0" font-size="9">Intro to Poly</text>
+      <!-- 2 done -->
+      <circle cx="130" cy="390" r="24" fill="#071510" stroke="#2DD46E" stroke-width="2" filter="url(#gT)"/>
+      <text x="130" y="387" text-anchor="middle" fill="white" font-size="11" font-weight="bold">2</text>
+      <text x="130" y="399" text-anchor="middle" fill="#2DD46E" font-size="8">✓</text>
+      <text x="98" y="393" text-anchor="end" fill="#B7BEE0" font-size="9">Degree & Types</text>
+      <!-- 3 in progress -->
+      <circle cx="130" cy="330" r="24" fill="#0d1535" stroke="#6B4BFF" stroke-width="2" filter="url(#gT)"/>
+      <circle cx="130" cy="330" r="24" fill="none" stroke="#6B4BFF" stroke-width="2.5" stroke-dasharray="90 61" stroke-linecap="round" transform="rotate(-90 130 330)" opacity="0.9"/>
+      <text x="130" y="327" text-anchor="middle" fill="white" font-size="11" font-weight="bold">3</text>
+      <text x="130" y="339" text-anchor="middle" fill="#6B4BFF" font-size="8">60%</text>
+      <text x="162" y="333" fill="#B7BEE0" font-size="9">Zeroes of Poly</text>
+      <!-- 4 available -->
+      <circle cx="130" cy="270" r="24" fill="#071520" stroke="#18D6FF" stroke-width="2" filter="url(#gT)"/>
+      <text x="130" y="267" text-anchor="middle" fill="white" font-size="11" font-weight="bold">4</text>
+      <text x="130" y="279" text-anchor="middle" fill="#18D6FF" font-size="8">Start</text>
+      <text x="98" y="273" text-anchor="end" fill="#B7BEE0" font-size="9">Remainder Thm</text>
+      <!-- 5 locked -->
+      <circle cx="130" cy="210" r="24" fill="#0a0a0a" stroke="#2D3260" stroke-width="1.5" opacity="0.5"/>
+      <text x="130" y="206" text-anchor="middle" fill="#424878" font-size="14">🔒</text>
+      <text x="130" y="222" text-anchor="middle" fill="#424878" font-size="8">Locked</text>
+      <text x="162" y="213" fill="#424878" font-size="9">Factor Theorem</text>
+      <!-- 6 locked -->
+      <circle cx="130" cy="150" r="24" fill="#0a0a0a" stroke="#2D3260" stroke-width="1.5" opacity="0.4"/>
+      <text x="130" y="146" text-anchor="middle" fill="#424878" font-size="14">🔒</text>
+      <text x="130" y="162" text-anchor="middle" fill="#424878" font-size="8">Locked</text>
+      <text x="98" y="153" text-anchor="end" fill="#424878" font-size="9">Factorisation</text>
+      <!-- 7 locked -->
+      <circle cx="130" cy="90" r="24" fill="#0a0a0a" stroke="#2D3260" stroke-width="1.5" opacity="0.3"/>
+      <text x="130" y="86" text-anchor="middle" fill="#424878" font-size="14">🔒</text>
+      <text x="130" y="102" text-anchor="middle" fill="#424878" font-size="8">Locked</text>
+      <text x="162" y="93" fill="#424878" font-size="9">Algebraic Identities</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ── TOOLTIP DEMO ── -->
+<div class="section-label">Hover Tooltip — try hovering these nodes</div>
+<div class="tooltip-demo">
+  <div class="node-hover-demo">
+    <div class="node-circle" style="background:#0f0a1f;border-color:#6B4BFF;box-shadow:0 0 18px rgba(107,75,255,0.5);">
+      <div class="tip">Mathematics</div>
+      📐
+    </div>
+    <span class="node-label">Subject node (large)</span>
+  </div>
+  <div class="node-hover-demo">
+    <div class="node-circle" style="width:52px;height:52px;background:#0d1535;border-color:#18D6FF;box-shadow:0 0 14px rgba(24,214,255,0.4);font-size:16px;">
+      <div class="tip">Chapter 3 — Linear Equations</div>
+      3
+    </div>
+    <span class="node-label">Chapter node (medium)</span>
+  </div>
+  <div class="node-hover-demo">
+    <div class="node-small" style="background:#071510;border-color:#2DD46E;box-shadow:0 0 10px rgba(45,212,110,0.4);">
+      <div class="tip">Topic — Zeroes of a Polynomial</div>
+      <span style="color:white;font-weight:700;font-size:11px;">3</span>
+    </div>
+    <span class="node-label">Topic node (small)</span>
+  </div>
+  <div class="node-hover-demo">
+    <div class="node-small" style="background:#0a0a0a;border-color:#2D3260;opacity:0.55;">
+      <div class="tip" style="border-color:#FF5A4D;">🔒 Complete prerequisite first</div>
+      <span style="font-size:14px;">🔒</span>
+    </div>
+    <span class="node-label">Locked node</span>
+  </div>
+</div>
+
+<script>
+// inject helper if not already present
+if (!window.__companion) {
+  window.__companion = true;
+}
+</script>
+</body>
+</html>

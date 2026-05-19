@@ -1,0 +1,42 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: QUEST
+        - generic [ref=e8]: ACADEMY
+      - generic [ref=e9]: DEMO MODE · PICK YOUR PERSONA
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - button "⚔️ Students" [ref=e12] [cursor=pointer]:
+          - generic [ref=e13]: ⚔️
+          - text: Students
+        - button "🧙 Teachers" [active] [ref=e14] [cursor=pointer]:
+          - generic [ref=e15]: 🧙
+          - text: Teachers
+        - button "🏰 School" [ref=e16] [cursor=pointer]:
+          - generic [ref=e17]: 🏰
+          - text: School
+        - button "🛡️ Admin" [ref=e18] [cursor=pointer]:
+          - generic [ref=e19]: 🛡️
+          - text: Admin
+      - generic [ref=e20]:
+        - generic [ref=e85]:
+          - generic [ref=e86]: MS
+          - generic [ref=e87]:
+            - generic [ref=e88]: Ms. Sunita Rao
+            - generic [ref=e89]: Mathematics · Classes 8–12
+          - button "▶ ENTER" [ref=e90] [cursor=pointer]
+        - generic [ref=e91]:
+          - generic [ref=e92]: MD
+          - generic [ref=e93]:
+            - generic [ref=e94]: Mr. Deepak Menon
+            - generic [ref=e95]: Science · Classes 6–10
+          - button "▶ ENTER" [ref=e96] [cursor=pointer]
+        - generic [ref=e97]:
+          - generic [ref=e98]: MM
+          - generic [ref=e99]:
+            - generic [ref=e100]: Ms. Meera Joshi
+            - generic [ref=e101]: English · All Classes
+          - button "▶ ENTER" [ref=e102] [cursor=pointer]
+      - generic [ref=e84]: TESTING MODE · NO REAL DATA · LEARN · BATTLE · CONQUER
+  - alert [ref=e103]

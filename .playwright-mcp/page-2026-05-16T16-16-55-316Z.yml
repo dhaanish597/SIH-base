@@ -1,0 +1,131 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e7]:
+      - generic [ref=e8]:
+        - link "QUEST ACADEMY" [ref=e9] [cursor=pointer]:
+          - /url: /student
+          - generic [ref=e11]:
+            - generic [ref=e12]: QUEST
+            - generic [ref=e13]: ACADEMY
+        - navigation [ref=e14]:
+          - link "🏠 Home" [ref=e15] [cursor=pointer]:
+            - /url: /student
+            - generic [ref=e16]: 🏠
+            - text: Home
+          - link "🎮 Games" [ref=e17] [cursor=pointer]:
+            - /url: /student/games
+            - generic [ref=e18]: 🎮
+            - text: Games
+          - link "⚔️ Quests" [ref=e19] [cursor=pointer]:
+            - /url: /student/quests
+            - generic [ref=e20]: ⚔️
+            - text: Quests
+          - link "🗺️ Roadmap" [ref=e21] [cursor=pointer]:
+            - /url: /student/roadmap
+            - generic [ref=e22]: 🗺️
+            - text: Roadmap
+          - link "🏆 Ranks" [ref=e23] [cursor=pointer]:
+            - /url: /student/leaderboard
+            - generic [ref=e24]: 🏆
+            - text: Ranks
+          - link "🛒 Shop" [ref=e25] [cursor=pointer]:
+            - /url: /student/shop
+            - generic [ref=e26]: 🛒
+            - text: Shop
+          - link "👤 Profile" [ref=e27] [cursor=pointer]:
+            - /url: /student/profile
+            - generic [ref=e28]: 👤
+            - text: Profile
+        - generic [ref=e29]:
+          - generic [ref=e30]: 🔥 1
+          - generic [ref=e31]: 🪙 87
+          - generic [ref=e32]:
+            - generic [ref=e33]: "5"
+            - generic [ref=e35]: LVL 5 · 48%
+    - main [ref=e38]:
+      - generic [ref=e214]:
+        - generic [ref=e215]:
+          - link "← Subjects" [ref=e216] [cursor=pointer]:
+            - /url: /student/roadmap
+            - generic [ref=e217]: ←
+            - text: Subjects
+          - heading "Chapter Map" [level=1] [ref=e218]
+          - paragraph [ref=e219]: Click a chapter to explore its topics.
+        - img [ref=e222]:
+          - generic [ref=e366]:
+            - button "Real Numbers" [ref=e367] [cursor=pointer]:
+              - generic: 20%
+              - generic: Real Numbers
+              - generic:
+                - generic: Real Numbers
+            - button "Polynomials" [ref=e373]:
+              - generic: 🔒
+              - generic: Polynomials
+              - generic:
+                - generic: Polynomials
+            - button "Pair of Linear Equations in Two Variables" [ref=e376] [cursor=pointer]:
+              - generic: 8%
+              - generic: Pair of Linear Equ…
+              - generic:
+                - generic: Pair of Linear Equations in Two Variables
+            - button "Quadratic Equations" [ref=e382]:
+              - generic: 🔒
+              - generic: Quadratic Equations
+              - generic:
+                - generic: Quadratic Equations
+            - button "Arithmetic Progressions" [ref=e385]:
+              - generic: 🔒
+              - generic: Arithmetic Progres…
+              - generic:
+                - generic: Arithmetic Progressions
+            - button "Triangles" [ref=e388]:
+              - generic: 🔒
+              - generic: Triangles
+              - generic:
+                - generic: Triangles
+            - button "Coordinate Geometry" [ref=e391] [cursor=pointer]:
+              - generic: 10%
+              - generic: Coordinate Geometry
+              - generic:
+                - generic: Coordinate Geometry
+            - button "Introduction to Trigonometry" [ref=e397] [cursor=pointer]:
+              - generic: 20%
+              - generic: Introduction to Tr…
+              - generic:
+                - generic: Introduction to Trigonometry
+            - button "Applications of Trigonometry" [ref=e403]:
+              - generic: 🔒
+              - generic: Applications of Tr…
+              - generic:
+                - generic: Applications of Trigonometry
+            - button "Circles" [ref=e406]:
+              - generic: 🔒
+              - generic: Circles
+              - generic:
+                - generic: Circles
+            - button "Constructions" [ref=e409]:
+              - generic: 🔒
+              - generic: Constructions
+              - generic:
+                - generic: Constructions
+            - button "Areas Related to Circles" [ref=e412]:
+              - generic: 🔒
+              - generic: Areas Related to C…
+              - generic:
+                - generic: Areas Related to Circles
+            - button "Surface Areas and Volumes" [ref=e415] [cursor=pointer]:
+              - generic: 10%
+              - generic: Surface Areas and …
+              - generic:
+                - generic: Surface Areas and Volumes
+            - button "Statistics" [ref=e421]:
+              - generic: 🔒
+              - generic: Statistics
+              - generic:
+                - generic: Statistics
+            - button "Probability" [ref=e424]:
+              - generic: 🔒
+              - generic: Probability
+              - generic:
+                - generic: Probability
+  - alert [ref=e6]

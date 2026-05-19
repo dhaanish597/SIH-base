@@ -1,0 +1,40 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e7]:
+      - generic [ref=e8]: QUEST
+      - generic [ref=e9]: ACADEMY
+    - generic [ref=e10]: YOUR SCHOOL'S GAME WORLD
+  - generic [ref=e11]:
+    - generic [ref=e12]:
+      - generic [ref=e13]: SELECT YOUR ROLE
+      - generic [ref=e14]:
+        - button "⚔️ Student" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: ⚔️
+          - text: Student
+        - button "🧙 Teacher" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: 🧙
+          - text: Teacher
+        - button "🏰 School" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: 🏰
+          - text: School
+        - button "🛡 Admin" [ref=e21] [cursor=pointer]:
+          - generic [ref=e22]: 🛡
+          - text: Admin
+    - generic [ref=e25]: STUDENT LOGIN
+    - generic [ref=e27]:
+      - generic [ref=e28]:
+        - generic: 🏰
+        - textbox "School Code (optional)" [ref=e29]
+      - generic [ref=e30]:
+        - generic: 🆔
+        - textbox "Student ID" [ref=e31]
+      - generic [ref=e32]:
+        - generic: 🔑
+        - textbox "PIN" [ref=e33]
+        - button "👁️" [ref=e35] [cursor=pointer]
+      - button "▶ ENTER THE ARENA" [ref=e36] [cursor=pointer]
+      - generic [ref=e37]: FORGOT PIN? ASK YOUR TEACHER
+    - generic [ref=e39]:
+      - text: Don't have an account?
+      - text: Contact your school admin.
+  - generic [ref=e40]: LEARN · BATTLE · CONQUER

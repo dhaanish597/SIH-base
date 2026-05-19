@@ -1,0 +1,26 @@
+<h2>App-wide Background Theme</h2>
+<p class="subtitle">You want the whole app to look like the PNG — deep blue celestial sky, not flat black. How far should this go?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Roadmap pages only</h3>
+      <p>The fantasy starfield/nebula background only appears on the 3 roadmap pages (subject map, chapter snake, topic panel). All other pages keep the current dark theme. Least disruptive, ships fastest.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Full app — global CSS swap</h3>
+      <p>Replace the flat <code>#07070F</code> background globally with a deep midnight-blue nebula gradient + subtle star field. Every page gets the new feel. All existing cards/nav sit on top unchanged — only the base background changes.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Full app — per-section themed</h3>
+      <p>Each major section gets its own biome: Math = violet nebula, Science = teal aurora, History = amber dusk, etc. Immersive but complex to maintain and coordinate across pages.</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,115 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e7]:
+      - generic [ref=e8]:
+        - link "QUEST ACADEMY" [ref=e9] [cursor=pointer]:
+          - /url: /student
+          - generic [ref=e11]:
+            - generic [ref=e12]: QUEST
+            - generic [ref=e13]: ACADEMY
+        - navigation [ref=e14]:
+          - link "🏠 Home" [ref=e15] [cursor=pointer]:
+            - /url: /student
+            - generic [ref=e16]: 🏠
+            - text: Home
+          - link "🎮 Games" [ref=e17] [cursor=pointer]:
+            - /url: /student/games
+            - generic [ref=e18]: 🎮
+            - text: Games
+          - link "⚔️ Quests" [ref=e19] [cursor=pointer]:
+            - /url: /student/quests
+            - generic [ref=e20]: ⚔️
+            - text: Quests
+          - link "🗺️ Roadmap" [ref=e21] [cursor=pointer]:
+            - /url: /student/roadmap
+            - generic [ref=e22]: 🗺️
+            - text: Roadmap
+          - link "🏆 Ranks" [ref=e23] [cursor=pointer]:
+            - /url: /student/leaderboard
+            - generic [ref=e24]: 🏆
+            - text: Ranks
+          - link "🛒 Shop" [ref=e25] [cursor=pointer]:
+            - /url: /student/shop
+            - generic [ref=e26]: 🛒
+            - text: Shop
+          - link "👤 Profile" [ref=e27] [cursor=pointer]:
+            - /url: /student/profile
+            - generic [ref=e28]: 👤
+            - text: Profile
+        - generic [ref=e29]:
+          - generic [ref=e30]: 🔥 1
+          - generic [ref=e31]: 🪙 87
+          - generic [ref=e32]:
+            - generic [ref=e33]: "5"
+            - generic [ref=e35]: LVL 5 · 48%
+    - main [ref=e38]:
+      - generic [ref=e427]:
+        - generic [ref=e428]:
+          - link "← Chapters" [ref=e429] [cursor=pointer]:
+            - /url: /student/roadmap/cmoprqvrd0000sqbwdk6k71nf
+            - generic [ref=e430]: ←
+            - text: Chapters
+          - heading "Real Numbers" [level=1] [ref=e431]
+          - paragraph [ref=e432]: Click a topic to see details and continue learning.
+        - img [ref=e435]:
+          - generic [ref=e579]:
+            - button "Euclid Division Lemma" [ref=e580] [cursor=pointer]:
+              - generic: 51%
+              - generic: Euclid Division Le…
+              - generic:
+                - generic: Euclid Division Lemma
+            - button "Fundamental Theorem of Arithmetic" [ref=e586] [cursor=pointer]:
+              - generic: 30%
+              - generic: Fundamental Theore…
+              - generic:
+                - generic: Fundamental Theorem of Arithmetic
+            - button "HCF and LCM" [ref=e592]:
+              - generic: 🔒
+              - generic: HCF and LCM
+              - generic:
+                - generic: HCF and LCM
+            - button "Irrational Numbers" [ref=e595] [cursor=pointer]:
+              - generic: Start
+              - generic: Irrational Numbers
+              - generic:
+                - generic: Irrational Numbers
+        - dialog "Topic details" [ref=e600]:
+          - generic [ref=e601]:
+            - generic [ref=e602]:
+              - paragraph
+              - heading [level=2]
+            - button "Close panel" [ref=e603] [cursor=pointer]: ×
+          - generic [ref=e604]:
+            - generic [ref=e605]:
+              - img "Mastery 0%" [ref=e606]:
+                - generic [ref=e609]: 0%
+              - generic [ref=e610]:
+                - paragraph [ref=e611]: Mastery
+                - paragraph [ref=e612]: 0%
+                - paragraph [ref=e613]: Not started
+            - generic [ref=e614]:
+              - paragraph [ref=e615]: Module Progress
+              - generic [ref=e617]:
+                - generic [ref=e618]:
+                  - generic [ref=e619]: ⚡
+                  - text: Learn
+                - generic [ref=e620]: —
+              - generic [ref=e623]:
+                - generic [ref=e624]:
+                  - generic [ref=e625]: 🎮
+                  - text: Play
+                - generic [ref=e626]: —
+              - generic [ref=e629]:
+                - generic [ref=e630]:
+                  - generic [ref=e631]: ✏️
+                  - text: Practice
+                - generic [ref=e632]: —
+              - generic [ref=e635]:
+                - generic [ref=e636]:
+                  - generic [ref=e637]: 📝
+                  - text: Quiz
+                - generic [ref=e638]: —
+          - generic [ref=e640]:
+            - button "▶ Continue Learning" [ref=e641] [cursor=pointer]
+            - button "View Stats →" [ref=e642] [cursor=pointer]
+  - alert [ref=e6]

@@ -1,0 +1,29 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: QUEST
+        - generic [ref=e8]: ACADEMY
+      - generic [ref=e9]: DEMO MODE · PICK YOUR PERSONA
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - button "⚔️ Students" [ref=e12] [cursor=pointer]:
+          - generic [ref=e13]: ⚔️
+          - text: Students
+        - button "🧙 Teachers" [ref=e14] [cursor=pointer]:
+          - generic [ref=e15]: 🧙
+          - text: Teachers
+        - button "🏰 School" [active] [ref=e16] [cursor=pointer]:
+          - generic [ref=e17]: 🏰
+          - text: School
+        - button "🛡️ Admin" [ref=e18] [cursor=pointer]:
+          - generic [ref=e19]: 🛡️
+          - text: Admin
+      - generic [ref=e85]:
+        - generic [ref=e86]: DR
+        - generic [ref=e87]:
+          - generic [ref=e88]: Dr. Rajesh Sharma
+          - generic [ref=e89]: Principal · Delhi Public School
+        - button "▶ ENTER" [ref=e90] [cursor=pointer]
+      - generic [ref=e84]: TESTING MODE · NO REAL DATA · LEARN · BATTLE · CONQUER
+  - alert [ref=e91]

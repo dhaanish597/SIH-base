@@ -1,0 +1,106 @@
+<h2>Subject Roadmap — Top Level Layout</h2>
+<p class="subtitle">When the student clicks "Roadmap" in the nav, what do they see first?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#07070f;padding:16px;min-height:240px;position:relative;overflow:hidden;">
+      <svg width="100%" height="220" viewBox="0 0 320 220" style="position:absolute;top:0;left:0;">
+        <defs>
+          <radialGradient id="bgA" cx="50%" cy="50%" r="70%">
+            <stop offset="0%" stop-color="#150d30"/>
+            <stop offset="100%" stop-color="#07070f"/>
+          </radialGradient>
+        </defs>
+        <rect width="320" height="220" fill="url(#bgA)"/>
+        <!-- Stars -->
+        <circle cx="40" cy="30" r="1" fill="white" opacity="0.4"/>
+        <circle cx="200" cy="15" r="1.5" fill="white" opacity="0.3"/>
+        <circle cx="280" cy="50" r="1" fill="white" opacity="0.5"/>
+        <circle cx="100" cy="60" r="1" fill="white" opacity="0.3"/>
+        <circle cx="260" cy="140" r="1.5" fill="white" opacity="0.4"/>
+        <!-- path connecting subjects -->
+        <path d="M60,180 C120,160 80,120 160,110 C240,100 200,60 260,50" stroke="#6B4BFF" stroke-width="2" fill="none" stroke-dasharray="5,4" opacity="0.5"/>
+        <!-- Subject nodes as big glowing circles -->
+        <circle cx="60" cy="180" r="28" fill="#1a1040" stroke="#6B4BFF" stroke-width="2.5"/>
+        <text x="60" y="178" text-anchor="middle" fill="white" font-size="16">📐</text>
+        <text x="60" y="192" text-anchor="middle" fill="#B7BEE0" font-size="8">Math</text>
+        <circle cx="60" cy="180" r="28" fill="none" stroke="#6B4BFF" stroke-width="2.5" opacity="0.4"/>
+
+        <circle cx="160" cy="110" r="28" fill="#0d1a30" stroke="#18D6FF" stroke-width="2.5"/>
+        <text x="160" y="108" text-anchor="middle" fill="white" font-size="16">🔬</text>
+        <text x="160" y="122" text-anchor="middle" fill="#B7BEE0" font-size="8">Science</text>
+
+        <circle cx="260" cy="50" r="28" fill="#0a1a15" stroke="#2DD46E" stroke-width="2.5"/>
+        <text x="260" y="48" text-anchor="middle" fill="white" font-size="16">📖</text>
+        <text x="260" y="62" text-anchor="middle" fill="#B7BEE0" font-size="8">English</text>
+
+        <!-- mastery arc -->
+        <circle cx="60" cy="180" r="32" fill="none" stroke="#6B4BFF" stroke-width="3" stroke-dasharray="70 131" stroke-linecap="round" opacity="0.8" transform="rotate(-90 60 180)"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>A — Fantasy World Map</h3>
+      <p>Subjects as glowing nodes on a starfield path — matches the PNG exactly. Each subject is a "world" you travel to. Vertical snake within each subject.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#07070f;padding:12px;min-height:240px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-content:start;">
+      <!-- Grid of subject cards -->
+      <div style="border:2px solid #6B4BFF;border-radius:12px;padding:10px 6px;background:#0f0d1f;text-align:center;box-shadow:0 0 12px rgba(107,75,255,0.3);">
+        <div style="font-size:22px;">📐</div>
+        <div style="color:#F5F7FF;font-size:10px;font-weight:700;margin-top:4px;">Math</div>
+        <div style="margin-top:6px;height:4px;background:#2D3260;border-radius:4px;">
+          <div style="width:72%;height:100%;background:#6B4BFF;border-radius:4px;"></div>
+        </div>
+        <div style="color:#6B4BFF;font-size:9px;margin-top:2px;">72%</div>
+      </div>
+      <div style="border:2px solid #18D6FF;border-radius:12px;padding:10px 6px;background:#071520;text-align:center;box-shadow:0 0 12px rgba(24,214,255,0.2);">
+        <div style="font-size:22px;">🔬</div>
+        <div style="color:#F5F7FF;font-size:10px;font-weight:700;margin-top:4px;">Science</div>
+        <div style="margin-top:6px;height:4px;background:#2D3260;border-radius:4px;">
+          <div style="width:45%;height:100%;background:#18D6FF;border-radius:4px;"></div>
+        </div>
+        <div style="color:#18D6FF;font-size:9px;margin-top:2px;">45%</div>
+      </div>
+      <div style="border:2px solid #2DD46E;border-radius:12px;padding:10px 6px;background:#071510;text-align:center;box-shadow:0 0 12px rgba(45,212,110,0.2);">
+        <div style="font-size:22px;">📖</div>
+        <div style="color:#F5F7FF;font-size:10px;font-weight:700;margin-top:4px;">English</div>
+        <div style="margin-top:6px;height:4px;background:#2D3260;border-radius:4px;">
+          <div style="width:88%;height:100%;background:#2DD46E;border-radius:4px;"></div>
+        </div>
+        <div style="color:#2DD46E;font-size:9px;margin-top:2px;">88%</div>
+      </div>
+      <div style="border:2px solid #FFC93C;border-radius:12px;padding:10px 6px;background:#120f00;text-align:center;">
+        <div style="font-size:22px;">🏛️</div>
+        <div style="color:#F5F7FF;font-size:10px;font-weight:700;margin-top:4px;">History</div>
+        <div style="margin-top:6px;height:4px;background:#2D3260;border-radius:4px;">
+          <div style="width:30%;height:100%;background:#FFC93C;border-radius:4px;"></div>
+        </div>
+        <div style="color:#FFC93C;font-size:9px;margin-top:2px;">30%</div>
+      </div>
+      <div style="border:2px solid #FF4D8A;border-radius:12px;padding:10px 6px;background:#150010;text-align:center;">
+        <div style="font-size:22px;">🌍</div>
+        <div style="color:#F5F7FF;font-size:10px;font-weight:700;margin-top:4px;">Geography</div>
+        <div style="margin-top:6px;height:4px;background:#2D3260;border-radius:4px;">
+          <div style="width:55%;height:100%;background:#FF4D8A;border-radius:4px;"></div>
+        </div>
+        <div style="color:#FF4D8A;font-size:9px;margin-top:2px;">55%</div>
+      </div>
+      <div style="border:2px solid #FF8A2B;border-radius:12px;padding:10px 6px;background:#140800;text-align:center;">
+        <div style="font-size:22px;">💻</div>
+        <div style="color:#F5F7FF;font-size:10px;font-weight:700;margin-top:4px;">CS</div>
+        <div style="margin-top:6px;height:4px;background:#2D3260;border-radius:4px;">
+          <div style="width:60%;height:100%;background:#FF8A2B;border-radius:4px;"></div>
+        </div>
+        <div style="color:#FF8A2B;font-size:9px;margin-top:2px;">60%</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Subject Card Grid</h3>
+      <p>All subjects in a responsive grid with mastery bars. Fast to scan, works great on mobile. Click a card → vertical snake map for that subject's chapters.</p>
+    </div>
+  </div>
+
+</div>

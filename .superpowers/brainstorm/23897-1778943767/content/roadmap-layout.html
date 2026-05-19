@@ -1,0 +1,113 @@
+<h2>Roadmap Map Layout Style</h2>
+<p class="subtitle">How should the chapter/lesson path be rendered inside each subject? (Like the PNG reference)</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0a0a1a;padding:16px;min-height:220px;position:relative;overflow:hidden;">
+      <!-- Duolingo-style vertical snake -->
+      <svg width="100%" height="200" viewBox="0 0 260 200" style="position:absolute;top:0;left:0;">
+        <defs>
+          <radialGradient id="bg1" cx="50%" cy="50%" r="80%">
+            <stop offset="0%" stop-color="#1a1040"/>
+            <stop offset="100%" stop-color="#07070f"/>
+          </radialGradient>
+        </defs>
+        <rect width="260" height="200" fill="url(#bg1)"/>
+        <!-- snake path -->
+        <path d="M130,180 C80,160 180,130 130,100 C80,70 180,40 130,20" stroke="#6B4BFF" stroke-width="3" fill="none" stroke-dasharray="6,4" opacity="0.5"/>
+        <!-- nodes -->
+        <circle cx="130" cy="180" r="18" fill="#2DD46E" stroke="#10B981" stroke-width="2"/>
+        <text x="130" y="185" text-anchor="middle" fill="white" font-size="11" font-weight="bold">1</text>
+        <circle cx="130" cy="130" r="18" fill="#6B4BFF" stroke="#8A6DFF" stroke-width="2"/>
+        <text x="130" y="135" text-anchor="middle" fill="white" font-size="11" font-weight="bold">2</text>
+        <circle cx="130" cy="80" r="18" fill="#18D6FF" stroke="#0B6E87" stroke-width="2"/>
+        <text x="130" y="85" text-anchor="middle" fill="white" font-size="11" font-weight="bold">3</text>
+        <circle cx="130" cy="30" r="18" fill="#2D3260" stroke="#6F77A6" stroke-width="2"/>
+        <text x="130" y="35" text-anchor="middle" fill="#6F77A6" font-size="11">🔒</text>
+        <text x="155" y="185" fill="#B7BEE0" font-size="10">Real Numbers</text>
+        <text x="155" y="135" fill="#B7BEE0" font-size="10">Polynomials</text>
+        <text x="70" y="85" fill="#B7BEE0" font-size="10">Quadratics</text>
+        <text x="70" y="35" fill="#6F77A6" font-size="10">Trigonometry</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>A — Vertical Snake Path</h3>
+      <p>Chapters as numbered nodes on a winding vertical path. Exactly like Duolingo or the PNG reference. Chapters at top, topics inside each node's panel.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0a0a1a;padding:16px;min-height:220px;position:relative;overflow:hidden;">
+      <!-- Horizontal scrollable world map -->
+      <svg width="100%" height="200" viewBox="0 0 300 200" style="position:absolute;top:0;left:0;">
+        <defs>
+          <radialGradient id="bg2" cx="30%" cy="50%" r="80%">
+            <stop offset="0%" stop-color="#0d1535"/>
+            <stop offset="100%" stop-color="#07070f"/>
+          </radialGradient>
+        </defs>
+        <rect width="300" height="200" fill="url(#bg2)"/>
+        <!-- horizontal path -->
+        <path d="M20,100 C60,60 100,140 140,100 C180,60 220,140 260,100" stroke="#FFC93C" stroke-width="3" fill="none" stroke-dasharray="6,4" opacity="0.6"/>
+        <!-- terrain hints -->
+        <ellipse cx="80" cy="130" rx="30" ry="15" fill="#1a2a10" opacity="0.5"/>
+        <ellipse cx="200" cy="70" rx="25" ry="12" fill="#1a1040" opacity="0.5"/>
+        <!-- nodes -->
+        <circle cx="20" cy="100" r="16" fill="#2DD46E" stroke="#10B981" stroke-width="2"/>
+        <text x="20" y="105" text-anchor="middle" fill="white" font-size="10" font-weight="bold">1</text>
+        <circle cx="80" cy="80" r="16" fill="#6B4BFF" stroke="#8A6DFF" stroke-width="2"/>
+        <text x="80" y="85" text-anchor="middle" fill="white" font-size="10" font-weight="bold">2</text>
+        <circle cx="140" cy="110" r="16" fill="#18D6FF" stroke="#0B6E87" stroke-width="2"/>
+        <text x="140" y="115" text-anchor="middle" fill="white" font-size="10" font-weight="bold">3</text>
+        <circle cx="200" cy="85" r="16" fill="#FFC93C" stroke="#B8852A" stroke-width="2"/>
+        <text x="200" y="90" text-anchor="middle" fill="#07070f" font-size="10" font-weight="bold">4</text>
+        <circle cx="260" cy="105" r="16" fill="#2D3260" stroke="#6F77A6" stroke-width="2"/>
+        <text x="260" y="110" text-anchor="middle" fill="#6F77A6" font-size="10">🔒</text>
+        <text x="20" y="125" text-anchor="middle" fill="#B7BEE0" font-size="9">Reals</text>
+        <text x="80" y="105" text-anchor="middle" fill="#B7BEE0" font-size="9">Poly</text>
+        <text x="140" y="135" text-anchor="middle" fill="#B7BEE0" font-size="9">Linear</text>
+        <text x="200" y="110" text-anchor="middle" fill="#B7BEE0" font-size="9">Quad</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>B — Horizontal World Map</h3>
+      <p>Chapters as floating islands on a left-to-right scrollable map with terrain. Immersive but harder to navigate on mobile.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0a0a1a;padding:16px;min-height:220px;display:flex;flex-direction:column;gap:8px;justify-content:center;">
+      <!-- Accordion list -->
+      <div style="border:1.5px solid #2DD46E;border-radius:10px;padding:10px 14px;background:#0d1a10;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:#2DD46E;display:grid;place-items:center;font-size:12px;font-weight:bold;color:#07070f;">1</div>
+          <span style="color:#F5F7FF;font-size:12px;font-weight:700;">Real Numbers</span>
+          <span style="margin-left:auto;color:#2DD46E;font-size:10px;">✓ Done</span>
+        </div>
+        <div style="margin-top:8px;padding-left:36px;display:flex;flex-direction:column;gap:4px;">
+          <div style="height:6px;background:#10B981;border-radius:4px;width:80%;"></div>
+          <span style="color:#6F77A6;font-size:10px;">4/5 topics complete</span>
+        </div>
+      </div>
+      <div style="border:1.5px solid #6B4BFF;border-radius:10px;padding:10px 14px;background:#0f0d1f;box-shadow:0 0 12px rgba(107,75,255,0.2);">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:#6B4BFF;display:grid;place-items:center;font-size:12px;font-weight:bold;color:white;">2</div>
+          <span style="color:#F5F7FF;font-size:12px;font-weight:700;">Polynomials</span>
+          <span style="margin-left:auto;color:#18D6FF;font-size:10px;">In Progress</span>
+        </div>
+      </div>
+      <div style="border:1.5px solid #2D3260;border-radius:10px;padding:10px 14px;background:#0f1128;opacity:0.6;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:#2D3260;display:grid;place-items:center;font-size:14px;">🔒</div>
+          <span style="color:#6F77A6;font-size:12px;font-weight:700;">Quadratic Equations</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Numbered List + Progress</h3>
+      <p>Clean card list with chapter numbers, progress bars, and lock state. No map path. Fast to build, easiest on mobile.</p>
+    </div>
+  </div>
+
+</div>
